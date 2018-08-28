@@ -33,9 +33,13 @@ class Command:
             os.system("cd " + str(parentPath) + "/src/NATS/Server && ./run &")
             exit()
         time.sleep(7)
-        DEMO_Gate_To_Gate_Simulation_SFO_PHX.main()
-        with open(str(parentPath) + "/src/NATS/Server/DEMO_Gate_To_Gate_SFO_PHX_trajectory.csv", 'r') as trajectoryFile:
-            CSVData = trajectoryFile.read()
-            
+        CSVData = None
+        try:
+            DEMO_Gate_To_Gate_Simulation_SFO_PHX.main()
+            with open(str(parentPath) + "/src/NATS/Server/DEMO_Gate_To_Gate_SFO_PHX_trajectory.csv", 'r') as trajectoryFile:
+                CSVData = trajectoryFile.read()
+        except:
+            print('killing NATS process')
+            os.kill(pid,9)
             
         return ["NATS_GateToGateSim", CSVData]
