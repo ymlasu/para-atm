@@ -11,7 +11,7 @@ Command call to interface NATS module with PARA-ATM to fetch generated trajector
 '''
 
 from PARA_ATM import *
-from NATS.Client import DEMO_Gate_To_Gate_Simulation_SFO_PHX
+from NATS.Client import DEMO_Gate_To_Gate_Simulation_SFO_PHX_beta1
 
 class Command:
     '''
@@ -28,18 +28,20 @@ class Command:
     #Method name executeCommand() should not be changed. It executes the query and displays/returns the output.
     def executeCommand(self):
         pid=os.fork()
-        parentPath = str(Path(__file__).parent.parent.parent.parent)
+        parentPath = str(Path(__file__).parent.parent.parent)
+        print(parentPath)
         if pid==0:
-            os.system("cd " + str(parentPath) + "/src/NATS/Server && ./run &")
+            os.system("cd " + str(parentPath) + "/NATS/Server && ./run &")
             exit()
         time.sleep(7)
         CSVData = None
         try:
-            DEMO_Gate_To_Gate_Simulation_SFO_PHX.main()
-            with open(str(parentPath) + "/src/NATS/Server/DEMO_Gate_To_Gate_SFO_PHX_trajectory.csv", 'r') as trajectoryFile:
+            pid2 = DEMO_Gate_To_Gate_Simulation_SFO_PHX_beta1.main()
+            with open(str(parentPath) + "/NATS/Server/DEMO_Gate_To_Gate_SFO_PHX_trajectory.csv", 'r') as trajectoryFile:
                 CSVData = trajectoryFile.read()
         except:
             print('killing NATS process')
-            os.kill(pid,9)
+            #os.kill(pid,9)
+            #os.kill(pid2,9)
             
         return ["NATS_GateToGateSim", CSVData]

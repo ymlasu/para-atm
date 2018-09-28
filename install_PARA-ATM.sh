@@ -6,7 +6,7 @@ dir=${PWD}
 sudo apt-get install default-jdk
 sudo apt-get install wget
 [ -a ./Anaconda3-2.4.0-Linux-x86_64.sh ] || wget https://repo.continuum.io/archive/Anaconda3-2.4.0-Linux-x86_64.sh
-chmod +x dependencies.sh
+sudo chmod +x dependencies.sh
 ./dependencies.sh
 echo "finished PARA-ATM installation, starting NATS installation"
 
@@ -14,7 +14,7 @@ echo "finished PARA-ATM installation, starting NATS installation"
 cd src/NATS/Server
 [ -d ./lib ] || mkdir lib
 cd dependency_library
-chmod +x *.sh
+sudo chmod +x *.sh
 choice="y"
 if [ -d ./jasper-1.900.1 ]
 then
@@ -58,8 +58,10 @@ cd ../../../
 #NATS client dependencies
 which conda || export PATH="/home/${USER}/anaconda3/bin:$PATH"
 conda install -c conda-forge jpype1
+conda install pyqt=4
 
 #set up database
+sudo service postgresql restart
 sudo -u postgres createuser paraatm_user
 sudo -u postgres createdb paraatm
 sudo -u postgres psql <<EOF
