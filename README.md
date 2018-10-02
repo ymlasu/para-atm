@@ -82,7 +82,7 @@ The project has been developed under the guidance of ULI PI Dr. Yongming Liu, wi
 as follows:
 
 Hari Iyer,
-PARA-ATM Founder & Lead Software Engineer,
+PARA-ATM Founder & (Former)Lead Software Engineer,
 hari.iyer@asu.edu.
 
 Yutian Pang,
