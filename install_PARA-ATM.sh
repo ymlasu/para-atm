@@ -53,6 +53,8 @@ echo "done installing NATS Server, starting database setup"
 #configure run file
 cd ../
 chmod +x run
+chmod +x utility/run_nodejs.sh
+chmod +x utility/node-v8.11.1-linux-x64/bin/node
 cd ../../../
 
 #NATS client dependencies
@@ -77,8 +79,9 @@ cp "$dir"/data/PARA_ATM_Database_Public.backup /tmp/PARA_ATM_Database_Public.bac
 sudo -u postgres pg_restore -d paraatm -1 /tmp/PARA_ATM_Database_Public.backup
 rm /tmp/PARA_ATM_Database_Public.backup
 
-sed -e "s:/NASA_ULI_InfoFusion/src/:$dir/src/:" "$dir"/src/PARA_ATM/Application/LaunchApp.py > tmp.txt
+sed -e "s:'.*/NASA_ULI_InfoFusion/src/':'$dir/src/':" "$dir"/src/PARA_ATM/Application/LaunchApp.py > tmp.txt
 mv tmp.txt "$dir"/src/PARA_ATM/Application/LaunchApp.py
+
 
 echo "Done installing PARA-ATM/NATS. Verify by running 'src/PARA_ATM/Application/LaunchApp.py'"
 echo "If it didn't work, try the steps in the readme or email michael.hartnett@swri.org"

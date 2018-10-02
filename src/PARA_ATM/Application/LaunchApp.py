@@ -12,7 +12,7 @@ Run this module to invoke the application. It contains the main features and fun
 
 import sys
 
-sys.path.insert(0, '/NASA_ULI_InfoFusion/src/')
+sys.path.insert(0, '/home/mhartnett/NASA_ULI/NASA_ULI_InfoFusion/src/')
 
 from PARA_ATM import *
 
@@ -292,7 +292,7 @@ class ParaATM(QWidget):
         #Get the command name and argument inputs
         commandInput = self.commandInput.text() 
         commandName = str(commandInput.split('(')[0])
-        commandArguments = (commandInput.split('(')[1])[:-1]
+        commandArguments = str(commandInput.split('(')[1])[:-1]
         commandClass = eval(commandName).Command(self.cursor, commandArguments)
         self.commandParameters = commandClass.executeCommand()
 
@@ -302,15 +302,16 @@ class ParaATM(QWidget):
             if (self.commandParameters[0] == "Airport"):
                 self.mapView.setUrl(QUrl(str(Path(__file__).parent.parent) +  "/Map/web/LiveFlights.html?latitude=" + self.commandParameters[1] + "&longitude=" + self.commandParameters[2]))
             elif (self.commandParameters[0] == "NATS_GateToGateSim"):
-                parentPath = str(Path(__file__).parent.parent.parent.parent)
-                with open(str(parentPath) + "/src/NATS/Server/DEMO_Gate_To_Gate_SFO_PHX_trajectory.csv", 'r') as content_file:
+                parentPath = str(Path(__file__).parent.parent.parent)
+                with open(str(parentPath) + "/NATS/Server/DEMO_Gate_To_Gate_SFO_PHX_trajectory.csv", 'r') as content_file:
                     CSVData = content_file.read()
                 w = QWidget()
                 try:
                     result = QMessageBox.question(w, 'NATS Output', "" + str(CSVData)[0:5000])
                 except:
                     print('NATS output error')
-                w.showFullScreen() 
+                    raise Exception
+                w.showFullScreen()
         except:
             self.initMap()
         

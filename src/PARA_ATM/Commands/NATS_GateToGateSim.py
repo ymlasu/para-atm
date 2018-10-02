@@ -29,19 +29,24 @@ class Command:
     def executeCommand(self):
         pid=os.fork()
         parentPath = str(Path(__file__).parent.parent.parent)
-        print(parentPath)
         if pid==0:
-            os.system("cd " + str(parentPath) + "/NATS/Server && ./run &")
-            exit()
-        time.sleep(7)
+            os.system("cd " + parentPath + "/NATS/Server && ./run &")
+            quit()
+        host_port = 'localhost:2017'
+        while True:
+            server_response = os.system('curl -s ' + host_port) >> 8
+            if server_response == 0 or server_response == 52:
+                time.sleep(46)
+                break
+            else:
+                time.sleep(1)
         CSVData = None
         try:
             pid2 = DEMO_Gate_To_Gate_Simulation_SFO_PHX_beta1.main()
-            with open(str(parentPath) + "/NATS/Server/DEMO_Gate_To_Gate_SFO_PHX_trajectory.csv", 'r') as trajectoryFile:
+            with open(parentPath + "/NATS/Server/Trajectory_SFO_PHX_beta1.0_.csv", 'r') as trajectoryFile:
                 CSVData = trajectoryFile.read()
         except:
             print('killing NATS process')
-            #os.kill(pid,9)
-            #os.kill(pid2,9)
+            os.system("ps -a -o pid= | xargs -I sig kill -9 sig")
             
         return ["NATS_GateToGateSim", CSVData]
