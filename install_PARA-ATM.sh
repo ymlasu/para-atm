@@ -62,6 +62,11 @@ which conda || export PATH="/home/${USER}/anaconda3/bin:$PATH"
 conda install -c conda-forge jpype1
 conda install pyqt=4
 
+export LANGUAGE=C
+export LC_ALL=C
+export LANG=C
+export LC_TYPE=C
+
 #set up database
 sudo service postgresql restart
 sudo -u postgres createuser paraatm_user
