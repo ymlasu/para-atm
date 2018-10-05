@@ -46,4 +46,4 @@ from PARA_ATM.Commands import Airport,NATS_GateToGateSim,PlotGraph,RegressionCur
 from PARA_ATM.Map import MapView
 from PARA_ATM.Ontology import QueryOntology
 
-#from NATS.Server import *
+from NATS.Server import *

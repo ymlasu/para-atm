@@ -7,7 +7,7 @@ sudo apt-get install default-jdk
 sudo apt-get install wget
 [ -a ./Anaconda3-2.4.0-Linux-x86_64.sh ] || wget https://repo.continuum.io/archive/Anaconda3-2.4.0-Linux-x86_64.sh
 sudo chmod +x dependencies.sh
-./dependencies.sh
+sudo ./dependencies.sh
 echo "finished PARA-ATM installation, starting NATS installation"
 
 #NATS server dependencies

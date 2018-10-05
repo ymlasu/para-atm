@@ -12,7 +12,7 @@ Run this module to invoke the application. It contains the main features and fun
 
 import sys
 
-sys.path.insert(0, '/home/mhartnett/NASA_ULI/NASA_ULI_InfoFusion/src/')
+sys.path.insert(0, 'NASA_ULI_InfoFusion/src/')
 
 from PARA_ATM import *
 
@@ -303,7 +303,7 @@ class ParaATM(QWidget):
                 self.mapView.setUrl(QUrl(str(Path(__file__).parent.parent) +  "/Map/web/LiveFlights.html?latitude=" + self.commandParameters[1] + "&longitude=" + self.commandParameters[2]))
             elif (self.commandParameters[0] == "NATS_GateToGateSim"):
                 parentPath = str(Path(__file__).parent.parent.parent)
-                with open(str(parentPath) + "/NATS/Server/DEMO_Gate_To_Gate_SFO_PHX_trajectory.csv", 'r') as content_file:
+                with open(str(parentPath) + "/NATS/Server/DEMO_Gate_To_Gate_SFO_PHX_trajectory_beta_1.0.csv", 'r') as content_file:
                     CSVData = content_file.read()
                 w = QWidget()
                 try:
