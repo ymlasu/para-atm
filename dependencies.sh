@@ -9,7 +9,7 @@ sudo apt-get install postgresql
 sudo apt-get install pgadmin3
 sudo apt-get install postgresql-contrib
 . ~/.bashrc
-pip3 install psycopg2-binary
-pip3 install rdflib
+sudo pip3 install psycopg2-binary
+sudo pip3 install rdflib
 
 echo "Done."

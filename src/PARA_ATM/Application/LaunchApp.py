@@ -12,7 +12,7 @@ Run this module to invoke the application. It contains the main features and fun
 
 import sys
 
-sys.path.insert(0, 'NASA_ULI_InfoFusion/src/')
+sys.path.insert(0, '/home/mhartnett/NASA_ULI/NASA_ULI_InfoFusion/src/')
 
 from PARA_ATM import *
 
