@@ -30,6 +30,7 @@ class Command:
         pid=os.fork()
         parentPath = str(Path(__file__).parent.parent.parent)
         if pid==0:
+            host_port = 'localhost:2017'
             server_response = os.system('curl -s ' + host_port) >> 8
             if server_response == 52 or server_response == 0:
                 exit()
