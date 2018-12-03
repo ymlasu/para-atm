@@ -42,8 +42,7 @@ import rdflib
 #------------------------Application Modules------------------------#
 
 from PARA_ATM.Commands.Helpers import DataStore
-from PARA_ATM.Commands import Airport,NATS_GateToGateSim,PlotGraph,RegressionCurve
+from PARA_ATM.Commands import Airport,NATS_GateToGateSim,PlotGraph,TDDS,RegressionCurve
 from PARA_ATM.Map import MapView
 from PARA_ATM.Ontology import QueryOntology
 
-from NATS.Server import *

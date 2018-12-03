@@ -4,7 +4,7 @@ class Access:
     
     def __init__(self, API_key):
         self.API_key = API_key
-        self.connection = psycopg2.connect(database="paraatm", user="paraatm_user", password="paraatm_user", host="localhost", port="5432")
+        self.connection = psycopg2.connect('dbname=paraatm user=paraatm_user password=paraatm_user')
         self.cursor = self.connection.cursor()
         
     def getAirportLocation(self, airportCode):
@@ -63,6 +63,13 @@ class Access:
     def addTrajectoryData(self, callsign, date, timestamp, latitude, longitude):
         self.cursor.execute("INSERT INTO trajectory(callsign, date, timestamp, latitude, longitude) VALUES ('" + callsign + "', '" + date + "', '" + timestamp + "', '" + latitude + "', '" + longitude + "')")
         self.connection.commit()
+    
+    def getSMESData(self, airport):
+        self.cursor.execute('SELECT * FROM smes WHERE airport = %s' %airport)
+        results = self.cursor.fetchall()
+        return results
+
+
         
 '''      
 dataStoreAccess = Access("APIKEY")
