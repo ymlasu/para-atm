@@ -63,7 +63,6 @@ class ParaATM(QWidget):
         
         #Build and launch application UI
         self.buildUI()
-        self.initMap()
         
         
     '''
@@ -296,28 +295,33 @@ class ParaATM(QWidget):
         commandArguments = str(commandInput.split('(')[1])[:-1]
         commandClass = eval(commandName).Command(self.cursor, commandArguments)
         self.commandParameters = commandClass.executeCommand()
-
+        print('command %s executed'%commandName)
 
         #Command specific conditions
-        try:
-            if (self.commandParameters[0] == "Airport"):
-                self.mapView.setUrl(QUrl(str(Path(__file__).parent.parent) +  "/Map/web/LiveFlights.html?latitude=" + self.commandParameters[1] + "&longitude=" + self.commandParameters[2]))
-            elif (self.commandParameters[0] == 'TDDS'):
-                pass
-            elif (self.commandParameters[0] == "NATS_GateToGateSim"):
-                parentPath = str(Path(__file__).parent.parent.parent)
-                with open(str(parentPath) + "/NATS/Server/DEMO_Gate_To_Gate_SFO_PHX_trajectory_beta_1.0.csv", 'r') as content_file:
-                    CSVData = content_file.read()
-                w = QWidget()
-                try:
-                    result = QMessageBox.question(w, 'NATS Output', "" + str(CSVData)[0:5000])
-                except:
-                    print('NATS output error')
-                    raise Exception
-                w.showFullScreen()
-        except:
-            self.initMap()
-        
+        if (commandName == "Airport"):
+            self.mapView.setUrl(QUrl(str(Path(__file__).parent.parent) +  "/Map/web/LiveFlights.html?latitude=" + self.commandParameters[1] + "&longitude=" + self.commandParameters[2]))
+            print(self.commandParameters)
+        elif (commandName == 'TDDS'):
+            self.mapView.setUrl(QUrl(str(Path(__file__).parent.parent) +  "/Map/web/LiveFlights.html?latitude=" + str(self.commandParameters[1]['latitude'][0]) + "&longitude=" + str(self.commandParameters[1]['longitude'][0])))
+            
+            print(self.commandParameters)
+            self.mapHTML = MapView.buildMap(self.flightSelected, self.dateRangeSelected, self.filterToggles, self.cursor, self.commandParameters)
+            self.mapView.setHtml(self.mapHTML)
+            self.mapLayout.addWidget(self.mapView)
+
+        elif (commandName == "NATS_GateToGateSim"):
+            parentPath = str(Path(__file__).parent.parent.parent)
+            with open(str(parentPath) + "/NATS/Server/DEMO_Gate_To_Gate_SFO_PHX_trajectory_beta_1.0.csv", 'r') as content_file:
+                CSVData = content_file.read()
+            w = QWidget()
+            try:
+                result = QMessageBox.question(w, 'NATS Output', "" + str(CSVData)[0:5000])
+            except:
+                print('NATS output error')
+                raise Exception
+            w.showFullScreen()
+        else:
+            print(self.commandParameters)
 
 '''
     main() instantiates the ParaATM Class to run the application

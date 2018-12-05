@@ -44,8 +44,15 @@ def buildMap(flightSelected, dateRangeSelected, filterToggles, cursor, commandPa
     #Get command name and parameter if any
     try:
         commandName = commandParameters[0]
-        commandArguments = commandParameters[1:]
+        commandArguments = commandParameters[1]
+        print(len(list(commandArguments['latitude'])))
+        position = [str(commandArguments['latitude'][i])+','+str(commandArguments['longitude'][i]) for i in range(len(list(commandArguments['latitude'])))]
+        print(position[0])
+        flightResults.append([],list(commandArguments['time']),list(commandArguments['callsign']),position)
+        print(flightResults)
+
     except:
+        
         pass
     
     #Get flight, waypoint, and airport data from the database to be used to generate map
@@ -142,7 +149,7 @@ def buildMap(flightSelected, dateRangeSelected, filterToggles, cursor, commandPa
                               id: 'mapbox.streets'
                           }).addTo(map);
                   
-                  L.Control.Watermark = L.Control.extend({
+                 L.Control.Watermark = L.Control.extend({
                     onAdd: function(map) {
                         var img = L.DomUtil.create('img');
                         
@@ -175,7 +182,7 @@ def buildMap(flightSelected, dateRangeSelected, filterToggles, cursor, commandPa
                  for (var i = 0; i < flightPaths.length; i++) {
                      for (var j = 0; j < flightPaths[i].length; j++) {
                      
-                         var flightPosition = flightPaths[i][j][3].split(",");
+                         var flightPosition = flightPaths[i][3][j].split(",");
                          
                          var latitude = parseFloat(flightPosition[0]);
                          var longitude = parseFloat(flightPosition[1]);
