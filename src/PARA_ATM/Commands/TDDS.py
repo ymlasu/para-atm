@@ -29,6 +29,8 @@ class Command:
         self.cursor.execute("SELECT latitude,longitude FROM airports WHERE iata='%s'" %(""+self.airportIATA))
         lat,lon = self.cursor.fetchall()[0]
         lat,lon = float(lat),float(lon)
-        self.cursor.execute("SELECT time,callsign,lat,lon FROM smes WHERE lat>'%f' AND lat<'%f' AND lon>'%f' AND lon<'%f'" %(lat-1,lat+1,lon-1,lon+1))
-        results = pd.DataFrame(self.cursor.fetchall(),columns=['time','callsign','latitude','longitude'])
-        return ['TDDS',results]
+        self.cursor.execute("SELECT time,callsign,track,lat,lon FROM smes WHERE lat>'%f' AND lat<'%f' AND lon>'%f' AND lon<'%f'" %(lat-1,lat+1,lon-1,lon+1))
+        results = pd.DataFrame(self.cursor.fetchall(),columns=['time','callsign','track','latitude','longitude'])
+        #self.cursor.execute("SELECT time,track,lat,lon FROM asdex WHERE airport='%s' AND lat>'%f'" %("K"+self.airportIATA,lat-1))
+        #asdex = pd.DataFrame(self.cursor.fetchall(),columns=['time','callsign','latitude','longitude'])
+        return ['TDDS',results,self.airportIATA]

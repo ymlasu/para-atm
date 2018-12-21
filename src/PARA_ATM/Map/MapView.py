@@ -42,21 +42,22 @@ def buildMap(flightSelected, dateRangeSelected, filterToggles, cursor, commandPa
     resourcesDir = str(Path(__file__).parent.parent.parent.parent) + "/resources/"
     
     #Get command name and parameter if any
-    try:
+    def tdds_data():
+        flightResults = []
         commandName = commandParameters[0]
-        commandArguments = commandParameters[1]
-        print(len(list(commandArguments['latitude'])))
-        position = [str(commandArguments['latitude'][i])+','+str(commandArguments['longitude'][i]) for i in range(len(list(commandArguments['latitude'])))]
-        print(position[0])
-        flightResults.append([],list(commandArguments['time']),list(commandArguments['callsign']),position)
-        print(flightResults)
+        commandArguments = commandParameters[1:]
+        tdds_data = commandArguments[0]
+        airport = commandArguments[1]
+        cursor.execute("SELECT latitude,longitude from airports WHERE iata='%s'"%(airport))
+        airportLatLon = cursor.fetchall()
+        source = [airport,airportLatLon[0][0],airportLatLon[0][1]]
+        destination = source
+        for index,row in tdds_data.iterrows():
+            flightResults.append([[str(row['time']),str(row['track']),row['callsign'],str(row['latitude'])+','+str(row['longitude'])]])
+        return flightResults,source,destination
 
-    except:
-        
-        pass
-    
     #Get flight, waypoint, and airport data from the database to be used to generate map
-    try:
+    def flight_trajectory():
         cursor.execute("SELECT source, destination from flight_data WHERE callsign = %s", ("" + flightSelected,))
         airportResults = cursor.fetchall()
         sourceIATA = airportResults[0][0]
@@ -77,20 +78,34 @@ def buildMap(flightSelected, dateRangeSelected, filterToggles, cursor, commandPa
         for date in dateRangeSelected:
             cursor.execute("SELECT * from flight_data WHERE callsign = %s AND utc LIKE %s", ("" + flightSelected, "" + (date + '%'),))
             flightDailyResults = cursor.fetchall()
-            flightResults.append([list(flightData) for flightData in flightDailyResults if list(flightData)])   
+            flightResults.append([list(flightData) for flightData in flightDailyResults if list(flightData)])
+        print(flightResults[0])
+        print(len(flightResults),len(flightResults[0]))
         if airportToggle:
             cursor.execute("SELECT * from airports")
             airportData = cursor.fetchall()
             for airport in airportData:
                 airportFilterResults.append(list(airport))
-            
-    except:
-        pass
+        return airportResults,sourceIATA,destinationIATA,airportsLatLon,source,destination,flightResults
+
+    try:
+        flightResults,source,destination = tdds_data()
+    except Exception as e:
+        print('TDDS: ')
+        print(e)
+        try:
+            airportResults,sourceIATA,destinationIATA,airportsLatLon,source,destination,flightResults = flight_trajectory()
+        except Exception as e:
+            print('Map Gen:')
+            print(e)
+            pass
     
-    
-    #Generate the map HTML and return to main application call
-    return '''      
-          
+    for flight in flightResults:
+        for point in flight:
+            position = point[3].split(',')
+            print(position[0],position[1])
+    try:
+        html = '''
         <!DOCTYPE html>
            <head>
               <title>Full Screen Leaflet Map</title>
@@ -149,7 +164,7 @@ def buildMap(flightSelected, dateRangeSelected, filterToggles, cursor, commandPa
                               id: 'mapbox.streets'
                           }).addTo(map);
                   
-                 L.Control.Watermark = L.Control.extend({
+                  L.Control.Watermark = L.Control.extend({
                     onAdd: function(map) {
                         var img = L.DomUtil.create('img');
                         
@@ -159,7 +174,6 @@ def buildMap(flightSelected, dateRangeSelected, filterToggles, cursor, commandPa
                         return img;
                     }
                  });
-            
                  L.control.watermark = function(opts) {
                     return new L.Control.Watermark(opts);
                  }
@@ -170,7 +184,7 @@ def buildMap(flightSelected, dateRangeSelected, filterToggles, cursor, commandPa
                  var markerIcon = L.icon({iconUrl: 'https://storage.googleapis.com/support-kms-prod/SNP_2752063_en_v0'});
                  var airportIcon = L.icon({iconUrl: 'https://storage.googleapis.com/support-kms-prod/SNP_2752068_en_v0'});                  
                                    
-                 if(commandName == 'airport')
+                 if(commandName == 'Airport')
                  {
                      map.setHtml("LiveFlights.html");
                  }
@@ -181,15 +195,16 @@ def buildMap(flightSelected, dateRangeSelected, filterToggles, cursor, commandPa
 
                  for (var i = 0; i < flightPaths.length; i++) {
                      for (var j = 0; j < flightPaths[i].length; j++) {
-                     
-                         var flightPosition = flightPaths[i][3][j].split(",");
-                         
+
+                         var flightPosition = flightPaths[i][j][3].split(",");
+                         var callsign = flightPaths[i][j][2];
+
                          var latitude = parseFloat(flightPosition[0]);
                          var longitude = parseFloat(flightPosition[1]);
-                         
+
                          currentTrajectory.push(new L.LatLng(latitude, longitude));
                          
-                         var marker = L.marker([latitude, longitude], {icon: markerIcon}).addTo(map).bindPopup("" + latitude + ", " + longitude, {closeOnClick: false, autoClose: false});
+                         var marker = L.marker([latitude, longitude], {icon: markerIcon}).addTo(map).bindPopup("" + callsign + ": " + latitude + ", " + longitude, {closeOnClick: false, autoClose: false});
                          markers.push(marker);
                      
                      } 
@@ -270,7 +285,9 @@ def buildMap(flightSelected, dateRangeSelected, filterToggles, cursor, commandPa
 
                  }
                  
+                 if(source.length>0){
                  map.setView([parseFloat(source[1]), parseFloat(source[2])], 15);
+                 }
 
                  function moveMarker()
                  {
@@ -287,4 +304,10 @@ def buildMap(flightSelected, dateRangeSelected, filterToggles, cursor, commandPa
            </body>
         </html>
 
-  '''
+        '''
+        f=open('multiple.html','w')
+        f.write(html)
+        f.close()
+    except Exception as e:
+        print(e)
+    return html

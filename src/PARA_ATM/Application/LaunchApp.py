@@ -15,6 +15,7 @@ import sys
 sys.path.insert(0, '/home/dyn.datasys.swri.edu/mhartnett/NASA_ULI/NASA_ULI_InfoFusion/src/')
 
 from PARA_ATM import *
+import time
 
 class GitHub(QWidget):
     '''
@@ -218,7 +219,7 @@ class ParaATM(QWidget):
         self.mapHTML = MapView.buildMap(self.flightSelected, self.dateRangeSelected, self.filterToggles, self.cursor, self.commandParameters)
         self.mapView.setHtml(self.mapHTML)
         self.mapLayout.addWidget(self.mapView)
-    
+
     '''
         getFlightList() fetches the callsign list of flights to be displayed for selection
     '''
@@ -302,12 +303,15 @@ class ParaATM(QWidget):
             self.mapView.setUrl(QUrl(str(Path(__file__).parent.parent) +  "/Map/web/LiveFlights.html?latitude=" + self.commandParameters[1] + "&longitude=" + self.commandParameters[2]))
             print(self.commandParameters)
         elif (commandName == 'TDDS'):
-            self.mapView.setUrl(QUrl(str(Path(__file__).parent.parent) +  "/Map/web/LiveFlights.html?latitude=" + str(self.commandParameters[1]['latitude'][0]) + "&longitude=" + str(self.commandParameters[1]['longitude'][0])))
-            
             print(self.commandParameters)
+            lat,lon = self.commandParameters[1]['latitude'],self.commandParameters[1]['longitude']
+
+            self.initMap()
+            '''
             self.mapHTML = MapView.buildMap(self.flightSelected, self.dateRangeSelected, self.filterToggles, self.cursor, self.commandParameters)
             self.mapView.setHtml(self.mapHTML)
             self.mapLayout.addWidget(self.mapView)
+            '''
 
         elif (commandName == "NATS_GateToGateSim"):
             parentPath = str(Path(__file__).parent.parent.parent)
