@@ -2,11 +2,15 @@
 
 NASA NextGen NAS ULI Information Fusion
         
-@organization: PARA Lab, Arizona State University (PI Dr. Yongming Liu)
-@author: Hari Iyer
-@date: 01/19/2018
+@organization: Southwest Research Institute
+@author: Michael Hartnett
+@date: 01/9/2019
 
-Example user command to plot all airports in the US.
+Find all aircraft in conflict based on state-space model
+@params
+cursor - to connect to database
+airportIATA - 3 letter airport ID
+separation - the distance threshold for conflict, in meters
 
 '''
 
@@ -21,12 +25,14 @@ class Command:
     '''
     
     #Here, the database connector and the parameter are passed as arguments. This can be changed as per need.
-    def __init__(self, cursor, airportIATA):
+    def __init__(self, cursor, args):
         self.cursor = cursor
-        self.airportIATA = airportIATA
+        self.airportIATA = args[0]
+        self.separation = float(args[1])
 
     def load_BADA(self,load=False):
         if load:
+            #TODO: placeholder
             return {'vmin':250,'vmax':300}
         else:
             return {'vmin':250,'vmax':300}
@@ -56,6 +62,7 @@ class Command:
         return r
     
     def qdrdist_matrix_indices(self,n):
+        """ generate pairwise combinations between n objects """
         x = np.arange(n-1)
         ind1 = np.repeat(x,(x+1)[::-1])
         ind2 = np.ones(ind1.shape[0])
@@ -139,7 +146,10 @@ class Command:
         circle_tup = (tuple(map(tuple, np.flipud(xyc * ac_info['vmax']))), tuple(map(tuple , xyc * ac_info['vmin'])))
         circle_lst = [list(map(list, np.flipud(xyc * ac_info['vmax']))), list(map(list , xyc * ac_info['vmin']))]
         '''
+        if len(traffic) < 2:
+            return traffic['time']
         ind1, ind2 = self.qdrdist_matrix_indices(len(traffic))
+        #manually slice because numpy complains
         lat1 = np.repeat(lat[:-1],range(len(lat)-1,0,-1))
         lon1 = np.repeat(lon[:-1],range(len(lon)-1,0,-1))
         lat2 = np.tile(lat,len(lat)-1)
@@ -147,12 +157,11 @@ class Command:
         lon2 = np.tile(lon,len(lon)-1)
         lon2 = np.concatenate([lon2[i:len(lon)] for i in range(1,len(lon))])
         qdr,dist = self.qdrdist_matrix(lat1,lon1,lat2,lon2)
-        #qdr,dist = self.qdrdist_matrix(lat[ind1],lon[ind1],lat[ind2],lon[ind2])
         qdr = np.array(qdr)
         dist = np.array(dist)
         qdr = np.deg2rad(qdr)
+        #exclude 0 distance AKA same aircraft
         dist[(dist < hsep) & (dist > 0)] = hsep
-        print(np.where(dist==hsep)[0])
         conflict = (traffic.iloc[ind1[list(np.where(dist==hsep)[0])]],traffic.iloc[ind2[list(np.where(dist==hsep)[0])]])
         return conflict
 
@@ -163,11 +172,17 @@ class Command:
         lat,lon = float(lat),float(lon)
         self.cursor.execute("SELECT time,callsign,track,lat,lon FROM smes WHERE lat>'%f' AND lat<'%f' AND lon>'%f' AND lon<'%f'" %(lat-1,lat+1,lon-1,lon+1))
         traf = pd.DataFrame(self.cursor.fetchall(),columns=['time','callsign','track','latitude','longitude'])
-        ac_info = self.load_BADA()
-        horiz_separation = 150
-        results = self.SSD(traf,ac_info,horiz_separation)
-        #self.cursor.execute("SELECT time,stid,track,lat,lon FROM asdex WHERE airport='%s' AND lat>'%f'" %("K"+self.airportIATA,lat-1))
-        #asdex = pd.DataFrame(self.cursor.fetchall(),columns=['time','callsign','track','latitude','longitude']).fillna(value={'callsign':-1})
-        #asdex['callsign']=asdex['callsign'].astype(str)
-        #results=results.append(asdex,ignore_index=True)
-        return ['SSD',results,self.airportIATA]
+        results = []
+        #check each second
+        for g in traf.groupby(pd.Grouper(key='time',freq='S')):
+            try:
+                if g[1].empty():
+                    continue
+            except:
+                continue
+            #find vmin and vmax
+            ac_info = self.load_BADA()
+            horiz_separation = self.separation
+            #two tables will be returned 1st row of 1st table is in conflict with 1st row of second table etc.
+            results.append(self.SSD(g[1],ac_info,horiz_separation))
+        return ['SSD',results,self.airportIATA,self.separation]
