@@ -79,8 +79,6 @@ def buildMap(flightSelected, dateRangeSelected, filterToggles, cursor, commandPa
             cursor.execute("SELECT * from flight_data WHERE callsign = %s AND utc LIKE %s", ("" + flightSelected, "" + (date + '%'),))
             flightDailyResults = cursor.fetchall()
             flightResults.append([list(flightData) for flightData in flightDailyResults if list(flightData)])
-        print(flightResults[0])
-        print(len(flightResults),len(flightResults[0]))
         if airportToggle:
             cursor.execute("SELECT * from airports")
             airportData = cursor.fetchall()
@@ -91,19 +89,12 @@ def buildMap(flightSelected, dateRangeSelected, filterToggles, cursor, commandPa
     try:
         flightResults,source,destination = tdds_data()
     except Exception as e:
-        print('TDDS: ')
-        print(e)
+        pass
         try:
             airportResults,sourceIATA,destinationIATA,airportsLatLon,source,destination,flightResults = flight_trajectory()
         except Exception as e:
-            print('Map Gen:')
-            print(e)
             pass
     
-    for flight in flightResults:
-        for point in flight:
-            position = point[3].split(',')
-            print(position[0],position[1])
     try:
         html = '''
         <!DOCTYPE html>
@@ -198,13 +189,14 @@ def buildMap(flightSelected, dateRangeSelected, filterToggles, cursor, commandPa
 
                          var flightPosition = flightPaths[i][j][3].split(",");
                          var callsign = flightPaths[i][j][2];
+                         var timestamp = flightPaths[i][j][0];
 
                          var latitude = parseFloat(flightPosition[0]);
                          var longitude = parseFloat(flightPosition[1]);
 
                          currentTrajectory.push(new L.LatLng(latitude, longitude));
                          
-                         var marker = L.marker([latitude, longitude], {icon: markerIcon}).addTo(map).bindPopup("" + callsign + ": " + latitude + ", " + longitude, {closeOnClick: false, autoClose: false});
+                         var marker = L.marker([latitude, longitude], {icon: markerIcon}).addTo(map).bindPopup("" + timestamp + " " + callsign + ": " + latitude + ", " + longitude, {closeOnClick: false, autoClose: false});
                          markers.push(marker);
                      
                      } 
@@ -309,5 +301,5 @@ def buildMap(flightSelected, dateRangeSelected, filterToggles, cursor, commandPa
         f.write(html)
         f.close()
     except Exception as e:
-        print(e)
+        pass
     return html
