@@ -56,6 +56,25 @@ def buildMap(flightSelected, dateRangeSelected, filterToggles, cursor, commandPa
             flightResults.append([[str(row['time']),str(row['track']),row['callsign'],str(row['latitude'])+','+str(row['longitude'])]])
         return flightResults,source,destination
 
+    def NATS_data():
+        flightResults = []
+        commandName = commandParameters[0]
+        nats_data = commandParameters[1]
+        sourceIATA = nats_data['origin'].iloc[0]
+        destIATA = nats_data['destination'].iloc[0]
+        cursor.execute("SELECT latitude, longitude from airports WHERE iata = %s", ("" + sourceIATA[1:],))
+        airportsLatLon = cursor.fetchall()
+        source = [sourceIATA, airportsLatLon[0][0], airportsLatLon[0][1]]
+        cursor.execute("SELECT latitude, longitude from airports WHERE iata = %s", ("" + destIATA[1:],))
+        airportsLatLon = cursor.fetchall()
+        destination = [destIATA, airportsLatLon[0][0], airportsLatLon[0][1]]
+        for acid in np.unique(nats_data['callsign']):
+            ac_results = []
+            for index,row in nats_data[nats_data['callsign']==acid].iterrows():
+                ac_results.append([str(row['time']),row['mode'],row['callsign'],str(row['lat'])+','+str(row['lon'])])
+            flightResults.append(ac_results)
+        return flightResults,source,destination
+
     #Get flight, waypoint, and airport data from the database to be used to generate map
     def flight_trajectory():
         cursor.execute("SELECT source, destination from flight_data WHERE callsign = %s", ("" + flightSelected,))
@@ -88,12 +107,14 @@ def buildMap(flightSelected, dateRangeSelected, filterToggles, cursor, commandPa
 
     try:
         flightResults,source,destination = tdds_data()
-    except Exception as e:
-        pass
+    except Exception as t:
         try:
             airportResults,sourceIATA,destinationIATA,airportsLatLon,source,destination,flightResults = flight_trajectory()
-        except Exception as e:
-            pass
+        except Exception as f:
+            try:
+                flightResults,source,destination = NATS_data()
+            except Exception as v:
+                print('NATS visualizer: {}'.format(v))
     
     try:
         html = '''
@@ -297,7 +318,7 @@ def buildMap(flightSelected, dateRangeSelected, filterToggles, cursor, commandPa
         </html>
 
         '''
-        f=open('multiple.html','w')
+        f=open('vis_test.html','w')
         f.write(html)
         f.close()
     except Exception as e:

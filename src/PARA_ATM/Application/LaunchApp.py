@@ -303,7 +303,7 @@ class ParaATM(QWidget):
         #Command specific conditions
         if (commandName == "Airport"):
             self.mapView.setUrl(QUrl(str(Path(__file__).parent.parent) +  "/Map/web/LiveFlights.html?latitude=" + self.commandParameters[1] + "&longitude=" + self.commandParameters[2]))
-        elif (commandName == 'TDDS'):
+        elif (commandName == 'TDDS') or (commandName == 'Visualize_NATS'):
             self.initMap()
         elif (commandName == "NATS_GateToGateSim"):
             parentPath = str(Path(__file__).parent.parent.parent)
