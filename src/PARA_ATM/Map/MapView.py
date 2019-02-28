@@ -53,7 +53,7 @@ def buildMap(flightSelected, dateRangeSelected, filterToggles, cursor, commandPa
         source = [airport,airportLatLon[0][0],airportLatLon[0][1]]
         destination = source
         for index,row in tdds_data.iterrows():
-            flightResults.append([[str(row['time']),str(row['track']),row['callsign'],str(row['latitude'])+','+str(row['longitude'])]])
+            flightResults.append([[str(row['time']),str(row['status']),row['callsign'],str(row['latitude'])+','+str(row['longitude'])]])
         return flightResults,source,destination
 
     def NATS_data():
@@ -114,7 +114,7 @@ def buildMap(flightSelected, dateRangeSelected, filterToggles, cursor, commandPa
             try:
                 flightResults,source,destination = NATS_data()
             except Exception as v:
-                print('NATS visualizer: {}'.format(v))
+                pass
     
     try:
         html = '''
@@ -204,6 +204,7 @@ def buildMap(flightSelected, dateRangeSelected, filterToggles, cursor, commandPa
                  trajectories = [];
                  currentTrajectory = [];
                  markers = [];
+                 ssds = [];
 
                  for (var i = 0; i < flightPaths.length; i++) {
                      for (var j = 0; j < flightPaths[i].length; j++) {
@@ -217,7 +218,28 @@ def buildMap(flightSelected, dateRangeSelected, filterToggles, cursor, commandPa
 
                          currentTrajectory.push(new L.LatLng(latitude, longitude));
                          
+                         var status = flightPaths[i][j][1]
+
+                         if(status=='onsurface')
+                         {
+                            var ssd = L.circle([latitude,longitude], {radius: 15, opacity: 0.5});
+                            ssds.push(ssd);
+                         }
+
+                         else if(status=='onramp')
+                         {
+                            var ssd = L.circle([latitude,longitude], {radius: 45, opacity: 0.5});
+                            ssds.push(ssd);
+                         }
+
+                         else if(status=='airborne')
+                         {
+                            var ssd = L.circle([latitude,longitude], {radius: 800, opacity: 0.5});
+                            ssds.push(ssd);
+                         }
+
                          var marker = L.marker([latitude, longitude], {icon: markerIcon}).addTo(map).bindPopup("" + timestamp + " " + callsign + ": " + latitude + ", " + longitude, {closeOnClick: false, autoClose: false});
+
                          markers.push(marker);
                      
                      } 
@@ -257,6 +279,12 @@ def buildMap(flightSelected, dateRangeSelected, filterToggles, cursor, commandPa
                      sourceMarker = L.marker([parseFloat(source[1]), parseFloat(source[2])]).addTo(map).bindPopup(source[0].toString(), {closeOnClick: false, autoClose: false}).openPopup();
                      destinationMarker = L.marker([parseFloat(destination[1]), parseFloat(destination[2])]).addTo(map).bindPopup(destination[0].toString(), {closeOnClick: false, autoClose: false}).openPopup();
                  }
+                 
+                 if(ssds.length > 0)
+                 {
+                    var ssdGroup = new L.featureGroup(ssds).addTo(map);
+                 }
+
                  var currentPath = null;
                  var group = new L.featureGroup(markers);
                  for (var trajectory = 0; trajectory < trajectories.length; trajectory++) {
