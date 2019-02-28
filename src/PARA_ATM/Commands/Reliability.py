@@ -2,11 +2,11 @@
 
 NASA NextGen NAS ULI Information Fusion
         
-@organization: PARA Lab, Arizona State University (PI Dr. Yongming Liu)
-@author: Hari Iyer
-@date: 01/19/2018
+@organization: Southwest Research Institute
+@author: Michael Hartnett
+@date: 28/02/2019
 
-Command to plot airspeed vs altitude regression curve for a given callsign as argument.
+Conduct reliability analysis
 
 '''
 
@@ -23,13 +23,6 @@ class Command:
         self.cursor = cursor
         self.AirportIATA = airportIATA
         import uli_pyre_gp
-        
-    #User-defined method datafetch to perform a set of operations. This can be changed as per need.
-    def dataFetch(self, flightCallsign):
-        dataStoreAccess = DataStore.Access("API_KEY")
-        self.flightData = dataStoreAccess.getFlightHistory(flightCallsign)
-        self.xParameter = [i[4] for i in self.flightData]
-        self.yParameter = [i[5] for i in self.flightData]
         
     #Method name executeCommand() should not be changed. It executes the query and displays/returns the output.
     def executeCommand(self):
