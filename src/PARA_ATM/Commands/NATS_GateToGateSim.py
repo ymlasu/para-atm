@@ -43,7 +43,7 @@ class Command:
             while True:
                 server_response = os.system('curl -s ' + host_port) >> 8
                 if server_response == 0 or server_response == 52:
-                    time.sleep(60)
+                    time.sleep(15)
                     break
                 else:
                     time.sleep(5)
