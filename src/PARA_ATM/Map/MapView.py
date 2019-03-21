@@ -67,7 +67,8 @@ def buildMap(flightSelected, dateRangeSelected, filterToggles, cursor, commandPa
         
         #iterate through each tdds message
         for index,row in tdds_data.iterrows():
-            flightResults.append([[str(row['time']),str(row['status']),row['callsign'],str(row['latitude'])+','+str(row['longitude'])]])
+            lookahead=row['velocity']*.01
+            flightResults.append([[str(row['time']),str(row['status']),row['callsign'],str(row['latitude'])+','+str(row['longitude']),str(lookahead)]])
         
         return flightResults,source,destination
 
