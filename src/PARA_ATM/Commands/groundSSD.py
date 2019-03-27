@@ -12,6 +12,7 @@ cursor - to connect to database
 airportIATA - 3 letter airport ID
 separation - the distance threshold for conflict, in meters
 
+SSD calculations from https://github.com/TUDelft-CNS-ATM/bluesky by TU Delft
 '''
 
 from PARA_ATM import *
@@ -344,9 +345,11 @@ class Command:
                     ARV_calc = ARV
                     # Update calculatable ARV for resolutions
                     ARV_calc_loc[i] = ARV_calc
-                    print('FPF: ',ARV_area_loc[i]/(FRV_area_loc[i]+ARV_area_loc[i]))
+                fpf = ARV_area_loc[i]/(FRV_area_loc[i]+ARV_area_loc[i])
+                print('FPF: ',fpf)
+                FPFs.append(fpf)
 
-        return conflict
+        return (conflict,FPFs)
 
     #Method name executeCommand() should not be changed. It executes the query and displays/returns the output.
     def executeCommand(self):
@@ -383,7 +386,7 @@ class Command:
             #find vmin and vmax
             ac_info = list(self.load_BADA(g[1]['status']))
             #two tables will be returned 1st row of 1st table is in conflict with 1st row of second table etc.
-            inconf = self.conflict(g[1],ac_info)
-            results.append(inconf)
+            inconf,fpf = self.conflict(g[1],ac_info)
+            results.append((inconf,fpf))
 
         return ['SSD',results,self.airportIATA]
