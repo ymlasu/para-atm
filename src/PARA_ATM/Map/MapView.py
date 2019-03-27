@@ -42,14 +42,74 @@ def buildMap(flightSelected, dateRangeSelected, filterToggles, cursor, commandPa
     resourcesDir = str(Path(__file__).parent.parent.parent.parent) + "/resources/"
     
     #Get command name and parameter if any
-    try:
+    def tdds_data():
+        """
+            process results from the TDDS command
+
+            returns:
+                    flightResults = 3d list of shape (# pts in flight, # flights, 4)
+                                    last 4 elements are UTC time, smes status, callsign, position (lat,lon)
+                    source        = airport to focus on
+                    destination   = same as source
+        """
+        flightResults = []
         commandName = commandParameters[0]
+        #TDDS returns tuple (dataframe, airport IATA)
         commandArguments = commandParameters[1:]
-    except:
-        pass
-    
+        tdds_data = commandArguments[0]
+        airport = commandArguments[1]
+        #get position of airport
+        cursor.execute("SELECT latitude,longitude from airports WHERE iata='%s'"%(airport))
+        airportLatLon = cursor.fetchall()
+        #need this to zoom the map
+        source = [airport,airportLatLon[0][0],airportLatLon[0][1]]
+        destination = source
+        
+        #iterate through each tdds message
+        for index,row in tdds_data.iterrows():
+            lookahead=row['velocity']*.01
+            flightResults.append([[str(row['time']),str(row['status']),row['callsign'],str(row['latitude'])+','+str(row['longitude']),str(lookahead)]])
+        
+        return flightResults,source,destination
+
+    def NATS_data():
+        """
+            process the NATS simulation output
+
+            returns:
+                    flightResults = same as TDDS_data above
+                    source        = same as TDDS_data above
+                    destination   = destination airport and position
+        """
+        
+        flightResults = []
+        commandName = commandParameters[0]
+        nats_data = commandParameters[1]
+        #select first airport as zoom location
+        sourceIATA = nats_data['origin'].iloc[0]
+        destIATA = nats_data['destination'].iloc[0]
+        cursor.execute("SELECT latitude, longitude from airports WHERE iata = %s", ("" + sourceIATA[1:],))
+        airportsLatLon = cursor.fetchall()
+        source = [sourceIATA, airportsLatLon[0][0], airportsLatLon[0][1]]
+        cursor.execute("SELECT latitude, longitude from airports WHERE iata = %s", ("" + destIATA[1:],))
+        airportsLatLon = cursor.fetchall()
+        destination = [destIATA, airportsLatLon[0][0], airportsLatLon[0][1]]
+        
+        #select the distinct aircraft ids
+        for acid in np.unique(nats_data['callsign']):
+            ac_results = []
+            #select all the data relevant to given aircraft
+            for index,row in nats_data[nats_data['callsign']==acid].iterrows():
+                ac_results.append([str(row['time']),row['status'],row['callsign'],str(row['latitude'])+','+str(row['longitude'])])
+            flightResults.append(ac_results)
+        
+        return flightResults,source,destination
+
     #Get flight, waypoint, and airport data from the database to be used to generate map
-    try:
+    def flight_trajectory():
+        """
+            process the selection from the dropdown menus
+        """        
         cursor.execute("SELECT source, destination from flight_data WHERE callsign = %s", ("" + flightSelected,))
         airportResults = cursor.fetchall()
         sourceIATA = airportResults[0][0]
@@ -70,20 +130,33 @@ def buildMap(flightSelected, dateRangeSelected, filterToggles, cursor, commandPa
         for date in dateRangeSelected:
             cursor.execute("SELECT * from flight_data WHERE callsign = %s AND utc LIKE %s", ("" + flightSelected, "" + (date + '%'),))
             flightDailyResults = cursor.fetchall()
-            flightResults.append([list(flightData) for flightData in flightDailyResults if list(flightData)])   
+            flightResults.append([list(flightData) for flightData in flightDailyResults if list(flightData)])
         if airportToggle:
             cursor.execute("SELECT * from airports")
             airportData = cursor.fetchall()
             for airport in airportData:
                 airportFilterResults.append(list(airport))
-            
-    except:
-        pass
+        return airportResults,sourceIATA,destinationIATA,airportsLatLon,source,destination,flightResults
+
+
+    #commands which call init_map all pass through this code block
+    #so sequence through each potential caller
+    try:
+        flightResults,source,destination = tdds_data()
+    except Exception as t:
+        try:
+            airportResults,sourceIATA,destinationIATA,airportsLatLon,source,destination,flightResults = flight_trajectory()
+        except Exception as f:
+            try:
+                flightResults,source,destination = NATS_data()
+            except Exception as v:
+                print(v)
+                pass
     
-    
-    #Generate the map HTML and return to main application call
-    return '''      
-          
+    #build the html to display in the GUI
+    #documentation for leaflet https://leafletjs.com/index.html
+    try:
+        html = '''
         <!DOCTYPE html>
            <head>
               <title>Full Screen Leaflet Map</title>
@@ -120,8 +193,6 @@ def buildMap(flightSelected, dateRangeSelected, filterToggles, cursor, commandPa
                 crossorigin=""></script>
               <script>
                  
-                   
-                 
                  var flightPaths = ''' + repr(flightResults) + ''';
                  var source = ''' + repr(source) + ''';
                  var weatherToggle = ''' + repr(weatherToggle) + ''';
@@ -132,6 +203,8 @@ def buildMap(flightSelected, dateRangeSelected, filterToggles, cursor, commandPa
                  var commandName = ''' + repr(commandName) + ''';
                  var commandArguments = ''' + repr(commandArguments) + ''';
                  var resourcesDir = ''' + repr(resourcesDir) + ''';
+                 
+                 <!-- Center map on the U.S. -->
                  var map = L.map('map').setView([38.04, -99.17], 5);
                  var mapLink = '< a href="http://openstreetmap.org">OpenStreetMap</a>';
                  L.tileLayer('http://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
@@ -141,8 +214,9 @@ def buildMap(flightSelected, dateRangeSelected, filterToggles, cursor, commandPa
                                   'Imagery  <a href="http://mapbox.com">Mapbox</a>',
                               id: 'mapbox.streets'
                           }).addTo(map);
-                  
-                  L.Control.Watermark = L.Control.extend({
+                 
+                 <!-- PARA-ATM logo -->
+                 L.Control.Watermark = L.Control.extend({
                     onAdd: function(map) {
                         var img = L.DomUtil.create('img');
                         
@@ -150,20 +224,19 @@ def buildMap(flightSelected, dateRangeSelected, filterToggles, cursor, commandPa
                         img.style.width = '200px';
                         
                         return img;
-                    }
+                 }
                  });
-            
                  L.control.watermark = function(opts) {
                     return new L.Control.Watermark(opts);
                  }
-                
                  L.control.watermark({ position: 'bottomleft' }).addTo(map);
                   
-                  
+                 <!-- Markers for points and airports -->
                  var markerIcon = L.icon({iconUrl: 'https://storage.googleapis.com/support-kms-prod/SNP_2752063_en_v0'});
                  var airportIcon = L.icon({iconUrl: 'https://storage.googleapis.com/support-kms-prod/SNP_2752068_en_v0'});                  
                                    
-                 if(commandName == 'airport')
+                 <!-- Placeholder -->
+                 if(commandName == 'Airport')
                  {
                      map.setHtml("LiveFlights.html");
                  }
@@ -171,18 +244,45 @@ def buildMap(flightSelected, dateRangeSelected, filterToggles, cursor, commandPa
                  trajectories = [];
                  currentTrajectory = [];
                  markers = [];
+                 ssds = [];
 
+                 <!-- Cycle through the 3d list we built from command output -->
                  for (var i = 0; i < flightPaths.length; i++) {
                      for (var j = 0; j < flightPaths[i].length; j++) {
-                     
+
                          var flightPosition = flightPaths[i][j][3].split(",");
-                         
+                         var callsign = flightPaths[i][j][2];
+                         var timestamp = flightPaths[i][j][0];
+
                          var latitude = parseFloat(flightPosition[0]);
                          var longitude = parseFloat(flightPosition[1]);
-                         
+
                          currentTrajectory.push(new L.LatLng(latitude, longitude));
                          
-                         var marker = L.marker([latitude, longitude], {icon: markerIcon}).addTo(map).bindPopup("" + latitude + ", " + longitude, {closeOnClick: false, autoClose: false});
+                         var status = flightPaths[i][j][1]
+
+                         <!-- Build SSD for phase of flight -->
+                         if(status=='onsurface')
+                         {
+                            var ssd = L.circle([latitude,longitude], {radius: 15, opacity: 0.5});
+                            ssds.push(ssd);
+                         }
+
+                         else if(status=='onramp')
+                         {
+                            var ssd = L.circle([latitude,longitude], {radius: 45, opacity: 0.5});
+                            ssds.push(ssd);
+                         }
+
+                         else if(status=='airborne')
+                         {
+                            var ssd = L.circle([latitude,longitude], {radius: 800, opacity: 0.5});
+                            ssds.push(ssd);
+                         }
+
+                         <!-- Mark each aircraft -->
+                         var marker = L.marker([latitude, longitude], {icon: markerIcon}).addTo(map).bindPopup("" + timestamp + " " + callsign + ": " + latitude + ", " + longitude, {closeOnClick: false, autoClose: false});
+
                          markers.push(marker);
                      
                      } 
@@ -191,6 +291,7 @@ def buildMap(flightSelected, dateRangeSelected, filterToggles, cursor, commandPa
                      currentTrajectory = [];
                  }   
                  
+                 <!-- Display airport locations -->
                  if(airportResults.length > 0)
                  {
                      for(var airport = 0; airport < airportResults.length; airport++)
@@ -204,6 +305,7 @@ def buildMap(flightSelected, dateRangeSelected, filterToggles, cursor, commandPa
                  
                  }
                  
+                 <!-- Sector layer -->
                  if(sector == 1)
                  {
                  
@@ -215,6 +317,8 @@ def buildMap(flightSelected, dateRangeSelected, filterToggles, cursor, commandPa
                       }).addTo(map);
                  
                  }
+
+                 <!-- Show start and end of each flight -->
                  var sourceMarker;
                  var destinationMarker;
                  
@@ -222,11 +326,21 @@ def buildMap(flightSelected, dateRangeSelected, filterToggles, cursor, commandPa
                      sourceMarker = L.marker([parseFloat(source[1]), parseFloat(source[2])]).addTo(map).bindPopup(source[0].toString(), {closeOnClick: false, autoClose: false}).openPopup();
                      destinationMarker = L.marker([parseFloat(destination[1]), parseFloat(destination[2])]).addTo(map).bindPopup(destination[0].toString(), {closeOnClick: false, autoClose: false}).openPopup();
                  }
+                 
+                 <!-- Display SSD circles -->
+                 if(ssds.length > 0)
+                 {
+                    var ssdGroup = new L.featureGroup(ssds).addTo(map);
+                 }
+
+                 <!-- Connect points on the flight(s) -->
                  var currentPath = null;
                  var group = new L.featureGroup(markers);
                  for (var trajectory = 0; trajectory < trajectories.length; trajectory++) {
                      currentPath = L.polyline(trajectories[trajectory], {color: '#'+(Math.random()*0xFFFFFF<<0).toString(16)}).addTo(map);
                  }
+
+                 <!-- Weather filter -->
                  if(weatherToggle == 1)
                  {
                  
@@ -236,6 +350,7 @@ def buildMap(flightSelected, dateRangeSelected, filterToggles, cursor, commandPa
                   
                  }
                  
+
                  /*
                  if(CUSTOM_COMMAND)
                  {
@@ -248,6 +363,7 @@ def buildMap(flightSelected, dateRangeSelected, filterToggles, cursor, commandPa
                  
                  var animatedMarker = null;
                  
+                 <!-- Animation pulls from MovingMarker.js -->
                  if(trajectories[0].length > 0)
                  {
                      animatedMarker = L.animatedMarker(currentPath.getLatLngs(), {
@@ -263,13 +379,18 @@ def buildMap(flightSelected, dateRangeSelected, filterToggles, cursor, commandPa
 
                  }
                  
+                 <!-- Zoom in on selected airport -->
+                 if(source.length>0){
                  map.setView([parseFloat(source[1]), parseFloat(source[2])], 15);
+                 }
 
+                 <!-- On click, animate flight path -->
                  function moveMarker()
                  {
                      animatedMarker.start();
                  }
                  
+                 <!-- Waypoint display -->
                  if(waypoints.length > 0) {
                      for (var waypoint = 0; waypoint < waypoints.length; waypoint++) {
                          waypointMarker = L.marker([parseFloat(waypoints[waypoint][1]), parseFloat(waypoints[waypoint][2])]).addTo(map).bindPopup(waypoints[waypoint][0].toString(), {closeOnClick: false, autoClose: false}).openPopup();
@@ -280,4 +401,11 @@ def buildMap(flightSelected, dateRangeSelected, filterToggles, cursor, commandPa
            </body>
         </html>
 
-  '''
+        '''
+        #debugging
+        f=open('vis_test.html','w')
+        f.write(html)
+        f.close()
+    except Exception as e:
+        pass
+    return html

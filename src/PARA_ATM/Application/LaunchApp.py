@@ -12,9 +12,10 @@ Run this module to invoke the application. It contains the main features and fun
 
 import sys
 
-sys.path.insert(0, '/home/mhartnett/NASA_ULI/NASA_ULI_InfoFusion/src/')
+sys.path.insert(0, '/home/dyn.datasys.swri.edu/mhartnett/NASA_ULI/NASA_ULI_InfoFusion/src/')
 
 from PARA_ATM import *
+import time
 
 class GitHub(QWidget):
     '''
@@ -218,7 +219,7 @@ class ParaATM(QWidget):
         self.mapHTML = MapView.buildMap(self.flightSelected, self.dateRangeSelected, self.filterToggles, self.cursor, self.commandParameters)
         self.mapView.setHtml(self.mapHTML)
         self.mapLayout.addWidget(self.mapView)
-    
+
     '''
         getFlightList() fetches the callsign list of flights to be displayed for selection
     '''
@@ -292,29 +293,36 @@ class ParaATM(QWidget):
         #Get the command name and argument inputs
         commandInput = self.commandInput.text() 
         commandName = str(commandInput.split('(')[0])
+        cmd = getattr(__import__('PARA_ATM.Commands',fromlist=[commandName]), commandName)
         commandArguments = str(commandInput.split('(')[1])[:-1]
-        commandClass = eval(commandName).Command(self.cursor, commandArguments)
+        if ',' in commandArguments:
+            commandArguments = commandArguments.split(',')
+        if commandName == 'groundSSD':
+            commandClass = cmd.Command(self.cursor,self,commandArguments)
+        else:
+            commandClass = cmd.Command(self.cursor, commandArguments)
         self.commandParameters = commandClass.executeCommand()
-
-
-        #Command specific conditions
-        try:
-            if (self.commandParameters[0] == "Airport"):
-                self.mapView.setUrl(QUrl(str(Path(__file__).parent.parent) +  "/Map/web/LiveFlights.html?latitude=" + self.commandParameters[1] + "&longitude=" + self.commandParameters[2]))
-            elif (self.commandParameters[0] == "NATS_GateToGateSim"):
-                parentPath = str(Path(__file__).parent.parent.parent)
-                with open(str(parentPath) + "/NATS/Server/DEMO_Gate_To_Gate_SFO_PHX_trajectory_beta_1.0.csv", 'r') as content_file:
-                    CSVData = content_file.read()
-                w = QWidget()
-                try:
-                    result = QMessageBox.question(w, 'NATS Output', "" + str(CSVData)[0:5000])
-                except:
-                    print('NATS output error')
-                    raise Exception
-                w.showFullScreen()
-        except:
-            self.initMap()
+        print('command %s executed'%commandName)
         
+        #Command specific conditions
+        if (commandName == "Airport"):
+            self.mapView.setUrl(QUrl(str(Path(__file__).parent.parent) +  "/Map/web/LiveFlights.html?latitude=" + self.commandParameters[1] + "&longitude=" + self.commandParameters[2]))
+        elif (commandName == 'TDDS') or (commandName == 'Visualize_NATS'):
+            self.initMap()
+        elif (commandName == "NATS_GateToGateSim"):
+            parentPath = str(Path(__file__).parent.parent.parent)
+            with open(str(parentPath) + "/NATS/Server/DEMO_Gate_To_Gate_SFO_PHX_trajectory_beta_1.0.csv", 'r') as content_file:
+                CSVData = content_file.read()
+            w = QWidget()
+            try:
+                result = QMessageBox.question(w, 'NATS Output', "" + str(CSVData)[0:5000])
+            except:
+                print('NATS output error')
+                raise Exception
+            w.showFullScreen()
+        else:
+            pass
+            #print(self.commandParameters)
 
 '''
     main() instantiates the ParaATM Class to run the application
