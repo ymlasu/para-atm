@@ -293,13 +293,17 @@ class ParaATM(QWidget):
         #Get the command name and argument inputs
         commandInput = self.commandInput.text() 
         commandName = str(commandInput.split('(')[0])
+        cmd = getattr(__import__('PARA_ATM.Commands',fromlist=[commandName]), commandName)
         commandArguments = str(commandInput.split('(')[1])[:-1]
         if ',' in commandArguments:
             commandArguments = commandArguments.split(',')
-        commandClass = eval(commandName).Command(self.cursor, commandArguments)
+        if commandName == 'groundSSD':
+            commandClass = cmd.Command(self.cursor,self,commandArguments)
+        else:
+            commandClass = cmd.Command(self.cursor, commandArguments)
         self.commandParameters = commandClass.executeCommand()
         print('command %s executed'%commandName)
-
+        
         #Command specific conditions
         if (commandName == "Airport"):
             self.mapView.setUrl(QUrl(str(Path(__file__).parent.parent) +  "/Map/web/LiveFlights.html?latitude=" + self.commandParameters[1] + "&longitude=" + self.commandParameters[2]))
@@ -317,7 +321,8 @@ class ParaATM(QWidget):
                 raise Exception
             w.showFullScreen()
         else:
-            print(self.commandParameters)
+            pass
+            #print(self.commandParameters)
 
 '''
     main() instantiates the ParaATM Class to run the application

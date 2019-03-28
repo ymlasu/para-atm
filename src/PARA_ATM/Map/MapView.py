@@ -67,7 +67,8 @@ def buildMap(flightSelected, dateRangeSelected, filterToggles, cursor, commandPa
         
         #iterate through each tdds message
         for index,row in tdds_data.iterrows():
-            flightResults.append([[str(row['time']),str(row['status']),row['callsign'],str(row['latitude'])+','+str(row['longitude'])]])
+            lookahead=row['velocity']*.01
+            flightResults.append([[str(row['time']),str(row['status']),row['callsign'],str(row['latitude'])+','+str(row['longitude']),str(lookahead)]])
         
         return flightResults,source,destination
 
@@ -99,7 +100,7 @@ def buildMap(flightSelected, dateRangeSelected, filterToggles, cursor, commandPa
             ac_results = []
             #select all the data relevant to given aircraft
             for index,row in nats_data[nats_data['callsign']==acid].iterrows():
-                ac_results.append([str(row['time']),row['mode'],row['callsign'],str(row['lat'])+','+str(row['lon'])])
+                ac_results.append([str(row['time']),row['status'],row['callsign'],str(row['latitude'])+','+str(row['longitude'])])
             flightResults.append(ac_results)
         
         return flightResults,source,destination
@@ -149,6 +150,7 @@ def buildMap(flightSelected, dateRangeSelected, filterToggles, cursor, commandPa
             try:
                 flightResults,source,destination = NATS_data()
             except Exception as v:
+                print(v)
                 pass
     
     #build the html to display in the GUI

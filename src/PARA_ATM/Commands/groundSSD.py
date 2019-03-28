@@ -12,11 +12,15 @@ cursor - to connect to database
 airportIATA - 3 letter airport ID
 separation - the distance threshold for conflict, in meters
 
+SSD calculations from https://github.com/TUDelft-CNS-ATM/bluesky by TU Delft
 '''
 
 from PARA_ATM import *
 import pandas as pd
 import numpy as np
+import pyclipper
+
+nm = 0.868976
 
 class Command:
     '''
@@ -25,17 +29,21 @@ class Command:
     '''
     
     #Here, the database connector and the parameter are passed as arguments. This can be changed as per need.
-    def __init__(self, cursor, args):
+    def __init__(self, cursor, map_object, args=False):
         self.cursor = cursor
-        self.airportIATA = args[0]
-        self.separation = float(args[1])
+        self.airportIATA = False
+        self.map = map_object
+        if args:
+            self.airportIATA = args[0]
 
-    def load_BADA(self,load=False):
-        if load:
-            #TODO: placeholder
-            return {'vmin':250,'vmax':300}
-        else:
-            return {'vmin':250,'vmax':300}
+    def load_BADA(self,statuses):
+        for status in statuses:
+            if status == 'onsurface' or 'GATE' in status or 'PUSHBACK' in status:
+                yield {'vmin':0,'vmax':4,'sep':175}
+            elif status == 'onramp' or 'DEPARTING' in status:
+                yield {'vmin':0,'vmax':30,'sep':200}
+            else:
+                yield {'vmin':0,'vmax':200,'sep':2640}
 
     def rwgs84_matrix(self,latd):
         """ Calculate the earths radius with WGS'84 geoid definition
@@ -61,6 +69,20 @@ class Command:
 
         return r
     
+    def area(self,vset):
+        """ This function calculates the area of the set of FRV or ARV """
+        # Initialize A as it could be calculated iteratively
+        A = 0
+        # Check multiple exteriors
+        if type(vset[0][0]) == list:
+            # Calc every exterior separately
+            for i in range(len(vset)):
+                A += pyclipper.scale_from_clipper(pyclipper.scale_from_clipper(pyclipper.Area(pyclipper.scale_to_clipper(vset[i]))))
+        else:
+            # Single exterior
+            A = pyclipper.scale_from_clipper(pyclipper.scale_from_clipper(pyclipper.Area(pyclipper.scale_to_clipper(vset))))
+        return A
+
     def qdrdist_matrix_indices(self,n):
         """ generate pairwise combinations between n objects """
         x = np.arange(n-1)
@@ -137,15 +159,29 @@ class Command:
         
         return qdr,dist
         
-    def SSD(self,traffic,ac_info,hsep):
-        lat,lon = np.array(traffic['latitude']),np.array(traffic['longitude'])
-        '''
+    def conflict(self,traffic,ac_info):
+        lat,lon = np.array(traffic['latitude']).astype(float),np.array(traffic['longitude']).astype(float)
+        gsnorth,gseast = np.array(traffic['y']).astype(float),np.array(traffic['x']).astype(float)
+        hsep = ac_info[0]['sep']/nm
+        # Local variables, will be put into asas later
+        FRV_loc          = [None] * len(traffic)
+        ARV_loc          = [None] * len(traffic)
+        # For calculation purposes
+        ARV_calc_loc     = [None] * len(traffic)
+        FRV_area_loc     = np.zeros(len(traffic), dtype=np.float32)
+        ARV_area_loc     = np.zeros(len(traffic), dtype=np.float32)
         N_angle = 180
+        alpham  = 0.4999 * np.pi
+        betalos = np.pi / 4
+        adsbmax = 65 * nm
+        beta = 1.5 * betalos
         angles = np.arange(0, 2*np.pi, 2*np.pi/N_angle)
         xyc = np.transpose(np.reshape(np.concatenate((np.sin(angles), np.cos(angles))), (2, N_angle)))
-        circle_tup = (tuple(map(tuple, np.flipud(xyc * ac_info['vmax']))), tuple(map(tuple , xyc * ac_info['vmin'])))
-        circle_lst = [list(map(list, np.flipud(xyc * ac_info['vmax']))), list(map(list , xyc * ac_info['vmin']))]
-        '''
+        circle_tup,circle_lst = tuple(),[]
+        for i in range(len(traffic)):
+            circle_tup+=((tuple(map(tuple, np.flipud(xyc * ac_info[i]['vmax']))), tuple(map(tuple , xyc * ac_info[i]['vmin'])),),)
+            circle_lst.append([list(map(list, np.flipud(xyc * ac_info[i]['vmax']))), list(map(list , xyc * ac_info[i]['vmin'])),])
+       
         if len(traffic) < 2:
             return traffic['time']
         ind1, ind2 = self.qdrdist_matrix_indices(len(traffic))
@@ -162,27 +198,195 @@ class Command:
         qdr = np.deg2rad(qdr)
         #exclude 0 distance AKA same aircraft
         dist[(dist < hsep) & (dist > 0)] = hsep
+        dist[dist==0] = 1000
+        # Calculate vertices of Velocity Obstacle (CCW)
+        # These are still in relative velocity space, see derivation in appendix
+        # Half-angle of the Velocity obstacle [rad]
+        # Include safety margin
+        alpha = np.arcsin(hsep / dist)
+        # Limit half-angle alpha to 89.982 deg. Ensures that VO can be constructed
+        alpha[alpha > alpham] = alpham
+        # Relevant sin/cos/tan
+        sinqdr = np.sin(qdr)
+        cosqdr = np.cos(qdr)
+        tanalpha = np.tan(alpha)
+        cosqdrtanalpha = cosqdr * tanalpha
+        sinqdrtanalpha = sinqdr * tanalpha
+    
         conflict = (traffic.iloc[ind1[list(np.where(dist==hsep)[0])]],traffic.iloc[ind2[list(np.where(dist==hsep)[0])]])
-        return conflict
+        for i in range(len(traffic)):
+            # Relevant x1,y1,x2,y2 (x0 and y0 are zero in relative velocity space)
+            x1 = (sinqdr + cosqdrtanalpha) * 2 * ac_info[i]['vmax']
+            x2 = (sinqdr - cosqdrtanalpha) * 2 * ac_info[i]['vmax']
+            y1 = (cosqdr - sinqdrtanalpha) * 2 * ac_info[i]['vmax']
+            y2 = (cosqdr + sinqdrtanalpha) * 2 * ac_info[i]['vmax']
+            
+            if True: #traffic.iloc[i] in conflict:
+                # SSD for aircraft i
+                # Get indices that belong to aircraft i
+                ind = np.where(np.logical_or(ind1 == i,ind2 == i))[0]
+                # Check whether there are any aircraft in the vicinity
+                if len(ind) == 0:
+                    # No aircraft in the vicinity
+                    # Map them into the format ARV wants. Outercircle CCW, innercircle CW
+                    ARV_loc[i] = circle_lst[i]
+                    FRV_loc[i] = []
+                    ARV_calc_loc[i] = ARV_loc[i]
+                    # Calculate areas and store in asas
+                    FRV_area_loc[i] = 0
+                    ARV_area_loc[i] = np.pi * (ac_info[i]['vmax'] **2 - ac_info[i]['vmin'] ** 2)
+                else:
+                    # The i's of the other aircraft
+                    i_other = np.delete(np.arange(0, len(traffic)), i)
+                    # Aircraft that are within ADS-B range
+                    ac_adsb = np.where(dist[ind] < adsbmax)[0]
+                    # Now account for ADS-B range in indices of other aircraft (i_other)
+                    ind = ind[ac_adsb]
+                    i_other = i_other[ac_adsb]
+
+                    # VO from 2 to 1 is mirror of 1 to 2. Only 1 to 2 can be constructed in
+                # this manner, so need a correction vector that will mirror the VO
+                fix = np.ones(np.shape(i_other))
+                fix[i_other < i] = -1
+                # Relative bearing [deg] from [-180,180]
+                # (less required conversions than rad in RotA)
+                fix_ang = np.zeros(np.shape(i_other))
+                fix_ang[i_other < i] = 180.
+
+                x = np.concatenate((gseast[i_other],
+                                    x1[ind] * fix + gseast[i_other],
+                                    x2[ind] * fix + gseast[i_other]))
+                y = np.concatenate((gsnorth[i_other],
+                                    y1[ind] * fix + gsnorth[i_other],
+                                    y2[ind] * fix + gsnorth[i_other]))
+                # Reshape [(ntraf-1)x3] and put arrays in one array [(ntraf-1)x3x2]
+                x = np.transpose(x.reshape(3, np.shape(i_other)[0]))
+                y = np.transpose(y.reshape(3, np.shape(i_other)[0]))
+                xy = np.dstack((x,y))
+
+                # Make a clipper object
+                pc = pyclipper.Pyclipper()
+                # Add circles (ring-shape) to clipper as subject
+                pc.AddPaths(pyclipper.scale_to_clipper(circle_tup[i]), pyclipper.PT_SUBJECT, True)
+
+                # Add each other other aircraft to clipper as clip
+                for j in range(np.shape(i_other)[0]):
+                    ## Debug prints
+                    ## print(traf.id[i] + " - " + traf.id[i_other[j]])
+                    ## print(dist[ind[j]])
+                    # Scale VO when not in LOS
+                    if True:#dist[ind[j]] > hsep:
+                        # Normally VO shall be added of this other a/c
+                        VO = pyclipper.scale_to_clipper(tuple(map(tuple,xy[j,:,:])))
+                    else:
+                        # Pair is in LOS, instead of triangular VO, use darttip
+                        # Check if bearing should be mirrored
+                        if i_other[j] < i:
+                            qdr_los = qdr[ind[j]] + np.pi
+                        else:
+                            qdr_los = qdr[ind[j]]
+                        # Length of inner-leg of darttip
+                        leg = 1.1 * ac_info[i]['vmax'] / np.cos(beta) * np.array([1,1,1,0])
+                        # Angles of darttip
+                        angles_los = np.array([qdr_los + 2 * beta, qdr_los, qdr_los - 2 * beta, 0.])
+                        # Calculate coordinates (CCW)
+                        x_los = leg * np.sin(angles_los)
+                        y_los = leg * np.cos(angles_los)
+                        # Put in array of correct format
+                        xy_los = np.vstack((x_los,y_los)).T
+                        # Scale darttip
+                        VO = pyclipper.scale_to_clipper(tuple(map(tuple,xy_los)))
+                    # Add scaled VO to clipper
+                    pc.AddPath(VO, pyclipper.PT_CLIP, True)
+
+                # Execute clipper command
+                FRV = pyclipper.scale_from_clipper(pc.Execute(pyclipper.CT_INTERSECTION, pyclipper.PFT_NONZERO, pyclipper.PFT_NONZERO))
+
+                ARV = pc.Execute(pyclipper.CT_DIFFERENCE, pyclipper.PFT_NONZERO, pyclipper.PFT_NONZERO)
+
+                # Scale back
+                ARV = pyclipper.scale_from_clipper(ARV)
+
+                # Check if ARV or FRV is empty
+                if len(ARV) == 0:
+                    # No aircraft in the vicinity
+                    # Map them into the format ARV wants. Outercircle CCW, innercircle CW
+                    ARV_loc[i] = []
+                    FRV_loc[i] = circle_lst[i]
+                    ARV_calc_loc[i] = []
+                    # Calculate areas and store in asas
+                    FRV_area_loc[i] = np.pi * (ac_info[i]['vmax'] **2 - ac_info[i]['vmin'] ** 2)
+                    ARV_area_loc[i] = 0
+                elif len(FRV) == 0:
+                    # Should not happen with one a/c or no other a/c in the vicinity.
+                    # These are handled earlier. Happens when RotA has removed all
+                    # Map them into the format ARV wants. Outercircle CCW, innercircle CW
+                    ARV_loc[i] = circle_lst[i]
+                    FRV_loc[i] = []
+                    ARV_calc_loc[i] = circle_lst[i]
+                    # Calculate areas and store in asas
+                    FRV_area_loc[i] = 0
+                    ARV_area_loc[i] = np.pi * (ac_info[i]['vmax'] **2 - ac_info[i]['vmin'] ** 2)
+                else:
+                    # Check multi exteriors, if this layer is not a list, it means it has no exteriors
+                    # In that case, make it a list, such that its format is consistent with further code
+                    if not type(FRV[0][0]) == list:
+                        FRV = [FRV]
+                    if not type(ARV[0][0]) == list:
+                        ARV = [ARV]
+                    # Store in asas
+                    FRV_loc[i] = FRV
+                    ARV_loc[i] = ARV
+                    # Calculate areas and store in asas
+                    FRV_area_loc[i] = self.area(FRV)
+                    ARV_area_loc[i] = self.area(ARV)
+
+                    # Shortest way out prio, so use full SSD (ARV_calc = ARV)
+                    ARV_calc = ARV
+                    # Update calculatable ARV for resolutions
+                    ARV_calc_loc[i] = ARV_calc
+                fpf = ARV_area_loc[i]/(FRV_area_loc[i]+ARV_area_loc[i])
+                print('FPF: ',fpf)
+                FPFs.append(fpf)
+
+        return (conflict,FPFs)
 
     #Method name executeCommand() should not be changed. It executes the query and displays/returns the output.
     def executeCommand(self):
-        self.cursor.execute("SELECT latitude,longitude FROM airports WHERE iata='%s'" %(""+self.airportIATA))
-        lat,lon = self.cursor.fetchall()[0]
-        lat,lon = float(lat),float(lon)
-        self.cursor.execute("SELECT time,callsign,track,lat,lon FROM smes WHERE lat>'%f' AND lat<'%f' AND lon>'%f' AND lon<'%f'" %(lat-1,lat+1,lon-1,lon+1))
-        traf = pd.DataFrame(self.cursor.fetchall(),columns=['time','callsign','track','latitude','longitude'])
+        if self.airportIATA:
+            self.cursor.execute("SELECT latitude,longitude FROM airports WHERE iata='%s'" %(""+self.airportIATA))
+            lat,lon = self.cursor.fetchall()[0]
+            lat,lon = float(lat),float(lon)
+            self.cursor.execute("SELECT time,callsign,status,lat,lon FROM smes WHERE lat>'%f' AND lat<'%f' AND lon>'%f' AND lon<'%f'" %(lat-1,lat+1,lon-1,lon+1))
+            traf = pd.DataFrame(self.cursor.fetchall(),columns=['time','callsign','status','latitude','longitude'])
+        else:
+            from PARA_ATM.Commands import Visualize_NATS as vn
+            cmd = vn.Command(self.cursor,'TRX_DEMO_SFO_PHX_new_G2G_output.csv')
+            self.map.commandParameters = cmd.executeCommand()
+            #print(self.map.commandParameters)
+            self.map.initMap()
+            data = self.map.commandParameters[1]
+            rad = np.deg2rad(data['heading'])
+            x = np.sin(rad) * data['tas'].astype(float)
+            y = np.cos(rad) * data['tas'].astype(float)
+            traf = data[['time','callsign','latitude','longitude','altitude','rocd','tas','status']].join(pd.DataFrame({'x':x,'y':y}))
+            traf['time'] = pd.to_datetime(1121238067+traf['time'].astype(int),unit='s')
+
+        #print(traf)
         results = []
         #check each second
-        for g in traf.groupby(pd.Grouper(key='time',freq='S')):
+        for g in traf.groupby(pd.Grouper(key='time',freq='30s')):
             try:
-                if g[1].empty():
+                if g[1].empty:
+                    print('empty')
                     continue
-            except:
+            except Exception as e:
+                print(e)
                 continue
             #find vmin and vmax
-            ac_info = self.load_BADA()
-            horiz_separation = self.separation
+            ac_info = list(self.load_BADA(g[1]['status']))
             #two tables will be returned 1st row of 1st table is in conflict with 1st row of second table etc.
-            results.append(self.SSD(g[1],ac_info,horiz_separation))
-        return ['SSD',results,self.airportIATA,self.separation]
+            inconf,fpf = self.conflict(g[1],ac_info)
+            results.append((inconf,fpf))
+
+        return ['SSD',results,self.airportIATA]

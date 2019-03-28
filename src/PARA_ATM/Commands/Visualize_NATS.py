@@ -51,8 +51,8 @@ class Command:
             output.iloc[start:end,-2] = row['rocd']
             #copy destination
             output.iloc[start:end,-3] = row['tas']
-            results=results.append(output.iloc[start:end][['time','nrows','origin_elev','dest_elev','lat','lon','altitude','rocd','tas','fpa','sect_name','mode']])
+            results=results.append(output.iloc[start:end][['time','nrows','origin_elev','dest_elev','lat','lon','altitude','rocd','tas','heading','sect_name','mode']])
             
-        results.columns = ['time','callsign','origin','destination','lat','lon','altitude','rocd','tas','fpa','sector','mode']
+        results.columns = ['time','callsign','origin','destination','latitude','longitude','altitude','rocd','tas','heading','sector','status']
 
         return ["Visualize_NATS", results]
