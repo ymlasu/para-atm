@@ -29,21 +29,26 @@ class Command:
     '''
     
     #Here, the database connector and the parameter are passed as arguments. This can be changed as per need.
-    def __init__(self, cursor, map_object, args=False):
+    def __init__(self, cursor, map_object, args=[]):
         self.cursor = cursor
         self.airportIATA = False
         self.map = map_object
-        if args:
+        self.lookahead = 1.5/3600
+        if len(args) > 0 and type(args[0]) == str:
             self.airportIATA = args[0]
+            if len(args) > 1:
+                self.lookahead = args[1]
+        elif len(args) > 0 and type(args[0]) == int:
+            self.lookahead = args[0]
 
     def load_BADA(self,statuses):
         for status in statuses:
             if status == 'onsurface' or 'GATE' in status or 'PUSHBACK' in status:
-                yield {'vmin':0,'vmax':4,'sep':175}
+                yield {'vmin':0,'vmax':4*nm*self.lookahead,'sep':175*nm*self.lookahead}
             elif status == 'onramp' or 'DEPARTING' in status:
-                yield {'vmin':0,'vmax':30,'sep':200}
+                yield {'vmin':0,'vmax':30*nm*self.lookahead,'sep':200*nm*self.lookahead}
             else:
-                yield {'vmin':0,'vmax':200,'sep':2640}
+                yield {'vmin':0,'vmax':200*nm*self.lookahead,'sep':2640*nm*self.lookahead}
 
     def rwgs84_matrix(self,latd):
         """ Calculate the earths radius with WGS'84 geoid definition
@@ -179,6 +184,10 @@ class Command:
         xyc = np.transpose(np.reshape(np.concatenate((np.sin(angles), np.cos(angles))), (2, N_angle)))
         circle_tup,circle_lst = tuple(),[]
         for i in range(len(traffic)):
+            if ac_info[i]['vmax'] == 30: #taxi
+                opp_heading_ind = -float(traffic[i]['heading'])/2
+                alt = xyc[:,opp_heading_ind-45:opp_heading_ind+45] * np.stack(np.arange(1,2,1/90),np.arange(1,2,1/90))
+                xyc[:,opp_heading_ind-45:opp_heading_ind+45] = alt
             circle_tup+=((tuple(map(tuple, np.flipud(xyc * ac_info[i]['vmax']))), tuple(map(tuple , xyc * ac_info[i]['vmin'])),),)
             circle_lst.append([list(map(list, np.flipud(xyc * ac_info[i]['vmax']))), list(map(list , xyc * ac_info[i]['vmin'])),])
        
@@ -214,6 +223,7 @@ class Command:
         sinqdrtanalpha = sinqdr * tanalpha
     
         conflict = (traffic.iloc[ind1[list(np.where(dist==hsep)[0])]],traffic.iloc[ind2[list(np.where(dist==hsep)[0])]])
+        FPFs = []
         for i in range(len(traffic)):
             # Relevant x1,y1,x2,y2 (x0 and y0 are zero in relative velocity space)
             x1 = (sinqdr + cosqdrtanalpha) * 2 * ac_info[i]['vmax']
@@ -346,10 +356,9 @@ class Command:
                     # Update calculatable ARV for resolutions
                     ARV_calc_loc[i] = ARV_calc
                 fpf = ARV_area_loc[i]/(FRV_area_loc[i]+ARV_area_loc[i])
-                print('FPF: ',fpf)
                 FPFs.append(fpf)
 
-        return (conflict,FPFs)
+        return conflict,FPFs
 
     #Method name executeCommand() should not be changed. It executes the query and displays/returns the output.
     def executeCommand(self):
@@ -386,7 +395,6 @@ class Command:
             #find vmin and vmax
             ac_info = list(self.load_BADA(g[1]['status']))
             #two tables will be returned 1st row of 1st table is in conflict with 1st row of second table etc.
-            inconf,fpf = self.conflict(g[1],ac_info)
-            results.append((inconf,fpf))
+            results.append(self.conflict(g[1],ac_info))
 
         return ['SSD',results,self.airportIATA]

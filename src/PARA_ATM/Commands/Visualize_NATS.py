@@ -44,7 +44,7 @@ class Command:
         for index,row in output[output['nrows'] > 0].iterrows():
             #rows start immediately after header, end after specified nrows
             start = index+1
-            end = start+row['nrows']
+            end = start+int(row['nrows'])
             #copy acid to unused column of trajectory rec
             output.iloc[start:end,-1] = row['lon']
             #copy origin
