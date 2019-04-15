@@ -34,7 +34,7 @@ class Command:
         #src directory
         parentPath = str(Path(__file__).parent.parent.parent)
         #trajectory record rows have different fields than header rows
-        cols = ['time','lat','lon','altitude','rocd','tas','heading','fpa','sect_ind','sect_name','mode','origin_elev','dest_elev','nrows']
+        cols = ['time','lat','lon','altitude','rocd','tas','tas_ground','heading','fpa','sect_ind','sect_name','mode','dest_elev','nrows']
         
         #skip the initial header of the csv file
         output = pd.read_csv(open(parentPath + "/NATS/Server/" + self.filename, 'r'),header=None,names=cols,skiprows=9)
@@ -50,8 +50,8 @@ class Command:
             #copy origin
             output.iloc[start:end,-2] = row['rocd']
             #copy destination
-            output.iloc[start:end,-3] = row['tas']
-            results=results.append(output.iloc[start:end][['time','nrows','origin_elev','dest_elev','lat','lon','altitude','rocd','tas','heading','sect_name','mode']])
+            output.iloc[start:end,6] = row['tas']
+            results=results.append(output.iloc[start:end][['time','nrows','tas_ground','dest_elev','lat','lon','altitude','rocd','tas','heading','sect_name','mode']])
             
         results.columns = ['time','callsign','origin','destination','latitude','longitude','altitude','rocd','tas','heading','sector','status']
 
