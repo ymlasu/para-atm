@@ -34,17 +34,24 @@ class Command:
         self.cursor = cursor
         self.airportIATA = False
         self.NATS_path = None
+        self.IFF_path = None
         self.map = map_object
         self.lookahead = 1.5/3600
         if type(args) == list and len(args) > 1:
             if '.csv' in args[0]:
-                self.NATS_path = args[0]
+                if 'IFF' in args[0]:
+                    self.IFF_path = args[0]
+                else:
+                    self.NATS_path = args[0]
             else:
                 self.airportIATA = args[0]
             self.lookahead = args[1]
         else:
             if '.csv' in args:
-                self.NATS_path = args
+                if 'IFF' in args:
+                    self.IFF_path = args
+                else:
+                    self.NATS_path = args
 
     def load_BADA(self,statuses):
         for status in statuses:
@@ -394,8 +401,19 @@ class Command:
             y = np.cos(rad) * data['tas'].astype(float)
             traf = data[['time','callsign','latitude','longitude','altitude','rocd','tas','status','heading']].join(pd.DataFrame({'x':x,'y':y}))
             traf['time'] = pd.to_datetime(1121238067+traf['time'].astype(int),unit='s')
+        elif self.IFF_path:
+            from PARA_ATM.Commands import IFF_Reader as ir
+            cmd = ir.Command(self.cursor,self.IFF_path)
+            self.map.commandParameters = cmd.executeCommand()
+            self.map.initMap()
+            data = self.map.commandParameters[1]
+            rad = np.deg2rad(data['heading'])
+            x = np.sin(rad) * data['tas'].astype(float)
+            y = np.cos(rad) * data['tas'].astype(float)
+            traf = data[['time','callsign','latitude','longitude','altitude','rocd','tas','status','heading']].join(pd.DataFrame({'x':x,'y':y}))
+            traf['time'] = pd.to_datetime(traf['time'].astype(int),unit='s')
         else:
-            raise Exception('Enter an airport or NATS sim file name')
+            raise Exception('Enter an airport, IFF file, or NATS sim file name')
 
         results = []
         #check each second
@@ -411,4 +429,4 @@ class Command:
             #conflict returns a list of lists with timestamp, acid, and FPF of the aircraft.
             results.append(self.conflict(g[1],ac_info))
 
-        return ['SSD',results,self.airportIATA,self.NATS_path]
+        return ['SSD',results,self.airportIATA,self.NATS_path,self.IFF_path]
