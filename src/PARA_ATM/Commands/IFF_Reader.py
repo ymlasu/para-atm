@@ -34,18 +34,34 @@ class Command:
         #src directory
         parentPath = str(Path(__file__).parent.parent.parent)
         #trajectory record rows have different fields than header rows
-        cols = ['recType','recTime','fltKey','bcnCode','cid','Source','msgType',
-                'AcId','recTypeCat','coord1','coord2','alt','significance',
-                'coord1Accur','coord2Accur','altAccur','groundSpeed','course',
-                'rateOfClimb','altQualifier','altIndicator','trackPtStatus',
-                'leaderDir','scratchPad','msawInhibitInd','assignedAltString',
-                'controllingFac','controllingSeg','receivingFac','receivingSec',
-                'activeContr','primaryContr','kybrdSubset','kybrdSymbol','adsCode'
-                'opsType','airportCode','trackNumber','tptReturnType','modeSCode',
-                'sensorTrackNumberList','spi','dvs','dupM3a','tid']
-        
-        #skip the initial header of the csv file
-        data = pd.read_csv(open(parentPath + "/../data/Sherlock/" + self.filename, 'r'),header=None,names=cols,skiprows=3)
+
+        cols = {0:['recType','comment'],
+                1:['recType','fileType','fileFormatVersion'],
+                2:['recType','recTime','fltKey','bcnCode','cid','Source','msgType','AcId','recTypeCat','acType','Orig','Dest','opsType','estOrig','estDest','modeSCode'],
+                3:['recType','recTime','fltKey','bcnCode','cid','Source','msgType','AcId','recTypeCat','coord1','coord2','alt','significance','coord1Accur','coord2Accur','altAccur','groundSpeed','course','rateOfClimb','altQualifier','altIndicator','trackPtStatus','leaderDir','scratchPad','msawInhibitInd','assignedAltString','controllingFac','controllingSeg','receivingFac','receivingSec','activeContr','primaryContr','kybrdSubset','kybrdSymbol','adsCode','opsType','airportCode','trackNumber','tptReturnType','modeSCode','sensorTrackNumberList','spi','dvs','dupM3a','tid'],
+                4:['recType','recTime','fltKey','bcnCode','cid','Source','msgType','AcId','recTypeCat','acType','Orig','Dest','altcode','alt','maxAlt','assignedAltString','requestedAltString','route','estTime','fltCat','perfCat','opsType','equipList','coordinationTime','coordinationTimeType','leaderDir','scratchPad1','scratchPad2','fixPairScratchPad','prefDepArrRoute','prefDepRoute','prefArrRoute','coordinationPoint','coordinationPointType','trackNumber','modeSCode'],
+                5:['recType','dataSource','programName','programVersion'],
+                6:['recType','recTime','Source','msgType','rectypeCat','sectorizationString'],
+                7:['recType','recTime','fltKey','bcnCode','cid','Source','msgType','AcId','recTypeCat','coord1','coord2','alt','significance','coord1Accur','coord2Accur','altAccur','msawtype','msawTimeCat','msawLocCat','msawMinSafeAlt','msawIndex1','msawIndex2','msawVolID'],
+                8:['recType','recTime','fltKey','bcnCode','cid','Source','msgType','AcId','recTypeCat','acType','Orig','Dest','depTime','depTimeType','arrTime','arrTimeType'],
+                9:['recType','recTime','fltKey','bcnCode','cid','Source','msgType','AcId','recTypeCat','coord1','coord2','alt','pitchAngle','trueHeading','rollAngle','trueAirSpeed','fltPhaseIndicator'],
+                10:['recType','recTime','fltKey','bcnCode','cid','Source','msgType','AcId','recTypeCat','configType','configSpec']}
+    
+        dfs = []
+        for i in range(len(cols)):
+            dfs.append(pd.DataFrame(columns=cols[i]))
+                       
+        data = pd.read_csv(open(parentPath + "/../data/Sherlock/" + self.filename),encoding='latin1',low_memory=False,header=None)
+
+        for dfIdx in data[0].unique():
+            print(dfIdx)
+            df = data[data[0]==dfIdx].reset_index()
+            nCols = min(len(cols[dfIdx]),len(df.columns))
+            df = df[df.columns[0:nCols]]
+            df.columns = cols[dfIdx][0:nCols]
+            dfs[dfIdx]=df
+                                  
+        data = dfs[3]
         ev = pd.read_csv(open(parentPath + "/../data/Sherlock/" + 'EV_'+'_'.join(self.filename.split('_')[1:]),'r'),header=0)
         ev['time'] = ev['tStartSecs'] + ev['tEv']
         ev = ev[['time','AcId','EvType']]
