@@ -55,7 +55,9 @@ class Command:
 
     def load_BADA(self,statuses):
         for status in statuses:
-            if status == 'onsurface' or 'GATE' in status or 'PUSHBACK' in status:
+            if status == None:
+                yield {'vmin':0,'vmax':4*nm,'sep':175*ft_per_m}
+            elif status == 'onsurface' or 'GATE' in status or 'PUSHBACK' in status:
                 yield {'vmin':0,'vmax':4*nm,'sep':175*ft_per_m}
             elif status == 'onramp' or 'DEPARTING' in status:
                 yield {'vmin':0,'vmax':30*nm,'sep':200*ft_per_m}
@@ -214,7 +216,7 @@ class Command:
             circle_lst.append([list(map(list, np.flipud(xyc * ac_info[i]['vmax']))), list(map(list , xyc * ac_info[i]['vmin'])),])
        
         if len(traffic) < 2:
-            return traffic['time']
+            return
         ind1, ind2 = self.qdrdist_matrix_indices(len(traffic))
         #manually slice because numpy complains
         lat1 = np.repeat(lat[:-1],range(len(lat)-1,0,-1))
@@ -307,7 +309,7 @@ class Command:
                     ## print(traf.id[i] + " - " + traf.id[i_other[j]])
                     ## print(dist[ind[j]])
                     # Scale VO when not in LOS
-                    if True:#dist[ind[j]] > hsep:
+                    if dist[ind[j]] > hsep:
                         # Normally VO shall be added of this other a/c
                         VO = pyclipper.scale_to_clipper(tuple(map(tuple,xy[j,:,:])))
                     else:
@@ -379,7 +381,8 @@ class Command:
                     ARV_calc_loc[i] = ARV_calc
                 fpf = ARV_area_loc[i]/(FRV_area_loc[i]+ARV_area_loc[i])
                 FPFs.append([traffic.iloc[i]['time'],traffic.iloc[i]['callsign'],fpf])
-
+        FPFs = pd.DataFrame(FPFs)
+        
         return FPFs
 
     #Method name executeCommand() should not be changed. It executes the query and displays/returns the output.
@@ -417,7 +420,8 @@ class Command:
 
         results = []
         #check each second
-        for g in traf.groupby(pd.Grouper(key='time',freq='1s')):
+        timestep = max(1,int(self.lookahead))
+        for g in traf.groupby(pd.Grouper(key='time',freq='%ds'%timestep)):
             try:
                 if g[1].empty:
                     continue
@@ -427,6 +431,10 @@ class Command:
             #find vmin and vmax
             ac_info = list(self.load_BADA(g[1]['status']))
             #conflict returns a list of lists with timestamp, acid, and FPF of the aircraft.
-            results.append(self.conflict(g[1],ac_info))
-
+            fpf = self.conflict(g[1],ac_info)
+            if type(fpf) != list and type(fpf) != type(None) and not fpf.empty:
+                results.append(fpf)
+    
+        results = pd.concat(results)
+        results.columns=['time','callsign','fpf']
         return ['SSD',results,self.airportIATA,self.NATS_path,self.IFF_path]
