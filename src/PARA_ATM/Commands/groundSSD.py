@@ -21,6 +21,7 @@ import numpy as np
 import pyclipper
 
 nm = 0.868976
+ft_per_m = 0.3048
 
 class Command:
     '''
@@ -29,21 +30,39 @@ class Command:
     '''
     
     #Here, the database connector and the parameter are passed as arguments. This can be changed as per need.
-    def __init__(self, cursor, map_object, args=False):
+    def __init__(self, cursor, map_object, args=[]):
         self.cursor = cursor
         self.airportIATA = False
+        self.NATS_path = None
+        self.IFF_path = None
         self.map = map_object
-        if args:
-            self.airportIATA = args[0]
+        self.lookahead = 1.5/3600
+        if type(args) == list and len(args) > 1:
+            if '.csv' in args[0]:
+                if 'IFF' in args[0]:
+                    self.IFF_path = args[0]
+                else:
+                    self.NATS_path = args[0]
+            else:
+                self.airportIATA = args[0]
+            self.lookahead = args[1]
+        else:
+            if '.csv' in args:
+                if 'IFF' in args:
+                    self.IFF_path = args
+                else:
+                    self.NATS_path = args
 
     def load_BADA(self,statuses):
         for status in statuses:
-            if status == 'onsurface' or 'GATE' in status or 'PUSHBACK' in status:
-                yield {'vmin':0,'vmax':4,'sep':175}
+            if status == None:
+                yield {'vmin':0,'vmax':4*nm,'sep':175*ft_per_m}
+            elif status == 'onsurface' or 'GATE' in status or 'PUSHBACK' in status:
+                yield {'vmin':0,'vmax':4*nm,'sep':175*ft_per_m}
             elif status == 'onramp' or 'DEPARTING' in status:
-                yield {'vmin':0,'vmax':30,'sep':200}
+                yield {'vmin':0,'vmax':30*nm,'sep':200*ft_per_m}
             else:
-                yield {'vmin':0,'vmax':200,'sep':2640}
+                yield {'vmin':0,'vmax':200*nm,'sep':2640*ft_per_m}
 
     def rwgs84_matrix(self,latd):
         """ Calculate the earths radius with WGS'84 geoid definition
@@ -162,7 +181,7 @@ class Command:
     def conflict(self,traffic,ac_info):
         lat,lon = np.array(traffic['latitude']).astype(float),np.array(traffic['longitude']).astype(float)
         gsnorth,gseast = np.array(traffic['y']).astype(float),np.array(traffic['x']).astype(float)
-        hsep = ac_info[0]['sep']/nm
+        hsep = ac_info[0]['sep']
         # Local variables, will be put into asas later
         FRV_loc          = [None] * len(traffic)
         ARV_loc          = [None] * len(traffic)
@@ -179,11 +198,25 @@ class Command:
         xyc = np.transpose(np.reshape(np.concatenate((np.sin(angles), np.cos(angles))), (2, N_angle)))
         circle_tup,circle_lst = tuple(),[]
         for i in range(len(traffic)):
+            
+            if ac_info[i]['vmax'] == 30*nm: #taxi
+                heading = traffic.iloc[i]['heading']
+                #put between 0-360
+                if heading < 0:
+                    heading += 360
+                #find center of jet blast
+                opp_heading_ind = heading//2 - 90
+                #build ellipsoid part of outer circle
+                for j in range(45):
+                    xyc[opp_heading_ind-45+j] = xyc[opp_heading_ind-45+j] * (1+j/45)
+                for j in range(45):
+                    xyc[opp_heading_ind+j] = xyc[opp_heading_ind+j] * (2-j/45)
+            
             circle_tup+=((tuple(map(tuple, np.flipud(xyc * ac_info[i]['vmax']))), tuple(map(tuple , xyc * ac_info[i]['vmin'])),),)
             circle_lst.append([list(map(list, np.flipud(xyc * ac_info[i]['vmax']))), list(map(list , xyc * ac_info[i]['vmin'])),])
        
         if len(traffic) < 2:
-            return traffic['time']
+            return
         ind1, ind2 = self.qdrdist_matrix_indices(len(traffic))
         #manually slice because numpy complains
         lat1 = np.repeat(lat[:-1],range(len(lat)-1,0,-1))
@@ -198,7 +231,7 @@ class Command:
         qdr = np.deg2rad(qdr)
         #exclude 0 distance AKA same aircraft
         dist[(dist < hsep) & (dist > 0)] = hsep
-        dist[dist==0] = 1000
+        dist[dist==0] = hsep+1
         # Calculate vertices of Velocity Obstacle (CCW)
         # These are still in relative velocity space, see derivation in appendix
         # Half-angle of the Velocity obstacle [rad]
@@ -214,6 +247,7 @@ class Command:
         sinqdrtanalpha = sinqdr * tanalpha
     
         conflict = (traffic.iloc[ind1[list(np.where(dist==hsep)[0])]],traffic.iloc[ind2[list(np.where(dist==hsep)[0])]])
+        FPFs = []
         for i in range(len(traffic)):
             # Relevant x1,y1,x2,y2 (x0 and y0 are zero in relative velocity space)
             x1 = (sinqdr + cosqdrtanalpha) * 2 * ac_info[i]['vmax']
@@ -221,7 +255,7 @@ class Command:
             y1 = (cosqdr - sinqdrtanalpha) * 2 * ac_info[i]['vmax']
             y2 = (cosqdr + sinqdrtanalpha) * 2 * ac_info[i]['vmax']
             
-            if True: #traffic.iloc[i] in conflict:
+            if  (dist==hsep).any():
                 # SSD for aircraft i
                 # Get indices that belong to aircraft i
                 ind = np.where(np.logical_or(ind1 == i,ind2 == i))[0]
@@ -275,7 +309,7 @@ class Command:
                     ## print(traf.id[i] + " - " + traf.id[i_other[j]])
                     ## print(dist[ind[j]])
                     # Scale VO when not in LOS
-                    if True:#dist[ind[j]] > hsep:
+                    if dist[ind[j]] > hsep:
                         # Normally VO shall be added of this other a/c
                         VO = pyclipper.scale_to_clipper(tuple(map(tuple,xy[j,:,:])))
                     else:
@@ -346,10 +380,10 @@ class Command:
                     # Update calculatable ARV for resolutions
                     ARV_calc_loc[i] = ARV_calc
                 fpf = ARV_area_loc[i]/(FRV_area_loc[i]+ARV_area_loc[i])
-                print('FPF: ',fpf)
-                FPFs.append(fpf)
-
-        return (conflict,FPFs)
+                FPFs.append([traffic.iloc[i]['time'],traffic.iloc[i]['callsign'],fpf])
+        FPFs = pd.DataFrame(FPFs)
+        
+        return FPFs
 
     #Method name executeCommand() should not be changed. It executes the query and displays/returns the output.
     def executeCommand(self):
@@ -359,34 +393,48 @@ class Command:
             lat,lon = float(lat),float(lon)
             self.cursor.execute("SELECT time,callsign,status,lat,lon FROM smes WHERE lat>'%f' AND lat<'%f' AND lon>'%f' AND lon<'%f'" %(lat-1,lat+1,lon-1,lon+1))
             traf = pd.DataFrame(self.cursor.fetchall(),columns=['time','callsign','status','latitude','longitude'])
-        else:
+        elif self.NATS_path:
             from PARA_ATM.Commands import Visualize_NATS as vn
-            cmd = vn.Command(self.cursor,'TRX_DEMO_SFO_PHX_new_G2G_output.csv')
+            cmd = vn.Command(self.cursor,self.NATS_path)
             self.map.commandParameters = cmd.executeCommand()
-            #print(self.map.commandParameters)
             self.map.initMap()
             data = self.map.commandParameters[1]
             rad = np.deg2rad(data['heading'])
             x = np.sin(rad) * data['tas'].astype(float)
             y = np.cos(rad) * data['tas'].astype(float)
-            traf = data[['time','callsign','latitude','longitude','altitude','rocd','tas','status']].join(pd.DataFrame({'x':x,'y':y}))
+            traf = data[['time','callsign','latitude','longitude','altitude','rocd','tas','status','heading']].join(pd.DataFrame({'x':x,'y':y}))
             traf['time'] = pd.to_datetime(1121238067+traf['time'].astype(int),unit='s')
+        elif self.IFF_path:
+            from PARA_ATM.Commands import IFF_Reader as ir
+            cmd = ir.Command(self.cursor,self.IFF_path)
+            self.map.commandParameters = cmd.executeCommand()
+            self.map.initMap()
+            data = self.map.commandParameters[1]
+            rad = np.deg2rad(data['heading'])
+            x = np.sin(rad) * data['tas'].astype(float)
+            y = np.cos(rad) * data['tas'].astype(float)
+            traf = data[['time','callsign','latitude','longitude','altitude','rocd','tas','status','heading']].join(pd.DataFrame({'x':x,'y':y}))
+            traf['time'] = pd.to_datetime(traf['time'].astype(int),unit='s')
+        else:
+            raise Exception('Enter an airport, IFF file, or NATS sim file name')
 
-        #print(traf)
         results = []
         #check each second
-        for g in traf.groupby(pd.Grouper(key='time',freq='30s')):
+        timestep = max(1,int(self.lookahead))
+        for g in traf.groupby(pd.Grouper(key='time',freq='%ds'%timestep)):
             try:
                 if g[1].empty:
-                    print('empty')
                     continue
             except Exception as e:
                 print(e)
                 continue
             #find vmin and vmax
             ac_info = list(self.load_BADA(g[1]['status']))
-            #two tables will be returned 1st row of 1st table is in conflict with 1st row of second table etc.
-            inconf,fpf = self.conflict(g[1],ac_info)
-            results.append((inconf,fpf))
-
-        return ['SSD',results,self.airportIATA]
+            #conflict returns a list of lists with timestamp, acid, and FPF of the aircraft.
+            fpf = self.conflict(g[1],ac_info)
+            if type(fpf) != list and type(fpf) != type(None) and not fpf.empty:
+                results.append(fpf)
+    
+        results = pd.concat(results)
+        results.columns=['time','callsign','fpf']
+        return ['SSD',results,self.airportIATA,self.NATS_path,self.IFF_path]

@@ -67,7 +67,7 @@ def buildMap(flightSelected, dateRangeSelected, filterToggles, cursor, commandPa
         
         #iterate through each tdds message
         for index,row in tdds_data.iterrows():
-            lookahead=row['velocity']*.01
+            lookahead=.01
             flightResults.append([[str(row['time']),str(row['status']),row['callsign'],str(row['latitude'])+','+str(row['longitude']),str(lookahead)]])
         
         return flightResults,source,destination
@@ -86,13 +86,14 @@ def buildMap(flightSelected, dateRangeSelected, filterToggles, cursor, commandPa
         commandName = commandParameters[0]
         nats_data = commandParameters[1]
         #select first airport as zoom location
-        sourceIATA = nats_data['origin'].iloc[0]
-        destIATA = nats_data['destination'].iloc[0]
-        cursor.execute("SELECT latitude, longitude from airports WHERE iata = %s", ("" + sourceIATA[1:],))
+        sourceIATA = nats_data['origin'].loc[nats_data['origin'] != '?'].iloc[0]
+        destIATA = nats_data['destination'].loc[nats_data['destination'] != '?'].iloc[0]
+        cursor.execute("SELECT latitude, longitude from airports WHERE iata = %s", ("" + sourceIATA[len(sourceIATA)-3:],))
         airportsLatLon = cursor.fetchall()
         source = [sourceIATA, airportsLatLon[0][0], airportsLatLon[0][1]]
-        cursor.execute("SELECT latitude, longitude from airports WHERE iata = %s", ("" + destIATA[1:],))
+        cursor.execute("SELECT latitude, longitude from airports WHERE iata = %s", ("" + destIATA[len(destIATA)-3:],))
         airportsLatLon = cursor.fetchall()
+        #destination = source
         destination = [destIATA, airportsLatLon[0][0], airportsLatLon[0][1]]
         
         #select the distinct aircraft ids
@@ -100,7 +101,7 @@ def buildMap(flightSelected, dateRangeSelected, filterToggles, cursor, commandPa
             ac_results = []
             #select all the data relevant to given aircraft
             for index,row in nats_data[nats_data['callsign']==acid].iterrows():
-                ac_results.append([str(row['time']),row['status'],row['callsign'],str(row['latitude'])+','+str(row['longitude'])])
+                ac_results.append([str(row['time']),str(row['status']),str(row['callsign']),str(row['latitude'])+','+str(row['longitude'])])
             flightResults.append(ac_results)
         
         return flightResults,source,destination
@@ -150,7 +151,6 @@ def buildMap(flightSelected, dateRangeSelected, filterToggles, cursor, commandPa
             try:
                 flightResults,source,destination = NATS_data()
             except Exception as v:
-                print(v)
                 pass
     
     #build the html to display in the GUI
@@ -270,13 +270,13 @@ def buildMap(flightSelected, dateRangeSelected, filterToggles, cursor, commandPa
 
                          else if(status=='onramp')
                          {
-                            var ssd = L.circle([latitude,longitude], {radius: 45, opacity: 0.5});
+                            var ssd = L.circle([latitude,longitude], {radius: 30, opacity: 0.5});
                             ssds.push(ssd);
                          }
 
                          else if(status=='airborne')
                          {
-                            var ssd = L.circle([latitude,longitude], {radius: 800, opacity: 0.5});
+                            var ssd = L.circle([latitude,longitude], {radius: 100, opacity: 0.5});
                             ssds.push(ssd);
                          }
 

@@ -307,8 +307,6 @@ class ParaATM(QWidget):
         #Command specific conditions
         if (commandName == "Airport"):
             self.mapView.setUrl(QUrl(str(Path(__file__).parent.parent) +  "/Map/web/LiveFlights.html?latitude=" + self.commandParameters[1] + "&longitude=" + self.commandParameters[2]))
-        elif (commandName == 'TDDS') or (commandName == 'Visualize_NATS'):
-            self.initMap()
         elif (commandName == "NATS_GateToGateSim"):
             parentPath = str(Path(__file__).parent.parent.parent)
             with open(str(parentPath) + "/NATS/Server/DEMO_Gate_To_Gate_SFO_PHX_trajectory_beta_1.0.csv", 'r') as content_file:
@@ -321,8 +319,8 @@ class ParaATM(QWidget):
                 raise Exception
             w.showFullScreen()
         else:
-            pass
-            #print(self.commandParameters)
+            self.initMap()
+            print(self.commandParameters[1])
 
 '''
     main() instantiates the ParaATM Class to run the application
