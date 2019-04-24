@@ -11,6 +11,7 @@ Visualize NATS output CSV file
 '''
 
 from PARA_ATM import *
+from sqlalchemy import create_engine
 
 class Command:
     '''
@@ -54,5 +55,13 @@ class Command:
             results=results.append(output.iloc[start:end][['time','nrows','tas_ground','dest_elev','lat','lon','altitude','rocd','tas','heading','sect_name','mode']])
             
         results.columns = ['time','callsign','origin','destination','latitude','longitude','altitude','rocd','tas','heading','sector','status']
+
+        #add to database
+        engine = create_engine('postgresql://paraatm_user:paraatm_user@localhost:5432/paraatm')
+        
+        try:
+            results.to_sql(self.filename, engine)
+        except:
+            print('Table already exists')
 
         return ["Visualize_NATS", results]
