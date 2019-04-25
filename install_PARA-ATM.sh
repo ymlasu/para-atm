@@ -5,6 +5,7 @@ dir=${PWD}
 #PARA-ATM dependencies
 sudo apt-get install default-jdk
 sudo apt-get install wget
+sudo apt-get install libgtkmm-2.4
 [ -a ./Anaconda3-2.4.0-Linux-x86_64.sh ] || wget https://repo.continuum.io/archive/Anaconda3-2.4.0-Linux-x86_64.sh
 sudo chmod +x dependencies.sh
 sudo ./dependencies.sh
