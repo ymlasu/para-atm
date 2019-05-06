@@ -89,4 +89,6 @@ def main(infile):
         across_lookahead_results.append(results) #could also yield results and make a list somewhere else
 
     return across_lookahead_results
-    
+
+if __name__ == '__main__':
+    main(argv[1])
