@@ -3,6 +3,8 @@
 dir=${PWD}
 
 #PARA-ATM dependencies
+sudo apt-get update
+sudo apt-get install libcurl3
 sudo apt-get install default-jdk
 sudo apt-get install wget
 sudo apt-get install libgtkmm-2.4
