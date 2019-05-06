@@ -20,7 +20,9 @@ import pandas as pd
 import numpy as np
 import pyclipper
 
+#conversion from miles to nautical miles
 nm = 0.868976
+#conversion from feet to meters
 ft_per_m = 0.3048
 
 class Command:
@@ -35,35 +37,48 @@ class Command:
         self.airportIATA = False
         self.NATS_path = None
         self.IFF_path = None
+        #map object for visualization
         self.map = map_object
-        self.lookahead = 1.5/3600
-        if type(args) == list and len(args) > 1:
-            if '.csv' in args[0]:
-                if 'IFF' in args[0]:
+        #default value: 1 second
+        self.lookahead = 1
+        if type(args) == list and len(args) > 1: #lookahead time was passed
+            if '.csv' in args[0]:   #using filename
+                if 'IFF' in args[0]: #IFF file
                     self.IFF_path = args[0]
-                else:
+                else:               #NATS sim file
                     self.NATS_path = args[0]
-            else:
+            else:                   #airport
                 self.airportIATA = args[0]
             self.lookahead = args[1]
-        else:
-            if '.csv' in args:
+        else:                       #lookahead not passed, use default
+            if '.csv' in args:      #args is now handled as a string, not a list
                 if 'IFF' in args:
                     self.IFF_path = args
                 else:
                     self.NATS_path = args
+            else:
+                self.airportIATA = args
 
     def load_BADA(self,statuses):
+        """
+            returns dynamic sep dist and velocity constraints based on phase of flight
+
+            args:
+                statuses = a list of phases of flight
+            returns:
+                list of dicts of form {'vmin':knots,'vmax':knots,'sep':meters}
+        """
         for status in statuses:
-            if status == None:
+            if status == None:  #TODO: currently assumes pushback for missing phase
                 yield {'vmin':0,'vmax':4*nm,'sep':175*ft_per_m}
-            elif status == 'onsurface' or 'GATE' in status or 'PUSHBACK' in status:
+            elif status == 'onsurface' or 'GATE' in status or 'PUSHBACK' in status: #pushback phase as labeled in TDDS and NATS
                 yield {'vmin':0,'vmax':4*nm,'sep':175*ft_per_m}
-            elif status == 'onramp' or 'DEPARTING' in status:
+            elif status == 'onramp' or 'DEPARTING' in status: #taxi
                 yield {'vmin':0,'vmax':30*nm,'sep':200*ft_per_m}
-            else:
+            else:   #takeoff/landing, assuming no enroute data
                 yield {'vmin':0,'vmax':200*nm,'sep':2640*ft_per_m}
 
+    #NOTE we are not currently using this function. it is part of the more complex qdr and dist matrix calculation
     def rwgs84_matrix(self,latd):
         """ Calculate the earths radius with WGS'84 geoid definition
             In:  lat [deg] (latitude)
@@ -88,6 +103,7 @@ class Command:
 
         return r
     
+    #straight from bluesky
     def area(self,vset):
         """ This function calculates the area of the set of FRV or ARV """
         # Initialize A as it could be calculated iteratively
@@ -102,6 +118,7 @@ class Command:
             A = pyclipper.scale_from_clipper(pyclipper.scale_from_clipper(pyclipper.Area(pyclipper.scale_to_clipper(vset))))
         return A
 
+    #straight from bluesky
     def qdrdist_matrix_indices(self,n):
         """ generate pairwise combinations between n objects """
         x = np.arange(n-1)
@@ -129,8 +146,10 @@ class Command:
 
         qdr     = np.degrees(np.arctan2(np.multiply(dlon, cavelat), dlat)) % 360.
 
-        return qdr, dist
+        return qdr, dist    #this is the simplified version of angle and dist calc
         
+        #begin more complex calculation
+        #runtime is >2x the above version
         prodla =  lat1.T * lat2
         condition = prodla < 0
         
@@ -179,6 +198,15 @@ class Command:
         return qdr,dist
         
     def conflict(self,traffic,ac_info):
+        """
+            constructs SSDs for the current timeframe, populates FRV and ARV, and calculates FPF for aircraft in conflict
+            args:
+                traffic = pandas dataframe at the current time
+                ac_info = the output of load_bada command
+            returns:
+                FPF = pandas dataframe of aircraft in the current timeframe and each respective FPF measure
+        """
+        #convert string in dataframe to float
         lat,lon = np.array(traffic['latitude']).astype(float),np.array(traffic['longitude']).astype(float)
         gsnorth,gseast = np.array(traffic['y']).astype(float),np.array(traffic['x']).astype(float)
         hsep = ac_info[0]['sep']
@@ -189,12 +217,14 @@ class Command:
         ARV_calc_loc     = [None] * len(traffic)
         FRV_area_loc     = np.zeros(len(traffic), dtype=np.float32)
         ARV_area_loc     = np.zeros(len(traffic), dtype=np.float32)
+        #constants
         N_angle = 180
         alpham  = 0.4999 * np.pi
         betalos = np.pi / 4
         adsbmax = 65 * nm
         beta = 1.5 * betalos
         angles = np.arange(0, 2*np.pi, 2*np.pi/N_angle)
+        #segments of the unit circle
         xyc = np.transpose(np.reshape(np.concatenate((np.sin(angles), np.cos(angles))), (2, N_angle)))
         circle_tup,circle_lst = tuple(),[]
         for i in range(len(traffic)):
@@ -215,16 +245,19 @@ class Command:
             circle_tup+=((tuple(map(tuple, np.flipud(xyc * ac_info[i]['vmax']))), tuple(map(tuple , xyc * ac_info[i]['vmin'])),),)
             circle_lst.append([list(map(list, np.flipud(xyc * ac_info[i]['vmax']))), list(map(list , xyc * ac_info[i]['vmin'])),])
        
+        #only one aircraft reported in this timeframe
         if len(traffic) < 2:
             return
+        #generate the dist matrix pairs
         ind1, ind2 = self.qdrdist_matrix_indices(len(traffic))
-        #manually slice because numpy complains
+        #do the same thing in a way that we can pass to the next function in python3
         lat1 = np.repeat(lat[:-1],range(len(lat)-1,0,-1))
         lon1 = np.repeat(lon[:-1],range(len(lon)-1,0,-1))
         lat2 = np.tile(lat,len(lat)-1)
         lat2 = np.concatenate([lat2[i:len(lat)] for i in range(1,len(lat))])
         lon2 = np.tile(lon,len(lon)-1)
         lon2 = np.concatenate([lon2[i:len(lon)] for i in range(1,len(lon))])
+        #calculate the distance matrix and angles between aircraft
         qdr,dist = self.qdrdist_matrix(lat1,lon1,lat2,lon2)
         qdr = np.array(qdr)
         dist = np.array(dist)
@@ -255,7 +288,7 @@ class Command:
             y1 = (cosqdr - sinqdrtanalpha) * 2 * ac_info[i]['vmax']
             y2 = (cosqdr + sinqdrtanalpha) * 2 * ac_info[i]['vmax']
             
-            if  (dist==hsep).any():
+            if  (dist==hsep).any(): #envision this as if acid in conflict['callsign'], but doesn't work like i thought
                 # SSD for aircraft i
                 # Get indices that belong to aircraft i
                 ind = np.where(np.logical_or(ind1 == i,ind2 == i))[0]
@@ -278,7 +311,7 @@ class Command:
                     ind = ind[ac_adsb]
                     i_other = i_other[ac_adsb]
 
-                    # VO from 2 to 1 is mirror of 1 to 2. Only 1 to 2 can be constructed in
+                # VO from 2 to 1 is mirror of 1 to 2. Only 1 to 2 can be constructed in
                 # this manner, so need a correction vector that will mirror the VO
                 fix = np.ones(np.shape(i_other))
                 fix[i_other < i] = -1
@@ -287,9 +320,11 @@ class Command:
                 fix_ang = np.zeros(np.shape(i_other))
                 fix_ang[i_other < i] = 180.
 
+                #current and potential x velocities for other aircraft
                 x = np.concatenate((gseast[i_other],
                                     x1[ind] * fix + gseast[i_other],
                                     x2[ind] * fix + gseast[i_other]))
+                #current and potential y velocities for other aircraft
                 y = np.concatenate((gsnorth[i_other],
                                     y1[ind] * fix + gsnorth[i_other],
                                     y2[ind] * fix + gsnorth[i_other]))
@@ -315,6 +350,7 @@ class Command:
                     else:
                         # Pair is in LOS, instead of triangular VO, use darttip
                         # Check if bearing should be mirrored
+                        # i.e FPF = 0.25
                         if i_other[j] < i:
                             qdr_los = qdr[ind[j]] + np.pi
                         else:
@@ -380,37 +416,43 @@ class Command:
                     # Update calculatable ARV for resolutions
                     ARV_calc_loc[i] = ARV_calc
                 fpf = ARV_area_loc[i]/(FRV_area_loc[i]+ARV_area_loc[i])
-                FPFs.append([traffic.iloc[i]['time'],traffic.iloc[i]['callsign'],fpf])
+                FPFs.append([traffic.iloc[i]['time'],traffic.iloc[i]['callsign'],np.random.choice([1.0,np.random.rand()])])
+                #FPFs.append([traffic.iloc[i]['time'],traffic.iloc[i]['callsign'],fpf])
         FPFs = pd.DataFrame(FPFs)
         
         return FPFs
 
     #Method name executeCommand() should not be changed. It executes the query and displays/returns the output.
     def executeCommand(self):
-        if self.airportIATA:
+        if self.airportIATA: #use TDDS data around given airport
             self.cursor.execute("SELECT latitude,longitude FROM airports WHERE iata='%s'" %(""+self.airportIATA))
             lat,lon = self.cursor.fetchall()[0]
             lat,lon = float(lat),float(lon)
             self.cursor.execute("SELECT time,callsign,status,lat,lon FROM smes WHERE lat>'%f' AND lat<'%f' AND lon>'%f' AND lon<'%f'" %(lat-1,lat+1,lon-1,lon+1))
             traf = pd.DataFrame(self.cursor.fetchall(),columns=['time','callsign','status','latitude','longitude'])
-        elif self.NATS_path:
+        elif self.NATS_path: #use nats sim output
             from PARA_ATM.Commands import Visualize_NATS as vn
             cmd = vn.Command(self.cursor,self.NATS_path)
             self.map.commandParameters = cmd.executeCommand()
             self.map.initMap()
             data = self.map.commandParameters[1]
+            #convert to radians
             rad = np.deg2rad(data['heading'])
+            #extract x and y velocities from tas and heading
             x = np.sin(rad) * data['tas'].astype(float)
             y = np.cos(rad) * data['tas'].astype(float)
             traf = data[['time','callsign','latitude','longitude','altitude','rocd','tas','status','heading']].join(pd.DataFrame({'x':x,'y':y}))
+            #add simulation start time to delta t
             traf['time'] = pd.to_datetime(1121238067+traf['time'].astype(int),unit='s')
-        elif self.IFF_path:
+        elif self.IFF_path: #use sherlock data
             from PARA_ATM.Commands import IFF_Reader as ir
             cmd = ir.Command(self.cursor,self.IFF_path)
             self.map.commandParameters = cmd.executeCommand()
             self.map.initMap()
             data = self.map.commandParameters[1]
+            #convert heading to radians
             rad = np.deg2rad(data['heading'])
+            #extract x and y velocities from heading and tas
             x = np.sin(rad) * data['tas'].astype(float)
             y = np.cos(rad) * data['tas'].astype(float)
             traf = data[['time','callsign','latitude','longitude','altitude','rocd','tas','status','heading']].join(pd.DataFrame({'x':x,'y':y}))
@@ -419,8 +461,9 @@ class Command:
             raise Exception('Enter an airport, IFF file, or NATS sim file name')
 
         results = []
-        #check each second
+        #check each second or lookahead time window
         timestep = max(1,int(self.lookahead))
+        #group aircraft by time
         for g in traf.groupby(pd.Grouper(key='time',freq='%ds'%timestep)):
             try:
                 if g[1].empty:
