@@ -11,11 +11,12 @@ call groundSSD in a loop, given input variable distributions
 
 import sys
 import os
-sys.path.insert(0,os.path.join(os.environ['HOME'],'NASA_ULI/NASA_ULI_InfoFusion/src/PARA-ATM/')
+sys.path.insert(0,os.path.join(os.environ['HOME'],'NASA_ULI/NASA_ULI_InfoFusion/src/')
 
 from PARA_ATM.Commands import groundSSD
 from PARA_ATM.Commands import Visualize_NATS as vn
 
+import psycopg2
 import pandas as pd
 import numpy as np
 
@@ -59,8 +60,8 @@ def main(infile):
     traf['time'] = pd.to_datetime(1121238067+traf['time'].astype(int),unit='s') 
     
     #set up groundSSD
-    irrelevant_params = ['cursor','map','input_source','lookahead_time']
-    ssd = groundSSD(*irrelevant_params)
+    irrelevant_params = ['cursor','map','input_source']
+    ssd = groundSSD.Command(*irrelevant_params)
 
     #generate lookahead times from distribution
     lookaheads = get_lookahead_list()
@@ -91,4 +92,4 @@ def main(infile):
     return across_lookahead_results
 
 if __name__ == '__main__':
-    main(argv[1])
+    main(sys.argv[1])
