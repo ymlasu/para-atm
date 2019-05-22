@@ -460,10 +460,10 @@ class Command:
             raise Exception('Enter an airport, IFF file, or NATS sim file name')
 
         results = []
-        #check each second or lookahead time window
-        timestep = max(1,int(self.lookahead))
+        #convert to milliseconds
+        timestep = int(float(self.lookahead)*1e3)
         #group aircraft by time
-        for g in traf.groupby(pd.Grouper(key='time',freq='%ds'%timestep)):
+        for g in traf.groupby(pd.Grouper(key='time',freq='%dms'%timestep)):
             try:
                 if g[1].empty:
                     continue
