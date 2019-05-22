@@ -54,4 +54,4 @@ class Command:
         elif len(self.db) ==1 and 'asdex' in self.db:
             results = asdex
 
-        return ['TDDS',results,self.airportIATA]
+        return ['readTDDS',results,self.airportIATA]

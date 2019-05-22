@@ -221,7 +221,7 @@ class Command:
         N_angle = 180
         alpham  = 0.4999 * np.pi
         betalos = np.pi / 4
-        adsbmax = 65 * nm
+        adsbmax = 65 * 5280 * ft_per_m
         beta = 1.5 * betalos
         angles = np.arange(0, 2*np.pi, 2*np.pi/N_angle)
         #segments of the unit circle
@@ -279,7 +279,7 @@ class Command:
         cosqdrtanalpha = cosqdr * tanalpha
         sinqdrtanalpha = sinqdr * tanalpha
     
-        conflict = (traffic.iloc[ind1[list(np.where(dist==hsep)[0])]],traffic.iloc[ind2[list(np.where(dist==hsep)[0])]])
+        #conflict = (traffic.iloc[ind1[list(np.where(dist==hsep)[0])]],traffic.iloc[ind2[list(np.where(dist==hsep)[0])]])
         FPFs = []
         for i in range(len(traffic)):
             # Relevant x1,y1,x2,y2 (x0 and y0 are zero in relative velocity space)
@@ -288,7 +288,7 @@ class Command:
             y1 = (cosqdr - sinqdrtanalpha) * 2 * ac_info[i]['vmax']
             y2 = (cosqdr + sinqdrtanalpha) * 2 * ac_info[i]['vmax']
             
-            if  (dist==hsep).any(): #envision this as if acid in conflict['callsign'], but doesn't work like i thought
+            if  True: #(dist==hsep).any(): #envision this as if acid in conflict['callsign'], but doesn't work like i thought
                 # SSD for aircraft i
                 # Get indices that belong to aircraft i
                 ind = np.where(np.logical_or(ind1 == i,ind2 == i))[0]
@@ -310,7 +310,7 @@ class Command:
                     # Now account for ADS-B range in indices of other aircraft (i_other)
                     ind = ind[ac_adsb]
                     i_other = i_other[ac_adsb]
-
+                
                 # VO from 2 to 1 is mirror of 1 to 2. Only 1 to 2 can be constructed in
                 # this manner, so need a correction vector that will mirror the VO
                 fix = np.ones(np.shape(i_other))
@@ -416,8 +416,7 @@ class Command:
                     # Update calculatable ARV for resolutions
                     ARV_calc_loc[i] = ARV_calc
                 fpf = ARV_area_loc[i]/(FRV_area_loc[i]+ARV_area_loc[i])
-                FPFs.append([traffic.iloc[i]['time'],traffic.iloc[i]['callsign'],np.random.choice([1.0,np.random.rand()])])
-                #FPFs.append([traffic.iloc[i]['time'],traffic.iloc[i]['callsign'],fpf])
+                FPFs.append([traffic.iloc[i]['time'],traffic.iloc[i]['callsign'],fpf])
         FPFs = pd.DataFrame(FPFs)
         
         return FPFs
@@ -431,7 +430,7 @@ class Command:
             self.cursor.execute("SELECT time,callsign,status,lat,lon FROM smes WHERE lat>'%f' AND lat<'%f' AND lon>'%f' AND lon<'%f'" %(lat-1,lat+1,lon-1,lon+1))
             traf = pd.DataFrame(self.cursor.fetchall(),columns=['time','callsign','status','latitude','longitude'])
         elif self.NATS_path: #use nats sim output
-            from PARA_ATM.Commands import Visualize_NATS as vn
+            from PARA_ATM.Commands import readNATS as vn
             cmd = vn.Command(self.cursor,self.NATS_path)
             self.map.commandParameters = cmd.executeCommand()
             self.map.initMap()
@@ -445,7 +444,7 @@ class Command:
             #add simulation start time to delta t
             traf['time'] = pd.to_datetime(1121238067+traf['time'].astype(int),unit='s')
         elif self.IFF_path: #use sherlock data
-            from PARA_ATM.Commands import IFF_Reader as ir
+            from PARA_ATM.Commands import readIFF as ir
             cmd = ir.Command(self.cursor,self.IFF_path)
             self.map.commandParameters = cmd.executeCommand()
             self.map.initMap()

@@ -54,15 +54,20 @@ class Command:
                 results = dataframe of shape (# position records, 12)
         """
         #check for table
-        self.cursor.execute("SELECT * FROM \"%s\""%(self.filename))
-        if bool(self.cursor.rowcount):
-            results = pd.DataFrame(self.cursor.fetchall())
-            results.columns = ['time','callsign','origin','destination','latitude','longitude','altitude','rocd','tas','heading','status']
-            results[['latitude','longitude','altitude','heading']] = results[['latitude','longitude','altitude','heading']].replace(r'[^0-9,.,-]+','0',regex=True)
-            results[['latitude','longitude','altitude','heading']] = results[['latitude','longitude','altitude','heading']].astype(float)
-            results['status'] = results['status'].fillna('TAKEOFF/LANDING')
-            return ['IFF_Reader', results, self.filename]
-        
+        try:
+            self.cursor.execute("SELECT * FROM \"%s\" WHERE altitude='1.00'"%self.filename)
+            #self.cursor.execute("SELECT * FROM \"%s\""%(self.filename))
+            if bool(self.cursor.rowcount):
+                results = pd.DataFrame(self.cursor.fetchall())
+                results.columns = ['id','time','callsign','origin','destination','latitude','longitude','altitude','rocd','tas','heading','status']
+                del results['id']
+                results[['latitude','longitude','altitude','heading']] = results[['latitude','longitude','altitude','heading']].replace(r'[^0-9,.,-]+','0',regex=True)
+                results[['latitude','longitude','altitude','heading']] = results[['latitude','longitude','altitude','heading']].astype(float)
+                results['status'] = results['status'].fillna('TAKEOFF/LANDING')
+                return ['readIFF', results, self.filename]
+        except Exception as e:
+            print(e)
+            return
         #src directory
         parentPath = str(Path(__file__).parent.parent.parent)
         #trajectory record rows have different fields than header rows
@@ -173,4 +178,4 @@ class Command:
         data=data[['recTime','AcId','Orig','Dest','coord1','coord2','alt','rateOfClimb','groundSpeed','course']]   
         data.columns = ['time','callsign','origin','destination','latitude','longitude','altitude','rocd','tas','heading','mode']
 
-        return ["IFF_Reader", data]
+        return ["readIFF", data,self.filename]

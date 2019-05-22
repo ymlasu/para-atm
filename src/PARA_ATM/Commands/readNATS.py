@@ -31,6 +31,15 @@ class Command:
                 command name to be passed to MapView, etc.
                 results = dataframe of shape (# position records, 12)
         """
+        try:
+            self.cursor.execute("SELECT * FROM \"%s\""%self.filename)
+            results = pd.DataFrame(self.cursor.fetchall())
+            results.columns = ['id','time','callsign','origin','destination','latitude','longitude','altitude','rocd','tas','heading','sector','status']
+            del results['id']
+            del results['sector']
+            return ['readNATS',results,self.filename]
+        except:
+            pass
         results = None
         #src directory
         parentPath = str(Path(__file__).parent.parent.parent)
@@ -62,6 +71,6 @@ class Command:
         try:
             results.to_sql(self.filename, engine)
         except:
-            print('Table already exists')
+            print('DB Error')
 
-        return ["Visualize_NATS", results]
+        return ["readNATS", results]
