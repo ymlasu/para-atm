@@ -20,9 +20,17 @@ class Command:
     '''
     
     #Here, the database connector and the parameter are passed as arguments. This can be changed as per need.
-    def __init__(self, cursor, filename, *args):
+    def __init__(self, cursor, filename, **kwargs):
         self.cursor = cursor
-        self.filename = filename
+        self.kwargs = {}
+        if type(filename) == str:
+            self.filename = filename
+            self.kwargs = kwargs
+        else:
+            self.filename = filename[0]
+            for i in filename[1:]:
+                k,v = i.split('=')
+                self.kwargs[k] = v
     
     #Method name executeCommand() should not be changed. It executes the query and displays/returns the output.
     def executeCommand(self):
@@ -32,14 +40,21 @@ class Command:
                 results = dataframe of shape (# position records, 12)
         """
         try:
-            self.cursor.execute("SELECT * FROM \"%s\""%self.filename)
+            query = "SELECT * FROM \"%s\""%self.filename
+            conditions = []
+            for k,v in self.kwargs.items():
+                conditions.append("%s='%s'"%(k,v))
+            if self.kwargs:
+                query += " WHERE "
+                query += " AND ".join(conditions)
+            self.cursor.execute(query)
             results = pd.DataFrame(self.cursor.fetchall())
             results.columns = ['id','time','callsign','origin','destination','latitude','longitude','altitude','rocd','tas','heading','sector','status']
             del results['id']
             del results['sector']
             return ['readNATS',results,self.filename]
-        except:
-            pass
+        except Exception as e:
+            print(e)
         results = None
         #src directory
         parentPath = str(Path(__file__).parent.parent.parent)

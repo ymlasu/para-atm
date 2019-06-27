@@ -20,6 +20,9 @@ import pandas as pd
 import numpy as np
 import pyclipper
 
+import warnings
+warnings.filterwarnings("ignore")
+
 #conversion from miles to nautical miles
 nm = 0.868976
 #conversion from feet to meters
@@ -229,6 +232,7 @@ class Command:
         circle_tup,circle_lst = tuple(),[]
         for i in range(len(traffic)):
             
+            '''
             if ac_info[i]['vmax'] == 30*nm: #taxi
                 heading = traffic.iloc[i]['heading']
                 #put between 0-360
@@ -241,7 +245,8 @@ class Command:
                     xyc[opp_heading_ind-45+j] = xyc[opp_heading_ind-45+j] * (1+j/45)
                 for j in range(45):
                     xyc[opp_heading_ind+j] = xyc[opp_heading_ind+j] * (2-j/45)
-            
+            '''
+
             circle_tup+=((tuple(map(tuple, np.flipud(xyc * ac_info[i]['vmax']))), tuple(map(tuple , xyc * ac_info[i]['vmin'])),),)
             circle_lst.append([list(map(list, np.flipud(xyc * ac_info[i]['vmax']))), list(map(list , xyc * ac_info[i]['vmin'])),])
        
@@ -340,11 +345,11 @@ class Command:
 
                 # Add each other other aircraft to clipper as clip
                 for j in range(np.shape(i_other)[0]):
-                    ## Debug prints
-                    ## print(traf.id[i] + " - " + traf.id[i_other[j]])
-                    ## print(dist[ind[j]])
+                    if traffic.loc[traffic.index[j],'callsign'] == traffic.loc[traffic.index[i],'callsign']:
+                        continue
+                    
                     # Scale VO when not in LOS
-                    if dist[ind[j]] > hsep:
+                    if True:#dist[ind[j]] > hsep:
                         # Normally VO shall be added of this other a/c
                         VO = pyclipper.scale_to_clipper(tuple(map(tuple,xy[j,:,:])))
                     else:
@@ -367,7 +372,10 @@ class Command:
                         # Scale darttip
                         VO = pyclipper.scale_to_clipper(tuple(map(tuple,xy_los)))
                     # Add scaled VO to clipper
-                    pc.AddPath(VO, pyclipper.PT_CLIP, True)
+                    try:
+                        pc.AddPath(VO, pyclipper.PT_CLIP, True)
+                    except:
+                        pass
 
                 # Execute clipper command
                 FRV = pyclipper.scale_from_clipper(pc.Execute(pyclipper.CT_INTERSECTION, pyclipper.PFT_NONZERO, pyclipper.PFT_NONZERO))

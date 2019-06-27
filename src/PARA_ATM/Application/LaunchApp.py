@@ -15,6 +15,7 @@ import sys
 sys.path.insert(0, '/home/dyn.datasys.swri.edu/mhartnett/NASA_ULI/NASA_ULI_InfoFusion/src/')
 
 from PARA_ATM import *
+from PARA_ATM.Commands import readNATS,readIFF,readTDDS
 import time
 
 class GitHub(QWidget):
@@ -57,7 +58,7 @@ class ParaATM(QWidget):
         
         #Application-level data definition
         self.flightSelected = ""
-        self.flightList = self.getFlightList()
+        self.tableList = self.getTableList()
         self.dateRangeSelected = []
         self.commandParameters = []
         self.filterToggles = list(range(1, 5))
@@ -84,13 +85,36 @@ class ParaATM(QWidget):
         dates = [str(date) for date in range(1,32)]
         years = ["2017", "2018"]
             
-        #Populate flight list for trajectory selection
-        self.flightPickerLayout = QHBoxLayout()    
-        self.flightSelection = QComboBox()
-        self.flightSelection.addItems(self.flightList)
-        self.flightPickerLayout.addWidget(QLabel("Flight: "))
-        self.flightPickerLayout.addWidget(self.flightSelection)
+        #Populate table list for trajectory selection
+        self.tablePickerLayout = QHBoxLayout()    
+        self.tableSelection = QComboBox()
+        self.tableSelection.addItems(self.tableList)
+        self.tablePickerLayout.addWidget(QLabel("Available Tables: "))
+        self.tablePickerLayout.addWidget(self.tableSelection)
         
+        def show_trajectory():
+            table = self.tableSelection.currentText()
+            acid = self.flightSelection.currentText()
+            cmd = readNATS.Command(self.cursor,table,callsign=acid)
+            self.commandParameters = cmd.executeCommand()
+            self.initMap()
+
+        def populate_flights():
+            query = "SELECT DISTINCT callsign FROM \"%s\""%self.tableSelection.currentText()
+            print(query)
+            self.cursor.execute(query)
+            flightList = [i[0] for i in self.cursor.fetchall()]
+            self.flightPickerLayout = QHBoxLayout()
+            self.flightSelection = QComboBox()
+            self.flightSelection.addItems(flightList)
+            self.flightPickerLayout.addWidget(QLabel("Flights: "))
+            self.flightPickerLayout.addWidget(self.flightSelection)
+            self.flightSelection.activated.connect(show_trajectory)
+            self.flightSelectionLayout.addLayout(self.flightPickerLayout)
+
+        self.tableSelection.activated.connect(populate_flights)
+
+        '''
         #Data range start for trajectory plotting
         self.fromDatePicker = QHBoxLayout()
         self.simulationStartMonth = QComboBox(self)
@@ -112,7 +136,7 @@ class ParaATM(QWidget):
         self.toDatePicker.addWidget(self.simulationEndYear)
         
         #Widget size scaling for better UI
-        self.flightSelection.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        #self.flightSelection.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         self.simulationStartMonth.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         self.simulationStartDate.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         self.simulationStartYear.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
@@ -134,19 +158,24 @@ class ParaATM(QWidget):
         #Button to trigger and plot trajectories
         self.plotButton = QPushButton("Plot Trajectory")
         self.plotButton.clicked.connect(self.plotTrajectory)
-        
+        '''
         #Add flight selection widgets to UI
-        self.flightSelectionLayout.addLayout(self.flightPickerLayout)
+        self.flightSelectionLayout.addLayout(self.tablePickerLayout)
+        
+        '''
         self.flightSelectionLayout.addLayout(self.fromDatePicker)
         self.flightSelectionLayout.addLayout(self.toDatePicker)
         self.flightSelectionLayout.addWidget(self.plotButton)
-        
+        '''
+
         #Command line UI elements with action upon execution request
         self.commandInput = QLineEdit()
-        self.commandExecute = QPushButton("Execute Command")
-        self.commandExecute.clicked.connect(self.executeCommand)
+        self.commandInput.returnPressed.connect(self.executeCommand)
+        #self.commandExecute = QPushButton("Execute Command")
+        #self.commandExecute.clicked.connect(self.executeCommand)
+        self.actionsLayout.addWidget(QLabel("Command Line: "))
         self.actionsLayout.addWidget(self.commandInput)
-        self.actionsLayout.addWidget(self.commandExecute)
+        #self.actionsLayout.addWidget(self.commandExecute)
         
         #Adding toggles for map filters and overlays with action upon execution request
         self.filterLayoutOptions = QHBoxLayout()
@@ -221,12 +250,16 @@ class ParaATM(QWidget):
         self.mapLayout.addWidget(self.mapView)
 
     '''
-        getFlightList() fetches the callsign list of flights to be displayed for selection
+        getTableList() fetches the callsign list of flights to be displayed for selection
     '''
-    def getFlightList(self):
+    def getTableList(self):
         
         #Execute query to fetch flight data
-        self.cursor.execute("SELECT DISTINCT callsign FROM flight_data")
+        query = "SELECT t.table_name \
+                 FROM information_schema.tables t \
+                 JOIN information_schema.columns c ON c.table_name = t.table_name \
+                 WHERE c.column_name LIKE 'callsign'"
+        self.cursor.execute(query)
         results = self.cursor.fetchall()
         return [result[0] for result in results]
         
@@ -318,6 +351,8 @@ class ParaATM(QWidget):
                 print('NATS output error')
                 raise Exception
             w.showFullScreen()
+        elif commandName=='groundSSD':
+            print(self.commandParameters[1])
         else:
             self.initMap()
             print(self.commandParameters[1])
