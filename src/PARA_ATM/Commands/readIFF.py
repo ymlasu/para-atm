@@ -21,13 +21,21 @@ class Command:
     '''
     
     #Here, the database connector and the parameter are passed as arguments. This can be changed as per need.
-    def __init__(self, cursor, filename, *args):
+    def __init__(self, cursor, filename, **kwargs):
         self.cursor = cursor
-        self.filename = filename
         self.lock = Lock()
         self.procs = []
         self.n_procs = 8
         self.q = Queue()
+        self.kwargs = {}
+        if type(filename) == str:
+            self.filename = filename
+            self.kwargs = kwargs
+        else:
+            self.filename = filename[0]
+            for i in filename[1:]:
+                k,v = i.split('=')
+                self.kwargs[k] = v 
 
     def sub(self,last_index,index):
         start = last_index+2

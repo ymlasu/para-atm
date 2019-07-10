@@ -46,6 +46,8 @@ class ParaATM(QWidget):
     '''
     def __init__(self):
         
+        self.NATS_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)),'../../NATS/Server/')
+        self.SHERLOCK_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)),'../../../data/Sherlock/')
         #Initialize application window
         self.application = QApplication(sys.argv)
         self.window = QWidget()
@@ -66,7 +68,19 @@ class ParaATM(QWidget):
         #Build and launch application UI
         self.buildUI()
         
-        
+    def menu_trajectory(self):
+        action = self.sender()
+        acid = action.text()
+        table = action.parent().title()
+        if os.path.exists(self.NATS_DIR+table):
+            cmd = readNATS.Command(self.cursor,[table,'callsign='+acid])
+        elif os.path.exists(self.SHERLOCK_DIR+table):
+            cmd = readIFF.Command(self.cursor,[table,'callsign='+acid])
+        else:
+            print(self.NATS_DIR,self.SHERLOCK_DIR)
+        self.commandParameters = cmd.executeCommand()
+        self.initMap()
+
     '''
         buildUI() adds the UI elements and includes definitions for functional execution
     '''
@@ -80,11 +94,20 @@ class ParaATM(QWidget):
         self.actionsLayout = QVBoxLayout()
         self.liveFlightsLayout = QVBoxLayout()
         
-        #Flight date range definition
-        months = ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"]
-        dates = [str(date) for date in range(1,32)]
-        years = ["2017", "2018"]
-            
+        #Make menu
+        bar = QMenuBar()
+        display = bar.addMenu("View")
+        for table in self.tableList:
+            dataset = display.addMenu(table)
+            query = "SELECT DISTINCT callsign FROM \"%s\""%table
+            self.cursor.execute(query)
+            flightList = [i[0] for i in self.cursor.fetchall()]
+            for acid in flightList:
+                action = dataset.addAction(acid)
+                action.triggered.connect(self.menu_trajectory)
+
+        self.menuLayout.addWidget(bar)
+
         #Populate table list for trajectory selection
         self.tablePickerLayout = QHBoxLayout()    
         self.tableSelection = QComboBox()
@@ -101,9 +124,10 @@ class ParaATM(QWidget):
 
         def populate_flights():
             query = "SELECT DISTINCT callsign FROM \"%s\""%self.tableSelection.currentText()
-            print(query)
             self.cursor.execute(query)
             flightList = [i[0] for i in self.cursor.fetchall()]
+            if self.flightPickerLayout:
+                self.flightSelectionLayout.removeItem(self.flightPickerLayout)
             self.flightPickerLayout = QHBoxLayout()
             self.flightSelection = QComboBox()
             self.flightSelection.addItems(flightList)
@@ -112,8 +136,8 @@ class ParaATM(QWidget):
             self.flightSelection.activated.connect(show_trajectory)
             self.flightSelectionLayout.addLayout(self.flightPickerLayout)
 
+        self.flightPickerLayout=None
         self.tableSelection.activated.connect(populate_flights)
-
         '''
         #Data range start for trajectory plotting
         self.fromDatePicker = QHBoxLayout()

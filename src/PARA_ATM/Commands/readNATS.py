@@ -78,7 +78,27 @@ class Command:
             output.iloc[start:end,6] = row['tas']
             results=results.append(output.iloc[start:end][['time','nrows','tas_ground','dest_elev','lat','lon','altitude','rocd','tas','heading','sect_name','mode']])
             
-        results.columns = ['time','callsign','origin','destination','latitude','longitude','altitude','rocd','tas','heading','sector','status']
+        col = ['time','callsign','origin','destination','latitude','longitude','altitude','rocd','tas','heading','sector','status']
+        results.columns = col
+        results['time'] = pd.to_datetime(results['time'].astype(float),unit='s')
+        floats = ['latitude','longitude','altitude','rocd','tas','heading']
+        strs = ['callsign','origin','destination','sector','status']
+        results[floats] = results[floats].astype(float)
+        results[strs] = results[strs].astype(str).fillna('unknown')
+        print(results)
+        if (results.at[2,'time'] - results.at[1,'time']) >= pd.to_timedelta('1s'):
+            temp = pd.DataFrame()
+            results = results.set_index('time')
+            for acid in np.unique(results['callsign']):
+                upsample = results[results['callsign']==acid].resample('ms')
+                interp = upsample.interpolate(method='linear')
+                try:
+                    interp[strs] = interp[strs].interpolate(method='pad')
+                except Exception as e:
+                    print(e)
+                temp = temp.append(interp,ignore_index=True)
+            results = temp.fillna(method='ffill')
+
 
         #add to database
         engine = create_engine('postgresql://paraatm_user:paraatm_user@localhost:5432/paraatm')
