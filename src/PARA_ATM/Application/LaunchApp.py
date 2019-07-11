@@ -16,7 +16,93 @@ sys.path.insert(0, '/home/dyn.datasys.swri.edu/mhartnett/NASA_ULI/NASA_ULI_InfoF
 
 from PARA_ATM import *
 from PARA_ATM.Commands import readNATS,readIFF,readTDDS
+from bokeh.io import output_file, show, curdoc
+from bokeh.layouts import layout
+from bokeh.models import CategoricalColorMapper, Div, HoverTool, ColumnDataSource, Panel, CustomJS
+from bokeh.models.widgets import MultiSelect, Select, Slider, RangeSlider
+from bokeh.application import Application
+from bokeh.application.handlers import FunctionHandler
+from bokeh.embed import components
+from bokeh.tile_providers import CARTODBPOSITRON
+from bokeh.plotting import figure
+from flask import Flask, render_template, request
+from itertools import repeat
 import time
+
+#Flask app
+app = Flask(__name__)
+
+def create_figure(name,env):
+    if name == 'map':
+        p = figure(x_range=(-2000000, 6000000), y_range=(-1000000, 7000000),
+                    x_axis_type='mercator', y_axis_type='mercator')
+        p.add_tile(CARTODBPOSITRON)
+        return p
+    elif name == 'time_slider':
+        pass
+    elif name == 'command_box':
+        pass
+    elif name == 'flight_select':
+        pass
+    elif name == 'help':
+        pass
+
+def dashboard(sections):
+    """
+        Aggregates elements of the GUI
+    """
+    tools = 'pan,wheel_zoom,box_zoom'
+    dash = layout(sections, sizing_mode='stretch_both')
+    return dash
+
+@app.route('/')
+def index():
+    elements = [request.args.get('elements')]
+    if not elements[0]:
+        elements = ['map']#['map','time_slider','command_box','flight_select','help']
+    env = Environment()
+    plots = list(map(create_figure,elements,repeat(env)))
+    dash = dashboard(plots)
+    script, div = components(dash)
+    return render_template("dashboard.html", script=script, div=div)
+
+class Environment():
+    def __init__(self):
+        self.NATS_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)),'../../NATS/Server/')
+        self.SHERLOCK_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)),'../../../data/Sherlock/')
+        #Set connection to postgres database based on the credentials mentioned
+        self.connection = psycopg2.connect(database="paraatm", user="paraatm_user", password="paraatm_user", host="localhost", port="5432")
+        self.cursor = self.connection.cursor()
+        self.flightSelected = ""
+        self.tableList = self.getTableList()
+        self.dateRangeSelected = []
+        self.commandParameters = []
+        self.filterToggles = [0 for i in range(4)]
+
+    def initMap(self):
+
+        #Set the toggle values based on user selection
+        '''
+        self.filterToggles[0] = 1 if self.airportToggle.isChecked() else 0
+        self.filterToggles[1] = 1 if self.waypointToggle.isChecked() else 0
+        self.filterToggles[2] = 1 if self.weatherToggle.isChecked() else 0
+        self.filterToggles[3] = 1 if self.sectorToggle.isChecked() else 0
+        '''
+
+        #Invoke MapView to plot the map onto the application layout based on the user's preferences as parameters
+        mapHTML = MapView.buildMap(self.flightSelected, self.dateRangeSelected, self.filterToggles, self.cursor, self.commandParameters)
+        return mapHTML
+
+    def getTableList(self):
+
+        #Execute query to fetch flight data
+        query = "SELECT t.table_name \
+                 FROM information_schema.tables t \
+                 JOIN information_schema.columns c ON c.table_name = t.table_name \
+                 WHERE c.column_name LIKE 'callsign'"
+        self.cursor.execute(query)
+        results = self.cursor.fetchall()
+        return [result[0] for result in results]
 
 class GitHub(QWidget):
     '''
@@ -36,8 +122,6 @@ class GitHub(QWidget):
         
         #Add the view to main application
         self.githubLayout.addWidget(self.githubView)
-
-
 
 class ParaATM(QWidget):
     '''
@@ -269,9 +353,10 @@ class ParaATM(QWidget):
         self.filterToggles[3] = 1 if self.sectorToggle.isChecked() else 0
         
         #Invoke MapView to plot the map onto the application layout based on the user's preferences as parameters
-        self.mapHTML = MapView.buildMap(self.flightSelected, self.dateRangeSelected, self.filterToggles, self.cursor, self.commandParameters)
-        self.mapView.setHtml(self.mapHTML)
-        self.mapLayout.addWidget(self.mapView)
+        mapHTML = MapView.buildMap(self.flightSelected, self.dateRangeSelected, self.filterToggles, self.cursor, self.commandParameters)
+        return mapHTML
+        #self.mapView.setHtml(self.mapHTML)
+        #self.mapLayout.addWidget(self.mapView)
 
     '''
         getTableList() fetches the callsign list of flights to be displayed for selection
@@ -388,4 +473,4 @@ def main():
     paraAtm = ParaATM()
 
 if __name__ == '__main__':
-    main()
+    app.run(host='0.0.0.0', port=5000, debug=True)
