@@ -17,7 +17,7 @@ sys.path.insert(0, '/home/dyn.datasys.swri.edu/mhartnett/NASA_ULI/NASA_ULI_InfoF
 from PARA_ATM import *
 from PARA_ATM.Commands import readNATS,readIFF,readTDDS
 from bokeh.io import output_file, show, curdoc
-from bokeh.layouts import layout
+from bokeh.layouts import column,WidgetBox,layout
 from bokeh.models import CategoricalColorMapper, Div, HoverTool, ColumnDataSource, Panel, CustomJS
 from bokeh.models.widgets import MultiSelect, Select, Slider, RangeSlider
 from bokeh.application import Application
@@ -43,7 +43,10 @@ def create_figure(name,env):
     elif name == 'command_box':
         pass
     elif name == 'flight_select':
-        pass
+        tables = Select(options=env.tableList)
+        tables.on_change('options',env.set_data_source)
+        #flights = MultiSelect(env.populate_flights())
+        return tables
     elif name == 'help':
         pass
 
@@ -59,11 +62,13 @@ def dashboard(sections):
 def index():
     elements = [request.args.get('elements')]
     if not elements[0]:
-        elements = ['map']#['map','time_slider','command_box','flight_select','help']
+        elements = ['map','flight_select']#['map','time_slider','command_box','flight_select','help']
     env = Environment()
     plots = list(map(create_figure,elements,repeat(env)))
-    dash = dashboard(plots)
-    script, div = components(dash)
+    controls = WidgetBox(plots[1])
+    layout = column(controls,plots[0])
+    #dash = dashboard(plots)
+    script, div = components(layout)
     return render_template("dashboard.html", script=script, div=div)
 
 class Environment():
@@ -103,6 +108,35 @@ class Environment():
         self.cursor.execute(query)
         results = self.cursor.fetchall()
         return [result[0] for result in results]
+    
+    def set_data_source(self,attr,new,old):
+        print('updating table')
+        if os.path.exists(self.NATS_DIR+new):
+            cmd = readNATS.Command(self.cursor,new)
+        elif os.path.exists(self.SHERLOCK_DIR+new):
+            cmd = readIFF.Command(self.cursor,new)
+        results = cmd.executeCommand()[1]
+        print('got data')
+        acids = np.unique(results['callsign'])
+        flights = MultiSelect(options=acids)
+        flights.on_change('options',self.update)
+        print('set up flights')
+        if flights in controls.children:
+            print('flights not in widget list')
+            controls.children[1] = flights
+        else:
+            print('flights in widget list')
+            controls.children.insert(2,flights)
+        self.source = ColumnDataSource(data=results)
+
+    def update(self,attr,new,old):
+        pass
+
+    def populate_flights(self):
+        query = "SELECT DISTINCT callsign FROM \"%s\""%self.tableSelection.currentText()
+        self.cursor.execute(query)
+        flightList = [i[0] for i in self.cursor.fetchall()]
+        return flightList
 
 class GitHub(QWidget):
     '''
