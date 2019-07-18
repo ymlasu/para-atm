@@ -25,7 +25,6 @@ class Command:
         self.kwargs = {}
         if type(filename) == str:
             self.filename = filename
-            self.kwargs = kwargs
         else:
             self.filename = filename[0]
             for i in filename[1:]:
@@ -39,6 +38,8 @@ class Command:
                 command name to be passed to MapView, etc.
                 results = dataframe of shape (# position records, 12)
         """
+        if self.filename == '':
+            return ('readNATS',pd.DataFrame())
         try:
             query = "SELECT * FROM \"%s\""%self.filename
             conditions = []
