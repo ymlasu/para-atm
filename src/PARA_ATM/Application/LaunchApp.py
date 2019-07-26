@@ -66,8 +66,7 @@ controls = WidgetBox()
 results = pd.DataFrame(columns=['latitude','longitude'])
 source = ColumnDataSource(results)
 flights = MultiSelect()
-p = figure(
-        x_axis_type='mercator', y_axis_type='mercator')
+p = figure(x_axis_type='mercator', y_axis_type='mercator')
 p.add_tile(CARTODBPOSITRON)
 layout = layout(controls,p)
 tables = Select(options=tableList,value=tableList[0])
@@ -98,7 +97,10 @@ def set_data_source(attr,new,old):
     elif os.path.exists(SHERLOCK_DIR+t):
         cmd = readIFF.Command(cursor,t)
     results = cmd.executeCommand()[1]
-    results['time'] = results['time'].astype(float)
+    if os.path.exists(NATS_DIR+t):
+        results['time'] = results['time'].astype(float)
+    else:
+        results['time'] = results['time'].astype('datetime64[s]').astype('int')
     acids = np.unique(results['callsign']).tolist()
     times = sorted(np.unique(results['time']).tolist())
     flights = MultiSelect(options=acids,value=[acids[0],])

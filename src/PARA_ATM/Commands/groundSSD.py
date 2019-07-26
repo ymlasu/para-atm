@@ -450,20 +450,20 @@ class Command:
             y = np.cos(rad) * data['tas'].astype(float)
             traf = data[['time','callsign','latitude','longitude','altitude','rocd','tas','status','heading']].join(pd.DataFrame({'x':x,'y':y}))
             #add simulation start time to delta t
-            traf['time'] = pd.to_datetime(1121238067+traf['time'].astype(int),unit='s')
+            #traf['time'] = pd.to_datetime(1121238067+traf['time'].astype(int),unit='s')
         elif self.IFF_path: #use sherlock data
             from PARA_ATM.Commands import readIFF as ir
             cmd = ir.Command(self.cursor,self.IFF_path)
             self.map.commandParameters = cmd.executeCommand()
-            self.map.initMap()
+            #self.map.initMap()
             data = self.map.commandParameters[1]
             #convert heading to radians
             rad = np.deg2rad(data['heading'])
             #extract x and y velocities from heading and tas
             x = np.sin(rad) * data['tas'].astype(float)
             y = np.cos(rad) * data['tas'].astype(float)
-            traf = data[['time','callsign','latitude','longitude','altitude','rocd','tas','status','heading']].join(pd.DataFrame({'x':x,'y':y}))
-            traf['time'] = pd.to_datetime(traf['time'].astype(int),unit='s')
+            traf = data[['time','callsign','latitude','longitude','altitude','rocd','tas','status','heading']].join(pd.DataFrame({'x':x,'y':y})).dropna()
+            #traf['time'] = pd.to_datetime(traf['time'].astype(int),unit='s')
         else:
             raise Exception('Enter an airport, IFF file, or NATS sim file name')
 
