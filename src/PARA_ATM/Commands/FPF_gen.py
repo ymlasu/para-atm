@@ -38,8 +38,9 @@ def get_lookahead_list():
 def solve_fpf(ssd,traf,timestep,across_lookahead_results):
     #results for this lookahead
     results = []
+    print(timestep)
     #group aircraft by time
-    for g in traf.groupby(pd.Grouper(key='time',freq='%ds'%timestep)):
+    for g in traf.groupby(pd.Grouper(key='time',freq='%fms'%timestep*1000)):
         try:
             if g[1].empty:
                 continue
@@ -52,11 +53,10 @@ def solve_fpf(ssd,traf,timestep,across_lookahead_results):
         fpf = ssd.conflict(g[1],ac_info)
         if type(fpf) != list and type(fpf) != type(None) and not fpf.empty:
             results.append(fpf)
-
     results = pd.concat(results)
     results.columns=['time','callsign','fpf']
-    results.to_csv('fpf_%f_nominal.csv'%timestep)
-    across_lookahead_results.append(results)
+    results.to_csv('fpf_%f_off.csv'%timestep)
+    #across_lookahead_results.append(results)
 
 def main(infile):
     """
@@ -82,7 +82,8 @@ def main(infile):
     x = np.sin(rad) * data['tas'].astype(float)
     y = np.cos(rad) * data['tas'].astype(float)
     traf = data[['time','callsign','latitude','longitude','altitude','rocd','tas','status','heading']].join(pd.DataFrame({'x':x,'y':y})).dropna()
-    
+    print(traf)
+
     #set up groundSSD
     irrelevant_params = ['cursor','map','input_source']
     ssd = groundSSD.Command(*irrelevant_params)
@@ -95,9 +96,11 @@ def main(infile):
     procs = []
     
     for timestep in sorted(lookaheads):
+        print(timestep)
         if os.path.isfile('fpf_%f_nominal.csv'%timestep):
-            across_lookahead_results.append(pd.read_csv('fpf_%f_nominal.csv'%timestep))
             continue
+            #across_lookahead_results.append(pd.read_csv('fpf_%f_nominal.csv'%timestep))
+            #continue
         while len(procs) >= n_proc:
             procs[0].join()
             procs.pop(0)
@@ -112,6 +115,7 @@ def main(infile):
 
 if __name__ == '__main__':
     results = main(sys.argv[1])
+    '''
     fig = plt.figure(figsize=(16,9),tight_layout=True)
     look = get_lookahead_list()
     for j,res in enumerate(results):
@@ -129,4 +133,4 @@ if __name__ == '__main__':
             ax.set_title(ac)
         plt.savefig('fpf_%f_nominal.png'%look[j])
         plt.clf()
-
+    '''

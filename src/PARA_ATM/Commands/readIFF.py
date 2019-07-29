@@ -1,18 +1,21 @@
 '''
-
 NASA NextGen NAS ULI Information Fusion
         
 @organization: Southwest Research Institute
 @author: Michael Hartnett
 @date: 04/16/2019
-
 Visualize IFF file
-
 '''
 
 from PARA_ATM import *
 from multiprocessing import Lock, Process, Queue
 from sqlalchemy import create_engine
+
+def value_change(x):
+    try:
+        return float(x)
+    except:
+        return -100.
 
 class Command:
     '''
@@ -52,7 +55,6 @@ class Command:
         ind = np.where(np.bitwise_and(data['groundSpeed'] > 30,data['groundSpeed'] <= 200))[0]
         data.iloc[ind,-1] = 'TAKEOFF/LANDING'
         self.q.put(data[['recTime','AcId','bcnCode','cid','coord1','coord2','alt','rateOfClimb','groundSpeed','course','EvType']])
-        print('done')
 
     #Method name executeCommand() should not be changed. It executes the query and displays/returns the output.
     def executeCommand(self):
@@ -61,9 +63,17 @@ class Command:
                 command name to be passed to MapView, etc.
                 results = dataframe of shape (# position records, 12)
         """
+        start = time.time()
         #check for table
         try:
-            self.cursor.execute("SELECT * FROM \"%s\" WHERE altitude='1.00'"%self.filename)
+            query = "SELECT * FROM \"%s\""%self.filename
+            conditions = []
+            for k,v in self.kwargs.items():
+                conditions.append("%s='%s'"%(k,v))
+            if self.kwargs:
+                query += " WHERE "
+                query += " AND ".join(conditions)
+            self.cursor.execute("SELECT * FROM \"%s\""%self.filename)
             #self.cursor.execute("SELECT * FROM \"%s\""%(self.filename))
             if bool(self.cursor.rowcount):
                 results = pd.DataFrame(self.cursor.fetchall())
@@ -75,7 +85,7 @@ class Command:
                 return ['readIFF', results, self.filename]
         except Exception as e:
             print(e)
-            return
+            self.cursor.connection.rollback()
         #src directory
         parentPath = str(Path(__file__).parent.parent.parent)
         #trajectory record rows have different fields than header rows
@@ -128,9 +138,27 @@ class Command:
             results = results.append(self.q.get())
         for p in self.procs:
             p.join()
+        print('done')
 
         #print(results)
         results.columns = ['time','callsign','origin','destination','latitude','longitude','altitude','rocd','tas','heading','status']
+        results['time'] = pd.to_datetime(results['time'].astype(float),unit='s')
+        floats = ['latitude','longitude','altitude','rocd','tas','heading']
+        strs = ['callsign','origin','destination','status']
+        results = results.loc[results['time'] > (pd.to_datetime(1557561627)+pd.Timedelta(50,unit='m'))]
+        results[floats] = results[floats].applymap(value_change)
+        results[strs] = results[strs].astype(str).fillna('unknown')
+        if (results.at[results.index[0],'time'] - results.at[results.index[1],'time']) >= pd.to_timedelta('1s'):
+            temp = pd.DataFrame()
+            results = results.set_index('time')
+            for acid in np.unique(results['callsign']):
+                upsample = results[results['callsign']==acid].resample('ms')
+                interp = upsample.interpolate(method='linear')
+                try:
+                    interp[strs] = interp[strs].interpolate(method='pad')
+                except Exception as e:
+                    print(e)
+                temp = temp.append(interp,ignore_index=True)
         #add to database
         engine = create_engine('postgresql://paraatm_user:paraatm_user@localhost:5432/paraatm')
 
@@ -139,6 +167,8 @@ class Command:
         except:
             print('Table already exists')
         
+        print(time.time()-start)
+
         return ["IFF_Reader", results]
 
         #TODO Erin's better way, need to integrate
