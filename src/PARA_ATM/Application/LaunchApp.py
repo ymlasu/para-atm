@@ -73,7 +73,7 @@ tables = Select(options=tableList,value=tableList[0])
 time = RangeSlider()
 populated = False
 
-points = p.cross(x='longitude',y='latitude',source=source)
+points = p.inverted_triangle(x='longitude',y='latitude',angle='heading',source=source)
 lines = p.multi_line(xs='longitude',ys='latitude',source=source)
 hover = HoverTool()
 hover.tooltips = [ ("Callsign", "@callsign"), ("Time","@time"), ("Phase","@status") ]
