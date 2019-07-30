@@ -23,7 +23,7 @@ from bokeh.models.widgets import MultiSelect, Select, Slider, RangeSlider
 from bokeh.application import Application
 from bokeh.application.handlers import FunctionHandler
 from bokeh.embed import components
-from bokeh.tile_providers import CARTODBPOSITRON
+from bokeh.tile_providers import get_provider, Vendors
 from bokeh.plotting import figure
 from bokeh.server.server import Server
 from flask import Flask, render_template, request
@@ -63,20 +63,21 @@ def getTableList():
 tableList = getTableList()
 tables = Select(options=tableList,value=tableList[0])
 controls = WidgetBox()
-results = pd.DataFrame(columns=['latitude','longitude'])
+results = pd.DataFrame(columns=['time','latitude','longitude','heading','altitude','tas'])
 source = ColumnDataSource(results)
 flights = MultiSelect()
+tile_provider = get_provider(Vendors.CARTODBPOSITRON)
 p = figure(x_axis_type='mercator', y_axis_type='mercator')
-p.add_tile(CARTODBPOSITRON)
+p.add_tile(tile_provider)
 layout = layout(controls,p)
 tables = Select(options=tableList,value=tableList[0])
 time = RangeSlider()
 populated = False
 
-points = p.inverted_triangle(x='longitude',y='latitude',angle='heading',source=source)
+points = p.triangle(x='longitude',y='latitude',angle='heading',angle_units='deg',source=source)
 lines = p.multi_line(xs='longitude',ys='latitude',source=source)
 hover = HoverTool()
-hover.tooltips = [ ("Callsign", "@callsign"), ("Time","@time"), ("Phase","@status") ]
+hover.tooltips = [ ("Callsign", "@callsign"), ("Time","@time"), ("Phase","@status"), ("Heading","@heading"), ("Altitude","@altitude"), ("Speed","@tas") ]
 p.add_tools(hover)
 
 def update(attr,new,old):
@@ -86,6 +87,8 @@ def update(attr,new,old):
     for acid in f:
         within_time = np.bitwise_and(results['time']>=t[0],results['time']<=t[1])
         data = data.append(results.loc[np.bitwise_and(results['callsign']==acid,within_time)])
+    data['heading'] = data['heading'] - 90
+    data.loc[data['heading']<0,'heading'] = data.loc[data['heading']<0,'heading'] + 360
     points.data_source.data = data.to_dict(orient='list')
     lines.data_source.data = data.to_dict(orient='list')
 
@@ -95,6 +98,8 @@ def set_data_source(attr,new,old):
     if os.path.exists(NATS_DIR+t):
         cmd = readNATS.Command(cursor,t)
     elif os.path.exists(SHERLOCK_DIR+t):
+        cmd = readIFF.Command(cursor,t)
+    else:
         cmd = readIFF.Command(cursor,t)
     results = cmd.executeCommand()[1]
     if os.path.exists(NATS_DIR+t):
