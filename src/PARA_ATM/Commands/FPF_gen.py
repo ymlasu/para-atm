@@ -33,7 +33,7 @@ def get_lookahead_list():
             list of lookahead times in seconds
     """
     #print(np.mean(pd.read_csv('total_response_time_nominal.csv')['total_rt']))
-    return np.round(pd.read_csv('total_response_time_nominal.csv')['total_rt'],decimals=2)
+    return np.round(pd.read_csv('total_response_time_off.csv')['total_rt'],decimals=2)
 
 def solve_fpf(ssd,traf,timestep,across_lookahead_results):
     #results for this lookahead
@@ -55,7 +55,7 @@ def solve_fpf(ssd,traf,timestep,across_lookahead_results):
             results.append(fpf)
     results = pd.concat(results)
     results.columns=['time','callsign','fpf']
-    results.to_csv('fpf_%f_nominal_off_10min.csv'%timestep)
+    results.to_csv('fpf_%f_off_20min.csv'%timestep)
     #across_lookahead_results.append(results)
 
 def main(infile):
@@ -97,8 +97,8 @@ def main(infile):
     
     for timestep in lookaheads:
         print(timestep)
-        #if os.path.isfile('fpf_%f_nominal_off.csv'%timestep):
-        #    continue
+        if os.path.isfile('fpf_%f_nominal_off_20min.csv'%timestep):
+            continue
         #    across_lookahead_results.append(pd.read_csv('fpf_%f_nominal.csv'%timestep))
         #    continue
         while len(procs) >= n_proc:
