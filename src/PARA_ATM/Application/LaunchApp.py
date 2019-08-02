@@ -19,7 +19,7 @@ from PARA_ATM.Commands import readNATS,readIFF,readTDDS
 from bokeh.io import output_file, show, curdoc
 from bokeh.layouts import column,WidgetBox,layout
 from bokeh.models import CategoricalColorMapper, Div, HoverTool, ColumnDataSource, Panel, CustomJS
-from bokeh.models.widgets import MultiSelect, Select, Slider, RangeSlider
+from bokeh.models.widgets import MultiSelect, Select, Slider, RangeSlider, AutocompleteInput
 from bokeh.application import Application
 from bokeh.application.handlers import FunctionHandler
 from bokeh.embed import components
@@ -119,13 +119,14 @@ def set_data_source(attr,new,old):
         controls.children.insert(1,flights)
         controls.children.insert(2,time)
         populated = True
-    results['longitude'],results['latitude'] = merc(results['latitude'].astype(float),results['longitude'].astype(float))
+    results['longitude'],results['latitude'] = merc(np.asarray(results['latitude'].astype(float)),np.asarray(results['longitude'].astype(float)))
 
 tables.on_change('value',set_data_source)
 
 def index():
     global controls
-    controls = WidgetBox(tables)
+    cmdline = AutocompleteInput(completions=['readNATS(','readIFF(','readTDDS(','groundSSD('])
+    controls = WidgetBox(tables,cmdline)
     layout = column(controls,p)
     curdoc().add_root(layout)
 
