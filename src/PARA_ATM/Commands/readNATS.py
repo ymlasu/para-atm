@@ -40,22 +40,12 @@ class Command:
         """
         if self.filename == '':
             return ('readNATS',pd.DataFrame())
+        db_access = DataStore.Access()
         try:
-            query = "SELECT * FROM \"%s\""%self.filename
-            conditions = []
-            for k,v in self.kwargs.items():
-                conditions.append("%s='%s'"%(k,v))
-            if self.kwargs:
-                query += " WHERE "
-                query += " AND ".join(conditions)
-            self.cursor.execute(query)
-            results = pd.DataFrame(self.cursor.fetchall())
-            results.columns = ['id','time','callsign','origin','destination','latitude','longitude','altitude','rocd','tas','heading','sector','status']
-            del results['id']
-            del results['sector']
-            return ['readNATS',results,self.filename]
+            return db_access.getNATSdata(self.filename,self.kwargs)
         except Exception as e:
             print(e)
+            db_access.connection.rollback()
         results = None
         #src directory
         parentPath = str(Path(__file__).parent.parent.parent)

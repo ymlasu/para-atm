@@ -49,6 +49,8 @@ SHERLOCK_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)),'../../.
 connection = psycopg2.connect(database="paraatm", user="paraatm_user", password="paraatm_user", host="localhost", port="5432")
 cursor = connection.cursor()
 
+cmdpath = str(Path(__file__).parent.parent+'/Commands/')
+
 def getTableList():
 
     #Execute query to fetch flight data
@@ -59,6 +61,26 @@ def getTableList():
     cursor.execute(query)
     results = cursor.fetchall()
     return [result[0] for result in results]
+
+def getCmdList():
+    cmdlist = [cmd.split('.')[0] for cmd in os.listdir(cmdpath+'*.py')]
+    return cmdlist 
+
+cmdline = AutocompleteInput(completions=getCmdList()+getTableList())
+
+def runCmd(old,new,attr):
+    commandInput = cmdline.value() 
+    commandName = str(commandInput.split('(')[0])
+    cmd = getattr(__import__('PARA_ATM.Commands',fromlist=[commandName]), commandName)
+    commandArguments = str(commandInput.split('(')[1])[:-1]
+    if ',' in commandArguments:
+        commandArguments = commandArguments.split(',')
+    if commandName == 'groundSSD':
+        commandClass = cmd.Command(cursor,self,commandArguments)
+    else:
+        commandClass = cmd.Command(self.cursor, commandArguments)
+    commandParameters = commandClass.executeCommand()
+    print('command %s executed'%commandName)
 
 tableList = getTableList()
 tables = Select(options=tableList,value=tableList[0])
@@ -125,7 +147,6 @@ tables.on_change('value',set_data_source)
 
 def index():
     global controls
-    cmdline = AutocompleteInput(completions=['readNATS(','readIFF(','readTDDS(','groundSSD('])
     controls = WidgetBox(tables,cmdline)
     layout = column(controls,p)
     curdoc().add_root(layout)

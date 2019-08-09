@@ -65,28 +65,12 @@ class Command:
         """
         start = time.time()
         #check for table
+        db_access = DataStore.Access()
         try:
-            query = "SELECT * FROM \"%s\""%self.filename
-            conditions = []
-            for k,v in self.kwargs.items():
-                conditions.append("%s='%s'"%(k,v))
-            if self.kwargs:
-                query += " WHERE "
-                query += " AND ".join(conditions)
-            self.cursor.execute("SELECT * FROM \"%s\""%self.filename)
-            #self.cursor.execute("SELECT * FROM \"%s\""%(self.filename))
-            if bool(self.cursor.rowcount):
-                results = pd.DataFrame(self.cursor.fetchall())
-                results.columns = ['id','time','callsign','origin','destination','latitude','longitude','altitude','rocd','tas','heading','status']
-                del results['id']
-                results[['latitude','longitude','altitude','heading']] = results[['latitude','longitude','altitude','heading']].replace(r'[^0-9,.,-]+','0',regex=True)
-                results[['latitude','longitude','altitude','heading']] = results[['latitude','longitude','altitude','heading']].astype(float)
-                results['status'] = results['status'].fillna('TAKEOFF/LANDING')
-                results = results[results['latitude'] != -100]
-                return ['readIFF', results, self.filename]
+            return db_access.getIFFdata(self.filename,self.kwargs)
         except Exception as e:
             print(e)
-            self.cursor.connection.rollback()
+            db_access.connection.rollback()
         #src directory
         parentPath = str(Path(__file__).parent.parent.parent)
         #trajectory record rows have different fields than header rows
