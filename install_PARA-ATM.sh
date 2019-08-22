@@ -62,8 +62,7 @@ cd ../../../
 
 #NATS client dependencies
 which conda || export PATH="/home/${USER}/anaconda3/bin:$PATH"
-conda install -c conda-forge jpype1
-conda install pyqt=4
+conda create -f paraatm_env.yml
 pip install --user pyclipper
 
 echo "done installing NATS Client, starting database setup"
