@@ -8,31 +8,21 @@ import sys
 sys.path.append('./Helpers/')
 import DataStore
 
-#add to database
-engine = create_engine('postgresql://paraatm_user:paraatm_user@localhost:5432/paraatm')
-
-results = pd.DataFrame([['norm','4,1','nominal']],columns=['type','params','state'])
-tablename = 'atc_uncertainty'
-
-try:
-    results.to_sql(tablename, engine)
-except:
-    print('Table already exists')
-
-subject = 'atc'
-state = 'nominal'
+#Entered by user
+func = getattr('PARA_ATM.Commands',argv[1])
+db_file = argv[2]
+subject_list = ['atc']
+state_list = ['nominal']
+Nsamples = 10000
 
 db_access = DataStore.Access()
 
-dist_type,loc,scale,args = db_access.getReaction(subject,state)
-dist_type = 'norm'
+dist_objs = [db_access.getCentaurDist(subject,state) for subject in subject_list for state in state_list]
 
-dist = getattr(scipy.stats,dist_type)
-print(args,loc,scale)
+#Create random variable
+rv_vector = np.array([np.array(dist.sample(Nsamples)) for dist in dist_objs])
 
-x = np.linspace(3,5,100)
+#propagate
+results = rv_vector.apply(lambda x: return func(db_file,x))
 
-pdf = dist(*args,loc=loc,scale=scale).pdf(x)
-plt.plot(pdf)
-plt.show()
 

@@ -1,4 +1,5 @@
 import psycopg2
+import pandas as pd
 
 class dbError(Exception):
     def __init__(self):
@@ -39,7 +40,7 @@ class Access:
             results[['latitude','longitude','altitude','heading']] = results[['latitude','longitude','altitude','heading']].astype(float)
             results['status'] = results['status'].fillna('TAKEOFF/LANDING')
             results = results[results['latitude'] != -100]
-            return ['readIFF', results, self.filename]
+            return ['readIFF', results, filename]
         else: raise dbError
 
     def getNATSdata(self, filename, kwargs):
@@ -55,7 +56,7 @@ class Access:
         results.columns = ['id','time','callsign','origin','destination','latitude','longitude','altitude','rocd','tas','heading','sector','status']
         del results['id']
         del results['sector']
-        return ['readNATS',results,self.filename]
+        return ['readNATS',results,filename]
 
     def getSMESData(self, airport):
         self.cursor.execute("SELECT * FROM smes WHERE airport = %s" %airport)
@@ -84,19 +85,29 @@ class Access:
         loc = float(params[-2])
         return dist_type,loc,scale,args
 
-'''      
-dataStoreAccess = Access("APIKEY")
-#Example Server URL: http://localhost/connect/dataStoreAccess/addAtcLogs
-latitude, longitude = dataStoreAccess.getAirportLocation("PHX")
-humanFactors = dataStoreAccess.getHumanFactorsData("AAL429", "12111111")
-atcLogs = dataStoreAccess.getAtcData("AAL429", "12111111")
-flightParameters = dataStoreAccess.getFlightParameters("AAL429", "12111111")
-flightSchedule = dataStoreAccess.getSchedule("AAL429", "12111111")
-flightTrajectory = dataStoreAccess.getTrajectory("AAL429", "12111111")
+    def getCentaurDist(self,table,key):
+        """
+        get the distribution of reaction times for a given subject
+        args:
+            table (str): table name
+            key (str): the primary key of the table
+        returns:
+            dist_type (str),
+            loc (float),
+            scale (float),
+            args (list)
+        """
 
-dataStoreAccess.addHumanFactorsData('AAL1077', '12141412', 'ATCRECORDING', 'PILOTRECORDING', 'COMPUTERVISIONDATA')
-dataStoreAccess.addAtcLogs('AAL1077', '12141412', 'ATCRECORDING', 'PILOTRECORDING')
-dataStoreAccess.addFlightParameters('AAL1077', '12141412', 'ATCRECORDING', 'PILOTRECORDING', 'COMPUTERVISIONDATA', 'COMPUTERVISIONDATA', 'COMPUTERVISIONDATA')
-dataStoreAccess.addFlightSchedule('AAL1077', '12141412', 'ATCRECORDING', 'PILOTRECORDING')
-dataStoreAccess.addTrajectoryData('AAL1077', '12141412', 'ATCRECORDING', 'PILOTRECORDING', 'COMPUTERVISIONDATA')
-'''
+        self.cursor.execute("SELECT * FROM %s_uncertainty WHERE key='%s'"%(table.lower(),key.lower()))
+        results = self.cursor.fetchall()[0]
+        print(results)
+        index,dist_type,params,key = results
+        params = params.split(',')
+        args = [float(p) for p in params[:-2]]
+        scale = float(params[-1])
+        loc = float(params[-2])
+
+        rv=centaur.Distribution()
+
+        distribution = getattr('centaur.Distribution','new_%s'%dist_type)
+        return distribution(loc,scale,*args)

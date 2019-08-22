@@ -33,7 +33,7 @@ def get_lookahead_list():
             list of lookahead times in seconds
     """
     #print(np.mean(pd.read_csv('total_response_time_nominal.csv')['total_rt']))
-    return np.round(pd.read_csv('total_response_time_off.csv')['total_rt'],decimals=2)
+    return np.unique(np.round(pd.read_csv('total_response_time_off.csv')['total_rt'],decimals=2))
 
 def solve_fpf(ssd,traf,timestep,across_lookahead_results):
     #results for this lookahead
@@ -55,7 +55,7 @@ def solve_fpf(ssd,traf,timestep,across_lookahead_results):
             results.append(fpf)
     results = pd.concat(results)
     results.columns=['time','callsign','fpf']
-    results.to_csv('fpf_%f_off_20min.csv'%timestep)
+    results.to_csv('fpf_%f_off.csv'%timestep)
     #across_lookahead_results.append(results)
 
 def main(infile):
@@ -67,13 +67,10 @@ def main(infile):
             currently, the same dataframe as groundSSD.py
     """
 
-    #set up db connection
-    connection = psycopg2.connect(database="paraatm", user="paraatm_user", password="paraatm_user", host="localhost", port="5432")
-    cursor = connection.cursor()
-    
     #set up nats reader
-    cmd = readIFF.Command(cursor,infile)
+    cmd = readIFF.Command(None,infile)
     commandParameters = cmd.executeCommand()
+    print('got data')
     #get the data
     data = commandParameters[1]
     #convert to radians
@@ -97,7 +94,10 @@ def main(infile):
     
     for timestep in lookaheads:
         print(timestep)
-        if os.path.isfile('fpf_%f_nominal_off_20min.csv'%timestep):
+        if os.path.isfile('fpf_%f_nominal.csv'%timestep):
+            os.rename('fpf_%f_nominal.csv'%timestep,'fpf_%f_nominal_off.csv'%timestep)
+            continue
+        elif os.path.isfile('fpf_%f_nominal_off.csv'%timestep):
             continue
         #    across_lookahead_results.append(pd.read_csv('fpf_%f_nominal.csv'%timestep))
         #    continue
@@ -114,7 +114,7 @@ def main(infile):
     return across_lookahead_results
 
 if __name__ == '__main__':
-    results = main(sys.argv[1])
+    main(sys.argv[1])
     '''
     fig = plt.figure(figsize=(16,9),tight_layout=True)
     look = get_lookahead_list()

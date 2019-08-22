@@ -26,10 +26,14 @@ from bokeh.embed import components
 from bokeh.tile_providers import get_provider, Vendors
 from bokeh.plotting import figure
 from bokeh.server.server import Server
+from bokeh.transform import factor_cmap
+from bokeh.palettes import Category10
+from bokeh_extensions import DatetimeRangeSlider
 from flask import Flask, render_template, request
 from itertools import repeat
 import time
 import math
+import glob
 
 def merc(lats,lons):
     coords_xy = ([],[])
@@ -49,7 +53,7 @@ SHERLOCK_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)),'../../.
 connection = psycopg2.connect(database="paraatm", user="paraatm_user", password="paraatm_user", host="localhost", port="5432")
 cursor = connection.cursor()
 
-cmdpath = str(Path(__file__).parent.parent+'/Commands/')
+cmdpath = str(Path(__file__).parent.parent)+'/Commands/'
 
 def getTableList():
 
@@ -63,7 +67,7 @@ def getTableList():
     return [result[0] for result in results]
 
 def getCmdList():
-    cmdlist = [cmd.split('.')[0] for cmd in os.listdir(cmdpath+'*.py')]
+    cmdlist = [cmd.split('.')[0] for cmd in glob.glob(cmdpath+'*.py')]
     return cmdlist 
 
 cmdline = AutocompleteInput(completions=getCmdList()+getTableList())
@@ -85,7 +89,7 @@ def runCmd(old,new,attr):
 tableList = getTableList()
 tables = Select(options=tableList,value=tableList[0])
 controls = WidgetBox()
-results = pd.DataFrame(columns=['time','latitude','longitude','heading','altitude','tas'])
+results = pd.DataFrame(columns=['time','callsign','latitude','longitude','heading','altitude','tas'])
 source = ColumnDataSource(results)
 flights = MultiSelect()
 tile_provider = get_provider(Vendors.CARTODBPOSITRON)
@@ -96,7 +100,7 @@ tables = Select(options=tableList,value=tableList[0])
 time = RangeSlider()
 populated = False
 
-points = p.triangle(x='longitude',y='latitude',angle='heading',angle_units='deg',source=source)
+points = p.triangle(x='longitude',y='latitude',angle='heading',angle_units='deg',alpha=0.5,source=source)
 lines = p.multi_line(xs='longitude',ys='latitude',source=source)
 hover = HoverTool()
 hover.tooltips = [ ("Callsign", "@callsign"), ("Time","@time"), ("Phase","@status"), ("Heading","@heading"), ("Altitude","@altitude"), ("Speed","@tas") ]
@@ -112,6 +116,8 @@ def update(attr,new,old):
     data['heading'] = data['heading'] - 90
     data.loc[data['heading']<0,'heading'] = data.loc[data['heading']<0,'heading'] + 360
     points.data_source.data = data.to_dict(orient='list')
+    points.glyph.fill_color = factor_cmap('callsign',palette=Category10[4],factors=f)
+    points.glyph.line_color = factor_cmap('callsign',palette=Category10[4],factors=f)
     lines.data_source.data = data.to_dict(orient='list')
 
 def set_data_source(attr,new,old):
@@ -129,11 +135,12 @@ def set_data_source(attr,new,old):
     else:
         results['time'] = results['time'].astype('datetime64[s]').astype('int')
     acids = np.unique(results['callsign']).tolist()
-    times = sorted(np.unique(results['time']).tolist())
+    times = sorted(np.unique(results['time']))
     flights = MultiSelect(options=acids,value=[acids[0],])
     flights.on_change('value',update)
-    time = RangeSlider(title="time",value=(times[0],times[-1]),start=times[0],end=times[-1],step=10,callback_policy='mouseup')
+    time = RangeSlider(title="time",value=(times[0],times[-1]),start=times[0],end=times[-1],step=1)
     time.on_change('value',update)
+    print(time)
     if  populated:
         controls.children[1] = flights
         controls.children[2] = time
