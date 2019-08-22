@@ -29,7 +29,6 @@ from bokeh.server.server import Server
 from bokeh.transform import factor_cmap
 from bokeh.palettes import Category10
 from bokeh_extensions import DatetimeRangeSlider
-from flask import Flask, render_template, request
 from itertools import repeat
 import time
 import math
