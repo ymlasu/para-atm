@@ -2,9 +2,9 @@
 
 NASA NextGen NAS ULI Information Fusion
         
-@organization: PARA Lab, Arizona State University (PI Dr. Yongming Liu)
-@author: Hari Iyer
-@date: 01/19/2018
+@organization: Southwest Research Institute (PI Dr. Yongming Liu)
+@author: Michael Hartnett
+@date: 07/19/2019
 
 Run this module to invoke the application. It contains the main features and functions to execute the system.
 
@@ -17,7 +17,7 @@ sys.path.insert(0, '/home/dyn.datasys.swri.edu/mhartnett/NASA_ULI/NASA_ULI_InfoF
 from PARA_ATM import *
 from PARA_ATM.Commands import readNATS,readIFF,readTDDS
 from bokeh.io import output_file, show, curdoc
-from bokeh.layouts import column,WidgetBox,layout
+from bokeh.layouts import row,column,WidgetBox,layout
 from bokeh.models import CategoricalColorMapper, Div, HoverTool, ColumnDataSource, Panel, CustomJS
 from bokeh.models.widgets import MultiSelect, Select, Slider, RangeSlider, AutocompleteInput
 from bokeh.application import Application
@@ -29,7 +29,7 @@ from bokeh.server.server import Server
 from bokeh.transform import factor_cmap
 from bokeh.palettes import Category10
 from bokeh_extensions import DatetimeRangeSlider
-from itertools import repeat
+from itertools import product
 import time
 import math
 import glob
@@ -66,68 +66,74 @@ def getTableList():
     return [result[0] for result in results]
 
 def getCmdList():
-    cmdlist = [cmd.split('.')[0] for cmd in glob.glob(cmdpath+'*.py')]
+    cmdlist = [cmd.split('/')[-1].split('.')[0] for cmd in glob.glob(cmdpath+'*.py')]
     return cmdlist 
 
-cmdline = AutocompleteInput(completions=getCmdList()+getTableList())
-
-def runCmd(old,new,attr):
-    commandInput = cmdline.value() 
-    commandName = str(commandInput.split('(')[0])
-    cmd = getattr(__import__('PARA_ATM.Commands',fromlist=[commandName]), commandName)
-    commandArguments = str(commandInput.split('(')[1])[:-1]
-    if ',' in commandArguments:
-        commandArguments = commandArguments.split(',')
-    if commandName == 'groundSSD':
-        commandClass = cmd.Command(cursor,self,commandArguments)
-    else:
-        commandClass = cmd.Command(self.cursor, commandArguments)
-    commandParameters = commandClass.executeCommand()
-    print('command %s executed'%commandName)
+#permute = [a+'('+b+')'for a,b in product(getCmdList(),getTableList())]
+#cmdline = AutocompleteInput(completions=permute)
+cmdline = AutocompleteInput(completions=['readNATS(TRX_DEMO_SFO_PHX_new_G2G_output.csv)','groundSSD(incident)','uncertaintyProp(groundSSD(incident))'])
 
 tableList = getTableList()
 tables = Select(options=tableList,value=tableList[0])
 controls = WidgetBox()
-results = pd.DataFrame(columns=['time','callsign','latitude','longitude','heading','altitude','tas'])
+results = pd.DataFrame(columns=['id','time','callsign','latitude','longitude','heading','altitude','tas','param'])
 source = ColumnDataSource(results)
+source2 = ColumnDataSource(results)
 flights = MultiSelect()
 tile_provider = get_provider(Vendors.CARTODBPOSITRON)
 p = figure(x_axis_type='mercator', y_axis_type='mercator')
 p.add_tile(tile_provider)
+p2 = figure()
+lines = p2.line(x='time',y='param',source=source2)
+params = Select(options=['altitude','tas','fpf'],value='altitude')
+p2control=WidgetBox(params)
 layout = layout(controls,p)
 tables = Select(options=tableList,value=tableList[0])
 time = RangeSlider()
 populated = False
 
 points = p.triangle(x='longitude',y='latitude',angle='heading',angle_units='deg',alpha=0.5,source=source)
-lines = p.multi_line(xs='longitude',ys='latitude',source=source)
 hover = HoverTool()
 hover.tooltips = [ ("Callsign", "@callsign"), ("Time","@time"), ("Phase","@status"), ("Heading","@heading"), ("Altitude","@altitude"), ("Speed","@tas") ]
 p.add_tools(hover)
+colors = ['blue','orange','green','red','purple','brown','pink','grey','olive','cyan']
+
+def plot_param(attr,new,old):
+    f = flights.value
+    t = time.value
+    param = params.value
+    data = pd.DataFrame()
+    within_time = np.bitwise_and(results['time']>=t[0],results['time']<=t[1])
+    for i,acid in enumerate(f):
+        data = data.append(results.loc[np.bitwise_and(results['callsign']==acid,within_time),['time','callsign',param]])
+    data.columns=['time','callsign','param']
+    data['time'] = (data['time'] - np.min(data['time']))/1e9
+    print(data)
+    lines.data_source.data = data.to_dict(orient='list')
+    print(lines.data_source.data['time'][0],lines.data_source.data['param'][0])
 
 def update(attr,new,old):
     f = flights.value
     t = time.value
     data = pd.DataFrame()
+    within_time = np.bitwise_and(results['time']>=t[0],results['time']<=t[1])
     for acid in f:
-        within_time = np.bitwise_and(results['time']>=t[0],results['time']<=t[1])
         data = data.append(results.loc[np.bitwise_and(results['callsign']==acid,within_time)])
     data['heading'] = data['heading'] - 90
     data.loc[data['heading']<0,'heading'] = data.loc[data['heading']<0,'heading'] + 360
     points.data_source.data = data.to_dict(orient='list')
-    points.glyph.fill_color = factor_cmap('callsign',palette=Category10[4],factors=f)
-    points.glyph.line_color = factor_cmap('callsign',palette=Category10[4],factors=f)
-    lines.data_source.data = data.to_dict(orient='list')
+    points.glyph.fill_color = factor_cmap('callsign',palette=Category10[10],factors=f)
+    plot_param(0,0,0)
 
 def set_data_source(attr,new,old):
     global populated,controls,results,flights,time
     t = tables.value
     if os.path.exists(NATS_DIR+t):
-        cmd = readNATS.Command(cursor,t)
+        cmd = readNATS.Command(t)
     elif os.path.exists(SHERLOCK_DIR+t):
-        cmd = readIFF.Command(cursor,t)
+        cmd = readIFF.Command(t)
     else:
-        cmd = readIFF.Command(cursor,t)
+        cmd = readIFF.Command(t)
     results = cmd.executeCommand()[1]
     if os.path.exists(NATS_DIR+t):
         results['time'] = results['time'].astype(float)
@@ -135,11 +141,12 @@ def set_data_source(attr,new,old):
         results['time'] = results['time'].astype('datetime64[s]').astype('int')
     acids = np.unique(results['callsign']).tolist()
     times = sorted(np.unique(results['time']))
-    flights = MultiSelect(options=acids,value=[acids[0],])
+    flights = MultiSelect(options=acids,value=['ACA781','SWA3117','SWA4362','UAL1736','UAL1799','UAL2065','UAL502','UAL731','VRD1945'])
+    #MultiSelect(options=acids,value=[acids[0],])
     flights.on_change('value',update)
+    #time = RangeSlider(title='time',value=(1508731296566685952,1508731296566685952),start=1508731296566685952,end=1508733264248322048,step=1)
     time = RangeSlider(title="time",value=(times[0],times[-1]),start=times[0],end=times[-1],step=1)
     time.on_change('value',update)
-    print(time)
     if  populated:
         controls.children[1] = flights
         controls.children[2] = time
@@ -148,13 +155,41 @@ def set_data_source(attr,new,old):
         controls.children.insert(2,time)
         populated = True
     results['longitude'],results['latitude'] = merc(np.asarray(results['latitude'].astype(float)),np.asarray(results['longitude'].astype(float)))
+    update('attr','new','old')
 
+def runCmd(old,new,attr):
+    global tables,tableList
+    commandInput = cmdline.value
+    commandName = str(commandInput.split('(')[0])
+    cmd = getattr(__import__('PARA_ATM.Commands',fromlist=[commandName]), commandName)
+    commandArguments = '('.join(commandInput.split('(')[1:])[:-1]
+    if ',' in commandArguments:
+        commandArguments = commandArguments.split(',') 
+    commandClass = cmd.Command(commandArguments)
+    commandParameters = commandClass.executeCommand()
+    print('command %s executed'%commandName)
+    if commandName=='groundSSD':
+        global results
+        tables.value = commandArguments[0] if type(commandArguments)==list else commandArguments
+        fpf_table = commandParameters[1]
+        set_data_source('attr','new','old')
+        for acid in np.unique(results['callsign']):
+            results.loc[results['callsign']==acid,'fpf'] = fpf_table.loc[fpf_table['callsign']==acid,'fpf'].tolist()
+        plot_param('attr','new','old')
+    elif 'read' in commandName:
+        tableList.append(commandArguments[0] if type(commandArguments)==list else commandArguments)
+        tables.options=tableList
+        tables.value = commandArguments[0] if type(commandArguments)==list else commandArguments
+        set_data_source('attr','old','new')
+
+params.on_change('value',plot_param)
 tables.on_change('value',set_data_source)
+cmdline.on_change('value',runCmd)
 
 def index():
     global controls
-    controls = WidgetBox(tables,cmdline)
-    layout = column(controls,p)
+    controls = row(WidgetBox(tables,cmdline),Div(width=20),p2control)
+    layout = column(controls,row(p,p2))
     curdoc().add_root(layout)
 
 index()

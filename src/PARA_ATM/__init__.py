@@ -32,9 +32,6 @@ from ast import literal_eval
 
 #------------------------Installed Third-Party Libraries------------------------#
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
-from PyQt4.QtWebKit import QWebView
 import matplotlib.pyplot as plt
 import numpy as np
 import psycopg2
@@ -43,7 +40,7 @@ import rdflib
 #------------------------Application Modules------------------------#
 
 from PARA_ATM.Commands.Helpers import DataStore
-from PARA_ATM.Commands import  Airport,NATS_GateToGateSim,PlotGraph,TDDS,groundSSD,enrouteSSD,RegressionCurve,Visualize_NATS,Reliability
+from PARA_ATM.Commands import  Airport,NATS_GateToGateSim,PlotGraph,readTDDS,groundSSD,enrouteSSD,readNATS,readIFF,Reliability
 from PARA_ATM.Map import MapView
 from PARA_ATM.Ontology import QueryOntology
 

@@ -1,5 +1,6 @@
 import psycopg2
 import pandas as pd
+import centaur
 
 class dbError(Exception):
     def __init__(self):
@@ -63,28 +64,6 @@ class Access:
         results = self.cursor.fetchall()
         return results
 
-    def getReaction(self,subject,state):
-        """
-        get the distribution of reaction times for a given subject
-        args:
-            subject (str): one of ['pilot','atc','vehicle']
-        returns:
-            dist_type (str),
-            loc (float),
-            scale (float),
-            args (list)
-        """
-
-        self.cursor.execute("SELECT * FROM %s_uncertainty WHERE state='%s'"%(subject.lower(),state.lower()))
-        results = self.cursor.fetchall()[0]
-        print(results)
-        index,dist_type,params,state = results
-        params = params.split(',')
-        args = [float(p) for p in params[:-2]]
-        scale = float(params[-1])
-        loc = float(params[-2])
-        return dist_type,loc,scale,args
-
     def getCentaurDist(self,table,key):
         """
         get the distribution of reaction times for a given subject
@@ -98,9 +77,8 @@ class Access:
             args (list)
         """
 
-        self.cursor.execute("SELECT * FROM %s_uncertainty WHERE key='%s'"%(table.lower(),key.lower()))
+        self.cursor.execute("SELECT * FROM %s_uncertainty WHERE state='%s'"%(table.lower(),key.lower()))
         results = self.cursor.fetchall()[0]
-        print(results)
         index,dist_type,params,key = results
         params = params.split(',')
         args = [float(p) for p in params[:-2]]
@@ -109,5 +87,5 @@ class Access:
 
         rv=centaur.Distribution()
 
-        distribution = getattr('centaur.Distribution','new_%s'%dist_type)
-        return distribution(loc,scale,*args)
+        getattr(rv,'new_%s'%dist_type)(loc,scale,*args)
+        return rv

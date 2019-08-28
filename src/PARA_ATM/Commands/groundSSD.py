@@ -35,27 +35,27 @@ class Command:
     '''
     
     #Here, the database connector and the parameter are passed as arguments. This can be changed as per need.
-    def __init__(self, cursor, map_object, args=[]):
-        self.cursor = cursor
+    def __init__(self, args=[]):
+        print(args)
         self.airportIATA = False
         self.NATS_path = None
         self.IFF_path = None
         #map object for visualization
-        self.map = map_object
+        self.map = None
         #default value: 1 second
         self.lookahead = 1
         if type(args) == list and len(args) > 1: #lookahead time was passed
-            if '.csv' in args[0]:   #using filename
-                if 'IFF' in args[0]: #IFF file
+            if '.csv' in args[0] or 'incident' in args[0]:   #using filename
+                if 'IFF' in args[0] or 'incident' in args[0]: #IFF file
                     self.IFF_path = args[0]
                 else:               #NATS sim file
                     self.NATS_path = args[0]
             else:                   #airport
                 self.airportIATA = args[0]
-            self.lookahead = args[1]
+            self.lookahead = np.sum(args[1])
         else:                       #lookahead not passed, use default
-            if '.csv' in args:      #args is now handled as a string, not a list
-                if 'IFF' in args:
+            if '.csv' in args or 'IFF' in args or 'incident' in args:      #args is now handled as a string, not a list
+                if 'IFF' in args or 'incident' in args:
                     self.IFF_path = args
                 else:
                     self.NATS_path = args
@@ -439,10 +439,8 @@ class Command:
             traf = pd.DataFrame(self.cursor.fetchall(),columns=['time','callsign','status','latitude','longitude'])
         elif self.NATS_path: #use nats sim output
             from PARA_ATM.Commands import readNATS as vn
-            cmd = vn.Command(self.cursor,self.NATS_path)
-            self.map.commandParameters = cmd.executeCommand()
-            self.map.initMap()
-            data = self.map.commandParameters[1]
+            cmd = vn.Command(self.NATS_path)
+            data = cmd.executeCommand()[1]
             #convert to radians
             rad = np.deg2rad(data['heading'])
             #extract x and y velocities from tas and heading
@@ -450,13 +448,11 @@ class Command:
             y = np.cos(rad) * data['tas'].astype(float)
             traf = data[['time','callsign','latitude','longitude','altitude','rocd','tas','status','heading']].join(pd.DataFrame({'x':x,'y':y}))
             #add simulation start time to delta t
-            #traf['time'] = pd.to_datetime(1121238067+traf['time'].astype(int),unit='s')
+            traf['time'] = pd.to_datetime(1121238067+traf['time'].astype(int),unit='s')
         elif self.IFF_path: #use sherlock data
             from PARA_ATM.Commands import readIFF as ir
-            cmd = ir.Command(self.cursor,self.IFF_path)
-            self.map.commandParameters = cmd.executeCommand()
-            #self.map.initMap()
-            data = self.map.commandParameters[1]
+            cmd = ir.Command(self.IFF_path)
+            data = cmd.executeCommand()[1]
             #convert heading to radians
             rad = np.deg2rad(data['heading'])
             #extract x and y velocities from heading and tas

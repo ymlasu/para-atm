@@ -25,8 +25,7 @@ class Command:
     '''
     
     #Here, the database connector and the parameter are passed as arguments. This can be changed as per need.
-    def __init__(self, cursor, filename, **kwargs):
-        self.cursor = cursor
+    def __init__(self, filename, **kwargs):
         self.lock = Lock()
         self.procs = []
         self.n_procs = 8
