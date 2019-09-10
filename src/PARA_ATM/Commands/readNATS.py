@@ -37,6 +37,7 @@ class Command:
                 command name to be passed to MapView, etc.
                 results = dataframe of shape (# position records, 12)
         """
+        interp = False
         if self.filename == '':
             return ('readNATS',pd.DataFrame())
         db_access = DataStore.Access()
@@ -76,7 +77,7 @@ class Command:
         results[floats] = results[floats].astype(float)
         results[strs] = results[strs].astype(str).fillna('unknown')
         print(results)
-        if (results.at[2,'time'] - results.at[1,'time']) >= pd.to_timedelta('1s'):
+        if interp and (results.at[2,'time'] - results.at[1,'time']) >= pd.to_timedelta('1s'):
             temp = pd.DataFrame()
             results = results.set_index('time')
             for acid in np.unique(results['callsign']):

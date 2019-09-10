@@ -14,12 +14,13 @@ import sys
 
 sys.path.insert(0, '/home/dyn.datasys.swri.edu/mhartnett/NASA_ULI/NASA_ULI_InfoFusion/src/')
 
+from NATS.Client import *
 from PARA_ATM import *
 from PARA_ATM.Commands import readNATS,readIFF,readTDDS
 from bokeh.io import output_file, show, curdoc
 from bokeh.layouts import row,column,WidgetBox,layout
 from bokeh.models import CategoricalColorMapper, Div, HoverTool, ColumnDataSource, Panel, CustomJS
-from bokeh.models.widgets import MultiSelect, Select, Slider, RangeSlider, AutocompleteInput
+from bokeh.models.widgets import MultiSelect, Select, Slider, RangeSlider, TextInput, AutocompleteInput
 from bokeh.application import Application
 from bokeh.application.handlers import FunctionHandler
 from bokeh.embed import components
@@ -45,6 +46,11 @@ def merc(lats,lons):
         coords_xy[1].append(y)
     return coords_xy
 
+def inverse_merc(y):
+    r_major = 6378137.
+    lats = 90/math.pi * np.arctan(np.exp(y/r_major)) - 90/4.
+    return lats
+
 
 NATS_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)),'../../NATS/Server/')
 SHERLOCK_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)),'../../../data/Sherlock/')
@@ -69,23 +75,29 @@ def getCmdList():
     cmdlist = [cmd.split('/')[-1].split('.')[0] for cmd in glob.glob(cmdpath+'*.py')]
     return cmdlist 
 
+cmdline = TextInput()
 #permute = [a+'('+b+')'for a,b in product(getCmdList(),getTableList())]
 #cmdline = AutocompleteInput(completions=permute)
-cmdline = AutocompleteInput(completions=['readNATS(TRX_DEMO_SFO_PHX_new_G2G_output.csv)','groundSSD(incident)','uncertaintyProp(groundSSD(incident))'])
+#cmdline = AutocompleteInput(completions=['readNATS(TRX_DEMO_SFO_PHX_new_G2G_output.csv)','groundSSD(incident)','uncertaintyProp(groundSSD(incident))'])
 
+colors = ['blue','orange','green','red','purple','brown','pink','grey','olive','cyan']
 tableList = getTableList()
 tables = Select(options=tableList,value=tableList[0])
 controls = WidgetBox()
 results = pd.DataFrame(columns=['id','time','callsign','latitude','longitude','heading','altitude','tas','param'])
 source = ColumnDataSource(results)
 source2 = ColumnDataSource(results)
+source3 = ColumnDataSource({'top':[],'bottom':[],'left':[],'right':[]})
 flights = MultiSelect()
 tile_provider = get_provider(Vendors.CARTODBPOSITRON)
 p = figure(x_axis_type='mercator', y_axis_type='mercator')
 p.add_tile(tile_provider)
 p2 = figure()
 lines = p2.line(x='time',y='param',source=source2)
-params = Select(options=['altitude','tas','fpf'],value='altitude')
+hist = p2.quad(source=source3,top='top',bottom='bottom',left='left',right='right')
+#lines = p2.multi_line(xs='time',ys='param',source=source)
+#lines = p2.multi_line(xs=[[]],ys=[[]])
+params = Select(options=['altitude','tas','fpf','lat_hist'],value='lat_hist')
 p2control=WidgetBox(params)
 layout = layout(controls,p)
 tables = Select(options=tableList,value=tableList[0])
@@ -95,22 +107,42 @@ populated = False
 points = p.triangle(x='longitude',y='latitude',angle='heading',angle_units='deg',alpha=0.5,source=source)
 hover = HoverTool()
 hover.tooltips = [ ("Callsign", "@callsign"), ("Time","@time"), ("Phase","@status"), ("Heading","@heading"), ("Altitude","@altitude"), ("Speed","@tas") ]
+hover2 = HoverTool()
+hover2.tooltips = [ ("Callsign", "@callsign") ]
+p2.add_tools(hover2)
 p.add_tools(hover)
-colors = ['blue','orange','green','red','purple','brown','pink','grey','olive','cyan']
 
 def plot_param(attr,new,old):
     f = flights.value
     t = time.value
     param = params.value
-    data = pd.DataFrame()
-    within_time = np.bitwise_and(results['time']>=t[0],results['time']<=t[1])
-    for i,acid in enumerate(f):
-        data = data.append(results.loc[np.bitwise_and(results['callsign']==acid,within_time),['time','callsign',param]])
-    data.columns=['time','callsign','param']
-    data['time'] = (data['time'] - np.min(data['time']))/1e9
-    print(data)
-    lines.data_source.data = data.to_dict(orient='list')
-    print(lines.data_source.data['time'][0],lines.data_source.data['param'][0])
+    if param == 'lat_hist':
+        data = []
+        within_time = np.bitwise_and(results['time']>=t[0],results['time']<=t[1])
+        for i,acid in enumerate(f):
+            data.append(inverse_merc(np.array(results.loc[np.bitwise_and(results['callsign']==acid,within_time),['latitude']])))
+        counts, bins = np.histogram(data,density=True,bins=20)
+        print(bins)
+        data = {'bottom':np.zeros(20),'top':counts,'left':bins[:-1],'right':bins[1:]}
+        hist.data_source.data = data
+    else:
+        data = pd.DataFrame()
+        data_dict = {'time':[],'callsign':[],'param':[]}
+        within_time = np.bitwise_and(results['time']>=t[0],results['time']<=t[1])
+        for i,acid in enumerate(f):
+            data = data.append(results.loc[np.bitwise_and(results['callsign']==acid,within_time),['time','callsign',param]])
+            #data = results.loc[np.bitwise_and(results['callsign']==acid,within_time),['time','callsign',param]]
+            #data_dict['time'].append(((data['time'] - np.min(data['time']))/1e9).tolist())
+            #data_dict['callsign'].append(data['callsign'].tolist())
+            #data_dict['param'].append(data[param].tolist())
+        data.columns=['time','callsign','param']
+        data['time'] = (data['time'] - np.min(data['time']))/1e9
+        lines.data_source.data = data.to_dict(orient='list')
+        p2.xaxis.axis_label = 'time (s)'
+        p2.yaxis.axis_label = param
+        #lines.glyph.update(xs=data_dict['time'],ys=data_dict['param'])
+        #lines.data_source.data = data_dict
+        #lines.glyph.line_color = factor_cmap('callsign',palette=Category10[10],factors=f)
 
 def update(attr,new,old):
     f = flights.value
@@ -123,6 +155,7 @@ def update(attr,new,old):
     data.loc[data['heading']<0,'heading'] = data.loc[data['heading']<0,'heading'] + 360
     points.data_source.data = data.to_dict(orient='list')
     points.glyph.fill_color = factor_cmap('callsign',palette=Category10[10],factors=f)
+    points.glyph.line_color = factor_cmap('callsign',palette=Category10[10],factors=f)
     plot_param(0,0,0)
 
 def set_data_source(attr,new,old):
@@ -136,15 +169,13 @@ def set_data_source(attr,new,old):
         cmd = readIFF.Command(t)
     results = cmd.executeCommand()[1]
     if os.path.exists(NATS_DIR+t):
-        results['time'] = results['time'].astype(float)
+        results['time'] = results['time'].astype('datetime64[s]').astype(int)
     else:
         results['time'] = results['time'].astype('datetime64[s]').astype('int')
     acids = np.unique(results['callsign']).tolist()
     times = sorted(np.unique(results['time']))
-    flights = MultiSelect(options=acids,value=['ACA781','SWA3117','SWA4362','UAL1736','UAL1799','UAL2065','UAL502','UAL731','VRD1945'])
-    #MultiSelect(options=acids,value=[acids[0],])
+    flights = MultiSelect(options=acids,value=[acids[0],])
     flights.on_change('value',update)
-    #time = RangeSlider(title='time',value=(1508731296566685952,1508731296566685952),start=1508731296566685952,end=1508733264248322048,step=1)
     time = RangeSlider(title="time",value=(times[0],times[-1]),start=times[0],end=times[-1],step=1)
     time.on_change('value',update)
     if  populated:
@@ -175,6 +206,7 @@ def runCmd(old,new,attr):
         set_data_source('attr','new','old')
         for acid in np.unique(results['callsign']):
             results.loc[results['callsign']==acid,'fpf'] = fpf_table.loc[fpf_table['callsign']==acid,'fpf'].tolist()
+        params.value = 'fpf'
         plot_param('attr','new','old')
     elif 'read' in commandName:
         tableList.append(commandArguments[0] if type(commandArguments)==list else commandArguments)
