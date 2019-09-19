@@ -48,7 +48,7 @@ def merc(lats,lons):
 
 def inverse_merc(y):
     r_major = 6378137.
-    lats = 90/math.pi * np.arctan(np.exp(y/r_major)) - 90/4.
+    lats = 360/math.pi * np.arctan(np.exp(y/r_major)) - 90.
     return lats
 
 
@@ -84,10 +84,14 @@ colors = ['blue','orange','green','red','purple','brown','pink','grey','olive','
 tableList = getTableList()
 tables = Select(options=tableList,value=tableList[0])
 controls = WidgetBox()
+
+#data source set up
 results = pd.DataFrame(columns=['id','time','callsign','latitude','longitude','heading','altitude','tas','param'])
 source = ColumnDataSource(results)
 source2 = ColumnDataSource(results)
 source3 = ColumnDataSource({'top':[],'bottom':[],'left':[],'right':[]})
+
+#layout setup
 flights = MultiSelect()
 tile_provider = get_provider(Vendors.CARTODBPOSITRON)
 p = figure(x_axis_type='mercator', y_axis_type='mercator')
@@ -95,8 +99,6 @@ p.add_tile(tile_provider)
 p2 = figure()
 lines = p2.line(x='time',y='param',source=source2)
 hist = p2.quad(source=source3,top='top',bottom='bottom',left='left',right='right')
-#lines = p2.multi_line(xs='time',ys='param',source=source)
-#lines = p2.multi_line(xs=[[]],ys=[[]])
 params = Select(options=['altitude','tas','fpf','lat_hist'],value='lat_hist')
 p2control=WidgetBox(params)
 layout = layout(controls,p)
@@ -122,7 +124,6 @@ def plot_param(attr,new,old):
         for i,acid in enumerate(f):
             data.append(inverse_merc(np.array(results.loc[np.bitwise_and(results['callsign']==acid,within_time),['latitude']])))
         counts, bins = np.histogram(data,density=True,bins=20)
-        print(bins)
         data = {'bottom':np.zeros(20),'top':counts,'left':bins[:-1],'right':bins[1:]}
         hist.data_source.data = data
     else:
@@ -131,18 +132,11 @@ def plot_param(attr,new,old):
         within_time = np.bitwise_and(results['time']>=t[0],results['time']<=t[1])
         for i,acid in enumerate(f):
             data = data.append(results.loc[np.bitwise_and(results['callsign']==acid,within_time),['time','callsign',param]])
-            #data = results.loc[np.bitwise_and(results['callsign']==acid,within_time),['time','callsign',param]]
-            #data_dict['time'].append(((data['time'] - np.min(data['time']))/1e9).tolist())
-            #data_dict['callsign'].append(data['callsign'].tolist())
-            #data_dict['param'].append(data[param].tolist())
         data.columns=['time','callsign','param']
         data['time'] = (data['time'] - np.min(data['time']))/1e9
         lines.data_source.data = data.to_dict(orient='list')
         p2.xaxis.axis_label = 'time (s)'
         p2.yaxis.axis_label = param
-        #lines.glyph.update(xs=data_dict['time'],ys=data_dict['param'])
-        #lines.data_source.data = data_dict
-        #lines.glyph.line_color = factor_cmap('callsign',palette=Category10[10],factors=f)
 
 def update(attr,new,old):
     f = flights.value
@@ -214,6 +208,7 @@ def runCmd(old,new,attr):
         tables.value = commandArguments[0] if type(commandArguments)==list else commandArguments
         set_data_source('attr','old','new')
 
+#callback setup
 params.on_change('value',plot_param)
 tables.on_change('value',set_data_source)
 cmdline.on_change('value',runCmd)
