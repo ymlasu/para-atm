@@ -19,9 +19,10 @@ class Command:
     '''
     
     #Here, the database connector and the parameter are passed as arguments. This can be changed as per need.
-    def __init__(self, cursor, airportIATA):
+    def __init__(self, cursor, airportIATA, analysis_type):
         self.cursor = cursor
         self.AirportIATA = airportIATA
+        self.analysis_type = analysis_type
         import uli_pyre_gp
         
     #Method name executeCommand() should not be changed. It executes the query and displays/returns the output.
@@ -41,5 +42,5 @@ class Command:
         #analysis type. options:
         #                       'MC' : Monte Carlo
         #                       'EGRA' : EGRA
-        results = reliability.analyze(custom_limit_state=None,analysis_type='MC')
+        results = reliability.analyze(custom_limit_state=None,analysis_type=self.analysis_type)
         return results

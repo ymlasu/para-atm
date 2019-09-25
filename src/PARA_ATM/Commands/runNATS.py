@@ -22,7 +22,8 @@ class Command:
     #Here, the database connector and the parameter are passed as arguments. This can be changed as per need.
     def __init__(self, module):
         self.NATS_DIR = str(Path(__file__).parent.parent.parent) + '/NATS'
-        self.module = module
+        self.module = module[0]
+        self.trx = module[1]
     
     #Method name executeCommand() should not be changed. It executes the query and displays/returns the output.
     def executeCommand(self):
@@ -48,7 +49,7 @@ class Command:
             CSVData = None
             parentPath = str(Path(__file__).parent.parent.parent)
             os.system('cd ' + parentPath + '/NATS/Client && pwd')
-            os.system('python3 ' + parentPath + '/NATS/Client/' + self.module + '.py')
+            os.system('python3 ' + parentPath + '/NATS/Client/' + self.module + '.py ' + self.trx)
             #open_file,file_name,description = imp.find_module(self.module, [parentPath+'/NATS/Client/'])
             #module = imp.load_module(self.module+'.py',open_file,file_name,description)
             

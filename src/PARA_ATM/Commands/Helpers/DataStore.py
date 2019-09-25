@@ -77,7 +77,8 @@ class Access:
             args (list)
         """
 
-        self.cursor.execute("SELECT * FROM %s_uncertainty WHERE state='%s'"%(table.lower(),key.lower()))
+        self.cursor.execute("SELECT * FROM %s_uncertainty WHERE state='%s'"
+                %(table.lower(),key.lower()))
         results = self.cursor.fetchall()[0]
         index,dist_type,params,key = results
         params = params.split(',')

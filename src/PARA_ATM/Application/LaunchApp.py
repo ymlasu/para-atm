@@ -190,6 +190,7 @@ def runCmd(old,new,attr):
     commandArguments = '('.join(commandInput.split('(')[1:])[:-1]
     if ',' in commandArguments:
         commandArguments = commandArguments.split(',') 
+    print(commandArguments)
     commandClass = cmd.Command(commandArguments)
     commandParameters = commandClass.executeCommand()
     print('command %s executed'%commandName)

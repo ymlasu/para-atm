@@ -13,6 +13,8 @@ Command call to interface NATS module with PARA-ATM to fetch generated trajector
 import PARA_ATM
 from PARA_ATM.Commands.Helpers import DataStore
 import numpy as np
+import centaur
+centaur.CentaurUtils.initialize_centaur()
 
 class Command:
     '''
@@ -37,6 +39,7 @@ class Command:
         self.n_samples = 1000
         self.uncertainty_sources = ['atc','pilot','vehicle']
         self.states = ['nominal']
+        self.threshold = 0.2
 
     #Method name executeCommand() should not be changed. It executes the query and displays/returns the output.
     def executeCommand(self):
@@ -53,17 +56,18 @@ class Command:
 
         #create random variable matrix
         v = centaur.RV_Vector()
-        for obj in dist_obj:
+        for obj in dist_objs:
             v.append(obj)
 
         def min_fpf(rts):
             return np.min(self.safety_module.Command([self.in_file,rts]).executeCommand()[1])
 
-        context = centaur.ReliabilityContext(v,min_fpf,-1,0.2)
+        context = centaur.ReliabilityContext(v,min_fpf,-1,self.threshold)
         method=centaur.ReliabilityMethod()
-        method.new_LHS(10000)
+        method.new_LHS(self.n_samples)
         context.reliability_analysis(method)
 
         prob_of_failure = method.get_pf()
+        prop_samples = method.get_samples(self.n_samples)
 
-        return ["uncertaintyProp", prob_of_failure]
+        return ["reliabilityAnalysis", [prob_of_failure,prop_samples]]
