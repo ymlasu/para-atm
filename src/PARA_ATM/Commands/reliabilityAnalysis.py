@@ -68,6 +68,6 @@ class Command:
         context.reliability_analysis(method)
 
         prob_of_failure = method.get_pf()
-        prop_samples = method.get_samples(self.n_samples)
+        prop_samples = method.get_output_samples_data(self.n_samples)
 
         return ["reliabilityAnalysis", [prob_of_failure,prop_samples]]
