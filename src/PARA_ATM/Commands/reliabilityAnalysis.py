@@ -10,6 +10,7 @@ Command call to interface NATS module with PARA-ATM to fetch generated trajector
 
 '''
 
+from PARA_ATM.Commands import runNATS,readNATS
 import PARA_ATM
 from PARA_ATM.Commands.Helpers import DataStore
 import numpy as np
@@ -30,13 +31,19 @@ class Command:
                 n_samples (int) : the number of samples required from the distribution(s)
         """
         #parse the safety_module string
-        self.mod_name = safety_module.split('(')[0]
-        self.in_file = safety_module.split('(')[1][:-1]
+        if type(safety_module) == list:
+            self.mod_name = safety_module[0].split('(')[0]
+            self.in_file = safety_module[0].split('(')[1]
+            self.args = safety_module[1:]
+            self.args[-1]=self.args[-1][:-1]
+        else:
+            self.mod_name = safety_module.split('(')[0]
+            self.in_file = safety_module.split('(')[1][:-1]
         #load the module
         self.safety_module = getattr(PARA_ATM.Commands,self.mod_name)
 
         #future args for uncertaintyProp
-        self.n_samples = 1000
+        self.n_samples = 5
         self.uncertainty_sources = ['atc','pilot','vehicle']
         self.states = ['nominal']
         self.threshold = 0.2
@@ -52,7 +59,15 @@ class Command:
         db_access = DataStore.Access()
 
         #get Centaur distribution objects from the database
-        dist_objs = [db_access.getCentaurDist(subject,state) for subject in self.uncertainty_sources for state in self.states]
+        if 'NATS' not in self.mod_name:
+            dist_objs = [db_access.getCentaurDist(subject,state) for subject in self.uncertainty_sources for state in self.states]
+        else:
+            mean_lat = 40.995819091796875;
+            std_dev_lat = 0.01*mean_lat;
+            sample_sz_lat = 5;
+            rv = centaur.Distribution()
+            rv.new_Normal(mean_lat,std_dev_lat)
+            dist_objs = [rv,]
 
         #create random variable matrix
         v = centaur.RV_Vector()
@@ -61,8 +76,17 @@ class Command:
 
         def min_fpf(rts):
             return np.min(self.safety_module.Command([self.in_file,rts]).executeCommand()[1])
+        
+        def nats_lat(lats):
+            data = readNATS.Command(self.safety_module.Command([self.in_file]+self.args+[lats]).executeCommand()[1]).executeCommand()[1]
+            mean_lat = 40.995819091796875;
+            std_dev_lat = 0.01*mean_lat;
+            return np.std(data['latitude'])/std_dev_lat
 
-        context = centaur.ReliabilityContext(v,min_fpf,-1,self.threshold)
+        if 'NATS' in self.mod_name:
+            context = centaur.ReliabilityContext(v,nats_lat,1,2)
+        else:
+            context = centaur.ReliabilityContext(v,min_fpf,-1,self.threshold)
         method=centaur.ReliabilityMethod()
         method.new_LHS(self.n_samples)
         context.reliability_analysis(method)
@@ -70,4 +94,6 @@ class Command:
         prob_of_failure = method.get_pf()
         prop_samples = method.get_output_samples_data(self.n_samples)
 
+        print(prob_of_failure)
+        print(prop_samples)
         return ["reliabilityAnalysis", [prob_of_failure,prop_samples]]
