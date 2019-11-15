@@ -11,8 +11,11 @@ Command call to interface NATS module with PARA-ATM to fetch generated trajector
 '''
 
 import PARA_ATM
+from PARA_ATM.Commands import runNATS
 from PARA_ATM.Commands.Helpers import DataStore
 import numpy as np
+import centaur
+centaur.CentaurUtils.initialize_centaur()
 
 class Command:
     '''
@@ -29,14 +32,22 @@ class Command:
         """
         #parse the safety_module string
         self.mod_name = safety_module.split('(')[0]
-        self.in_file = safety_module.split('(')[1][:-1]
+        self.in_file = safety_module.split('(')[1]
         #load the module
         self.safety_module = getattr(PARA_ATM.Commands,self.mod_name)
 
         #future args for uncertaintyProp
-        self.n_samples = 1000
-        self.uncertainty_sources = ['atc','pilot','vehicle']
-        self.states = ['nominal']
+        self.n_samples = 10
+        self.states = ['pushbackDelay',
+                       'taxiDepartingDelay',
+                        'takeoffDelay',
+                        'enterARTCDelay',
+                        'descentDelay',
+                        'enterTRACONDelay',
+                        'approachDelay',
+                        'touchdownDelay',
+                        'taxiLandingDelay',
+                        'rampLandingDelay']
 
     #Method name executeCommand() should not be changed. It executes the query and displays/returns the output.
     def executeCommand(self):
@@ -49,21 +60,26 @@ class Command:
         db_access = DataStore.Access()
 
         #get Centaur distribution objects from the database
-        dist_objs = [db_access.getCentaurDist(subject,state) for subject in self.uncertainty_sources for state in self.states]
+        dist_objs = [db_access.getCentaurDist(key=state) for state in self.states]
 
         #create random variable matrix
         v = centaur.RV_Vector()
-        for obj in dist_obj:
+        for obj in dist_objs:
             v.append(obj)
 
         def min_fpf(rts):
             return np.min(self.safety_module.Command([self.in_file,rts]).executeCommand()[1])
+        
+        def delay(x):
+            data = self.safety_module.Command([self.in_file,{self.states[i]:x[i] for i in range(len(self.states))}]).executeCommand()[1]
+            return 1
+    
 
         context = centaur.ReliabilityContext(v,min_fpf,-1,0.2)
         method=centaur.ReliabilityMethod()
-        method.new_LHS(10000)
+        method.new_LHS(self.n_samples)
         context.reliability_analysis(method)
 
-        prob_of_failure = method.get_pf()
+        samps = method.get_output_samples_data(self.n_samples)
 
-        return ["uncertaintyProp", prob_of_failure]
+        return ["uncertaintyProp", samps]

@@ -44,7 +44,10 @@ class Command:
 
         #future args for uncertaintyProp
         self.n_samples = 5
-        self.uncertainty_sources = ['atc','pilot','vehicle']
+        if 'NATS' in self.mod_name:
+            self.uncertainty_sources = ['departure_delay']
+        else:
+            self.uncertainty_sources = ['atc','pilot','vehicle']
         self.states = ['nominal']
         self.threshold = 0.2
 
@@ -66,7 +69,12 @@ class Command:
             std_dev_lat = 0.01*mean_lat;
             sample_sz_lat = 5;
             rv = centaur.Distribution()
-            rv.new_Normal(mean_lat,std_dev_lat)
+            x = np.linspace(1,1200,1200)
+            probs = (np.exp(-(np.log(x) - 120)**2 / (2 * 30**2))
+                     / (x * 120 * np.sqrt(2*np.pi)))
+            probs /= np.sum(probs)
+            print(probs,np.sum(probs))
+            rv.new_discrete(x,probs)
             dist_objs = [rv,]
 
         #create random variable matrix
@@ -82,6 +90,15 @@ class Command:
             mean_lat = 40.995819091796875;
             std_dev_lat = 0.01*mean_lat;
             return np.std(data['latitude'])/std_dev_lat
+
+        def nats_departure(delays):
+            data = readNATS.Command(self.safety_module.Command([self.in_file]+self.args+[delays]).executeCommand()[1]).executeCommand()[1]
+            print(data)
+            print(data[data['status']=='FLIGHT_PHASE_TAKEOFF'].iloc[0,0])
+            return data[data['status']=='FLIGHT_PHASE_TAKEOFF'].iloc[0,0]
+
+
+        nats_departure(1)
 
         if 'NATS' in self.mod_name:
             context = centaur.ReliabilityContext(v,nats_lat,1,2)
