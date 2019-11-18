@@ -12,7 +12,7 @@ Run this module to invoke the application. It contains the main features and fun
 
 import sys
 
-sys.path.insert(0, '/home/dyn.datasys.swri.edu/mhartnett/NASA_ULI/NASA_ULI_InfoFusion/src/')
+sys.path.insert(0, '/home/edecarlo/dev/nasa-uli/src/')
 
 from NATS.Client import *
 from PARA_ATM import *
@@ -29,7 +29,6 @@ from bokeh.plotting import figure
 from bokeh.server.server import Server
 from bokeh.transform import factor_cmap
 from bokeh.palettes import Category10
-from bokeh_extensions import DatetimeRangeSlider
 from itertools import product
 import time
 import math
