@@ -30,30 +30,15 @@ class Command:
 
     #Method name executeCommand() should not be changed. It executes the query and displays/returns the output.
     def executeCommand(self):
-        pid=os.fork()
-        if pid==0:
-            host_port = 'localhost:2017'
-            server_response = os.system('curl -s ' + host_port) >> 8
-            if server_response == 52 or server_response == 0:
-                exit()
-            else:
-                os.system("cd " + self.NATS_DIR + "/Server && ./run &")
-            exit()
-        if pid!=0:
-            host_port = 'localhost:2017'
-            while True:
-                server_response = os.system('curl -s ' + host_port) >> 8
-                if server_response == 0 or server_response == 52:
-                    time.sleep(10)
-                    break
-                else:
-                    time.sleep(2)
-            os.system('cd ' + self.NATS_DIR + '/Client && pwd')
-            #os.system('python3 ' + self.NATS_DIR + '/Client/' + self.module + '.py ' + self.trx)
-            open_file,file_name,description = imp.find_module(self.module, [self.NATS_DIR+'/Client/'])
-            module = imp.load_module(self.module+'.py',open_file,file_name,description)
+        os.system('cd ' + self.NATS_DIR)
+        os.system('python scriptsSwRI/'+self.module+'.py')
+        open_file,file_name,description = imp.find_module(self.module, [self.NATS_DIR + '/scriptsSwRI/'])
+        module = imp.load_module(self.module+'.py',open_file,file_name,description)
+        try:
             results = module.main(self.params)
             print(results)
             readNATS.Command(results.split('/')[-1]).executeCommand()
+        except:
+            results = module
 
         return ["runNATS",results]

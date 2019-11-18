@@ -12,8 +12,9 @@ Run this module to invoke the application. It contains the main features and fun
 
 import sys
 
-sys.path.insert(0, '/home/edecarlo/dev/nasa-uli/src/')
+sys.path.insert(0, '/home/')
 
+from NATS.Client import *
 from PARA_ATM import *
 from PARA_ATM.Commands import readNATS,readIFF,readTDDS
 from bokeh.io import output_file, show, curdoc
@@ -28,6 +29,7 @@ from bokeh.plotting import figure
 from bokeh.server.server import Server
 from bokeh.transform import factor_cmap
 from bokeh.palettes import Category10
+from bokeh_extensions import DatetimeRangeSlider
 from itertools import product
 import time
 import math
@@ -97,7 +99,7 @@ p.add_tile(tile_provider)
 p2 = figure()
 lines = p2.line(x='time',y='param',source=source2)
 hist = p2.quad(source=source3,top='top',bottom='bottom',left='left',right='right')
-params = Select(options=['altitude','tas','fpf','lat_hist'],value='altitude')
+params = Select(options=['altitude','tas','fpf','lat_hist'],value='lat_hist')
 p2control=WidgetBox(params)
 layout = layout(controls,p)
 tables = Select(options=tableList,value=tableList[0])
@@ -206,7 +208,6 @@ def runCmd(old,new,attr):
         tables.options=tableList
         tables.value = commandArguments[0] if type(commandArguments)==list else commandArguments
         set_data_source('attr','old','new')
-            
 
 #callback setup
 params.on_change('value',plot_param)
