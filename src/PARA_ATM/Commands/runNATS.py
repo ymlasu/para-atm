@@ -11,6 +11,7 @@ Command call to interface NATS module with PARA-ATM to fetch generated trajector
 '''
 
 from PARA_ATM import *
+from PARA_ATM.Commands import readNATS
 import imp
 
 class Command:
@@ -23,8 +24,10 @@ class Command:
     def __init__(self, params):
         self.NATS_DIR = str(Path(__file__).parent.parent.parent) + '/NATS'
         self.module = params[0]
-        self.params = params
-    
+        print(self.module)
+        self.params = params[1:]
+        print(self.params)
+
     #Method name executeCommand() should not be changed. It executes the query and displays/returns the output.
     def executeCommand(self):
         pid=os.fork()
@@ -50,5 +53,7 @@ class Command:
             open_file,file_name,description = imp.find_module(self.module, [self.NATS_DIR+'/Client/'])
             module = imp.load_module(self.module+'.py',open_file,file_name,description)
             results = module.main(self.params)
+            print(results)
+            readNATS.Command(results.split('/')[-1]).executeCommand()
 
         return ["runNATS",results]

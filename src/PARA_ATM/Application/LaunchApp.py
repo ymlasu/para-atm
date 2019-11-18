@@ -98,7 +98,7 @@ p.add_tile(tile_provider)
 p2 = figure()
 lines = p2.line(x='time',y='param',source=source2)
 hist = p2.quad(source=source3,top='top',bottom='bottom',left='left',right='right')
-params = Select(options=['altitude','tas','fpf','lat_hist'],value='lat_hist')
+params = Select(options=['altitude','tas','fpf','lat_hist'],value='altitude')
 p2control=WidgetBox(params)
 layout = layout(controls,p)
 tables = Select(options=tableList,value=tableList[0])
@@ -207,6 +207,7 @@ def runCmd(old,new,attr):
         tables.options=tableList
         tables.value = commandArguments[0] if type(commandArguments)==list else commandArguments
         set_data_source('attr','old','new')
+            
 
 #callback setup
 params.on_change('value',plot_param)

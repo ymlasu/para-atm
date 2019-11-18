@@ -64,7 +64,7 @@ class Access:
         results = self.cursor.fetchall()
         return results
 
-    def getCentaurDist(self,table,key):
+    def getCentaurDist(self,table='distributionDB',key=''):
         """
         get the distribution of reaction times for a given subject
         args:
@@ -77,10 +77,11 @@ class Access:
             args (list)
         """
 
-        self.cursor.execute("SELECT * FROM %s_uncertainty WHERE state='%s'"
-                %(table.lower(),key.lower()))
+        self.cursor.execute("SELECT * FROM %s WHERE variable='%s'"%(table,key))
+        #self.cursor.execute("SELECT * FROM %s_uncertainty WHERE state='%s'"
+        #        %(table.lower(),key.lower()))
         results = self.cursor.fetchall()[0]
-        index,dist_type,params,key = results
+        index,dist_type,params = results
         params = params.split(',')
         args = [float(p) for p in params[:-2]]
         scale = float(params[-1])
