@@ -34,18 +34,7 @@ class Command:
         open_file,file_name,description = imp.find_module(self.module, [self.NATS_DIR + '/scriptsSwRI/'])
         module = imp.load_module(self.module+'.py',open_file,file_name,description)
         print(module)
-        try:
-            results = module.main(self.params)
-            print(results)
-            readNATS.Command(results.split('/')[-1]).executeCommand()
-        except:
-            results = module
-            open_file,file_name,description = imp.find_module(self.module, [self.NATS_DIR+'/Client/'])
-            module = imp.load_module(self.module+'.py',open_file,file_name,description)
-            if self.params != ['']:
-                results = module.main(self.params)
-            else:
-                results = module.main()
-            print(results)
+        results = module.main(self.params)
+        print(results)
 
         return ["runNATS",results]
