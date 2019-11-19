@@ -11,7 +11,7 @@ Command call to interface NATS module with PARA-ATM to fetch generated trajector
 '''
 
 import PARA_ATM
-from PARA_ATM.Commands import runNATS
+from PARA_ATM.Commands import runNATS,readNATS
 from PARA_ATM.Commands.Helpers import DataStore
 import numpy as np
 import centaur
@@ -71,11 +71,20 @@ class Command:
             return np.min(self.safety_module.Command([self.in_file,rts]).executeCommand()[1])
         
         def delay(x):
-            data = self.safety_module.Command([self.in_file,{self.states[i]:x[i] for i in range(len(self.states))}]).executeCommand()[1]
-            return 1
+            filename = self.safety_module.Command([self.in_file,{self.states[i]:x[i] for i in range(len(self.states))}]).executeCommand()[1]
+            data = readNATS.Command(filename).executeCommand()[1]
+            delays = []
+            for ac in np.unique(data['callsign']):
+                this_data = data[data['callsign']==ac]
+                gate = 'FLIGHT_PHASE_ORIGIN_GATE'
+                tf = 'FLIGHT_PHASE_TAKEOFF'
+                if (gate in this_data['status']).any() and (tf in this_data['status']).any():
+                    delta_takeoff = this_data[this_data['status']==tf]['time'] - this_data[this_data['status']==gate]['time']
+                    delays.append(delta_takeoff)
+            return np.mean(delays)
     
 
-        context = centaur.ReliabilityContext(v,min_fpf,-1,0.2)
+        context = centaur.ReliabilityContext(v,delay,-1,600)
         method=centaur.ReliabilityMethod()
         method.new_LHS(self.n_samples)
         context.reliability_analysis(method)
