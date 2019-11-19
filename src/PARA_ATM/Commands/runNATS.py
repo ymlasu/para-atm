@@ -52,8 +52,10 @@ class Command:
             #os.system('python3 ' + self.NATS_DIR + '/Client/' + self.module + '.py ' + self.trx)
             open_file,file_name,description = imp.find_module(self.module, [self.NATS_DIR+'/Client/'])
             module = imp.load_module(self.module+'.py',open_file,file_name,description)
-            results = module.main(self.params)
+            if self.params != ['']:
+                results = module.main(self.params)
+            else:
+                results = module.main()
             print(results)
-            readNATS.Command(results.split('/')[-1]).executeCommand()
 
         return ["runNATS",results]
