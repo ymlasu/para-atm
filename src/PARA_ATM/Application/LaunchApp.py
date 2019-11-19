@@ -50,12 +50,13 @@ def inverse_merc(y):
     return lats
 
 
-NATS_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)),'../../NATS/Server/')
+NATS_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)),'../../NATS/')
 SHERLOCK_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)),'../../../data/Sherlock/')
 #Set connection to postgres database based on the credentials mentioned
 connection = psycopg2.connect(database="paraatm", user="paraatm_user", password="paraatm_user", host="localhost", port="5432")
 cursor = connection.cursor()
 
+perf_results = None
 cmdpath = str(Path(__file__).parent.parent)+'/Commands/'
 
 def getTableList():
@@ -97,7 +98,7 @@ p.add_tile(tile_provider)
 p2 = figure()
 lines = p2.line(x='time',y='param',source=source2)
 hist = p2.quad(source=source3,top='top',bottom='bottom',left='left',right='right')
-params = Select(options=['altitude','tas','fpf','lat_hist'],value='altitude')
+params = Select(options=['altitude','tas','fpf','performance_hist'],value='altitude')
 p2control=WidgetBox(params)
 layout = layout(controls,p)
 tables = Select(options=tableList,value=tableList[0])
@@ -116,11 +117,8 @@ def plot_param(attr,new,old):
     f = flights.value
     t = time.value
     param = params.value
-    if param == 'lat_hist':
-        data = []
-        within_time = np.bitwise_and(results['time']>=t[0],results['time']<=t[1])
-        for i,acid in enumerate(f):
-            data.append(inverse_merc(np.array(results.loc[np.bitwise_and(results['callsign']==acid,within_time),['latitude']])))
+    if param == 'performance_hist':
+        data = perf_results
         counts, bins = np.histogram(data,density=True,bins=20)
         data = {'bottom':np.zeros(20),'top':counts,'left':bins[:-1],'right':bins[1:]}
         hist.data_source.data = data
@@ -210,7 +208,12 @@ def runCmd(old,new,attr):
         print(commandParameters)
         tables.value = commandParameters[1]
         set_data_source('attr','old','new')
-
+    elif 'uncertainty' in commandName:
+        global perf_results
+        print('Performance:\n',commandParameters[1])
+        perf_results = commandParameters[1]
+        params.value = 'performance_hist'
+        plot_param(0,0,0)
 #callback setup
 params.on_change('value',plot_param)
 tables.on_change('value',set_data_source)

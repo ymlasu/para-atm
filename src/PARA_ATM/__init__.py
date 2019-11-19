@@ -44,5 +44,5 @@ from PARA_ATM.Commands import  Airport,NATS_GateToGateSim,PlotGraph,readTDDS,gro
 from PARA_ATM.Map import MapView
 from PARA_ATM.Ontology import QueryOntology
 
-import NATS.NATS_Python_Header
+#import NATS.NATS_Python_Header
 

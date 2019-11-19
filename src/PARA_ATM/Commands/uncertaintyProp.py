@@ -37,7 +37,7 @@ class Command:
         self.safety_module = getattr(PARA_ATM.Commands,self.mod_name)
 
         #future args for uncertaintyProp
-        self.n_samples = 10
+        self.n_samples = 20
         self.states = ['pushbackDelay',
                        'taxiDepartingDelay',
                         'takeoffDelay',
@@ -76,19 +76,28 @@ class Command:
             delays = []
             for ac in np.unique(data['callsign']):
                 this_data = data[data['callsign']==ac]
+                print('Unique stati in this_data:', this_data.status.unique())
                 gate = 'FLIGHT_PHASE_ORIGIN_GATE'
                 tf = 'FLIGHT_PHASE_TAKEOFF'
-                if (gate in this_data['status']).any() and (tf in this_data['status']).any():
-                    delta_takeoff = this_data[this_data['status']==tf]['time'] - this_data[this_data['status']==gate]['time']
-                    delays.append(delta_takeoff)
+                if (gate in list(this_data['status'])) and (tf in list(this_data['status'])):
+                    print(ac,' has both flight phases!!!')
+                    print('Flight phase tf:', this_data[this_data['status']==tf]['time'].values)
+                    print('Flight phase gate:', this_data[this_data['status']==gate]['time'].values)
+                    delta_takeoff = this_data[this_data['status']==tf]['time'].values[0] - this_data[this_data['status']==gate]['time'].values
+                    print('delta takeoff: ',delta_takeoff)
+                    delays.append(delta_takeoff/10**9)
+
+            if delays == []:
+                delays = np.array([1])
             return np.mean(delays)
     
 
-        context = centaur.ReliabilityContext(v,delay,-1,600)
+        context = centaur.ReliabilityContext(v,delay,-1,1200)
         method=centaur.ReliabilityMethod()
         method.new_LHS(self.n_samples)
         context.reliability_analysis(method)
-
+        
         samps = method.get_output_samples_data(self.n_samples)
-
-        return ["uncertaintyProp", samps]
+        print('pf: ',method.get_pf())
+        
+        return ["uncertaintyProp",samps]

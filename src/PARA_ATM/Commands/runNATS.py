@@ -9,7 +9,6 @@ NASA NextGen NAS ULI Information Fusion
 Command call to interface NATS module with PARA-ATM to fetch generated trajectories.
 
 '''
-
 from PARA_ATM import *
 from PARA_ATM.Commands import readNATS
 import imp

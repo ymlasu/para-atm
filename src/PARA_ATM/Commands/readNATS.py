@@ -53,7 +53,7 @@ class Command:
         cols = ['time','lat','lon','altitude','rocd','tas','tas_ground','heading','fpa','sect_ind','sect_name','mode','dest_elev','nrows']
         
         #skip the initial header of the csv file
-        output = pd.read_csv(open(parentPath + "/NATS/Server/" + self.filename, 'r'),header=None,names=cols,skiprows=9)
+        output = pd.read_csv(open(parentPath + "/NATS/" + self.filename, 'r'),header=None,names=cols,skiprows=9)
         results = pd.DataFrame()
         
         #cycle through header rows
