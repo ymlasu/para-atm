@@ -206,7 +206,10 @@ def runCmd(old,new,attr):
         tables.options=tableList
         tables.value = commandArguments[0] if type(commandArguments)==list else commandArguments
         set_data_source('attr','old','new')
-            
+    elif 'run' in commandName:
+        print(commandParameters)
+        tables.value = commandParameters[1]
+        set_data_source('attr','old','new')
 
 #callback setup
 params.on_change('value',plot_param)
