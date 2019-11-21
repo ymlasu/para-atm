@@ -14,7 +14,7 @@ sudo ./dependencies.sh
 echo "finished PARA-ATM installation, starting NATS installation"
 
 #NATS server dependencies
-cd src/NATS/Server
+cd src/NATS/
 [ -d ./lib ] || mkdir lib
 cd dependency_library
 sudo chmod +x *.sh
@@ -89,9 +89,5 @@ cp "$dir"/data/PARA_ATM_Database_Public.backup /tmp/PARA_ATM_Database_Public.bac
 sudo -u postgres pg_restore -d paraatm -1 /tmp/PARA_ATM_Database_Public.backup
 rm /tmp/PARA_ATM_Database_Public.backup
 
-sed -e "s:'.*NASA_ULI_InfoFusion/src/':'$dir/src/':" "$dir"/src/PARA_ATM/Application/LaunchApp.py > tmp.txt
-mv tmp.txt "$dir"/src/PARA_ATM/Application/LaunchApp.py
-
-
-echo "Done installing PARA-ATM/NATS. Verify by running 'src/PARA_ATM/Application/LaunchApp.py'"
+echo "Done installing PARA-ATM/NATS. Verify by running 'bokeh serve src/PARA_ATM/Application/LaunchApp.py'"
 echo "If it didn't work, try the steps in the readme or email michael.hartnett@swri.org"

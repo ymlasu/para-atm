@@ -11,8 +11,10 @@ Run this module to invoke the application. It contains the main features and fun
 '''
 
 import sys
+from pathlib import Path
 
-sys.path.insert(0, '/home/edecarlo/dev/nasa-uli/src/')
+src_dir = str(Path(__file__).parent.parent.parent)
+sys.path.insert(0, src_dir)
 
 from PARA_ATM import *
 from PARA_ATM.Commands import readNATS,readIFF,readTDDS
@@ -75,16 +77,13 @@ def getCmdList():
     return cmdlist 
 
 cmdline = TextInput()
-#permute = [a+'('+b+')'for a,b in product(getCmdList(),getTableList())]
-#cmdline = AutocompleteInput(completions=permute)
-#cmdline = AutocompleteInput(completions=['readNATS(TRX_DEMO_SFO_PHX_new_G2G_output.csv)','groundSSD(incident)','uncertaintyProp(groundSSD(incident))'])
 
 colors = ['blue','orange','green','red','purple','brown','pink','grey','olive','cyan']
 tableList = getTableList()
 tables = Select(options=tableList,value=tableList[0])
 controls = WidgetBox()
 
-#data source set up
+#data source setup
 results = pd.DataFrame(columns=['id','time','callsign','latitude','longitude','heading','altitude','tas','param'])
 source = ColumnDataSource(results)
 source2 = ColumnDataSource(results)
@@ -105,6 +104,7 @@ tables = Select(options=tableList,value=tableList[0])
 time = RangeSlider()
 populated = False
 
+#plot setup
 points = p.triangle(x='longitude',y='latitude',angle='heading',angle_units='deg',alpha=0.5,source=source)
 hover = HoverTool()
 hover.tooltips = [ ("Callsign", "@callsign"), ("Time","@time"), ("Phase","@status"), ("Heading","@heading"), ("Altitude","@altitude"), ("Speed","@tas") ]
@@ -214,15 +214,12 @@ def runCmd(old,new,attr):
         perf_results = commandParameters[1]
         params.value = 'performance_hist'
         plot_param(0,0,0)
+
 #callback setup
 params.on_change('value',plot_param)
 tables.on_change('value',set_data_source)
 cmdline.on_change('value',runCmd)
 
-def index():
-    global controls
-    controls = row(WidgetBox(tables,cmdline),Div(width=20),p2control)
-    layout = column(controls,row(p,p2))
-    curdoc().add_root(layout)
-
-index()
+controls = row(WidgetBox(tables,cmdline),Div(width=20),p2control)
+layout = column(controls,row(p,p2))
+curdoc().add_root(layout)
