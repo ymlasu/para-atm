@@ -46,7 +46,6 @@ class Command:
         except Exception as e:
             print(e)
             db_access.connection.rollback()
-        results = None
         #src directory
         parentPath = str(Path(__file__).parent.parent.parent)
         #trajectory record rows have different fields than header rows

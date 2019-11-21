@@ -41,6 +41,9 @@ class Command:
                 self.kwargs[k] = v 
 
     def sub(self,last_index,index):
+        """
+            multi-process function to an aircraft's data
+        """
         start = last_index+2
         end = index
         data = self.data.iloc[start:end].copy()
@@ -88,10 +91,6 @@ class Command:
 
         #skip the initial header of the csv file
         self.data = pd.read_csv(open(parentPath + "/../data/Sherlock/" + self.filename, 'r'),header=None,names=cols,skiprows=3,low_memory=False)
-        #ev = pd.read_csv(open(parentPath + "/../data/Sherlock/" + 'EV_'+'_'.join(self.filename.split('_')[1:]),'r'),header=0,low_memory=False)
-        #column to match to time in IFF
-        #ev['time'] = ev['tStartSecs'] + ev['tEv'] - ev['tStart']
-        #ev = ev[['time','AcId','EvType']]
         
         #cycle through header rows
         last_index = -1
@@ -125,12 +124,10 @@ class Command:
             p.join()
         print('done')
 
-        #print(results)
         results.columns = ['time','callsign','origin','destination','latitude','longitude','altitude','rocd','tas','heading','status']
         results['time'] = pd.to_datetime(results['time'].astype(float),unit='s')
         floats = ['latitude','longitude','altitude','rocd','tas','heading']
         strs = ['callsign','origin','destination','status']
-        results = results.loc[results['time'] > (pd.to_datetime(1557561627)+pd.Timedelta(50,unit='m'))]
         results[floats] = results[floats].applymap(value_change)
         results[strs] = results[strs].astype(str).fillna('unknown')
         if (results.at[results.index[0],'time'] - results.at[results.index[1],'time']) >= pd.to_timedelta('1s'):

@@ -67,9 +67,11 @@ class Command:
         for obj in dist_objs:
             v.append(obj)
 
+        #returns the lowest fpf in the group of aircraft
         def min_fpf(rts):
             return np.min(self.safety_module.Command([self.in_file,rts]).executeCommand()[1])
         
+        #returns average (over all aircraft) time from departure to takeoff
         def delay(x):
             filename = self.safety_module.Command([self.in_file,{self.states[i]:x[i] for i in range(len(self.states))}]).executeCommand()[1]
             data = readNATS.Command(filename).executeCommand()[1]
@@ -94,6 +96,7 @@ class Command:
 
         context = centaur.ReliabilityContext(v,delay,-1,1200)
         method=centaur.ReliabilityMethod()
+        #TODO: getattr method from user input
         method.new_LHS(self.n_samples)
         context.reliability_analysis(method)
         
