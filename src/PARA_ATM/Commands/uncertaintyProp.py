@@ -37,7 +37,7 @@ class Command:
         self.safety_module = getattr(PARA_ATM.Commands,self.mod_name)
 
         #future args for uncertaintyProp
-        self.n_samples = 20
+        self.n_samples = 1000
         self.states = ['pushbackDelay',
                        'taxiDepartingDelay',
                         'takeoffDelay',
