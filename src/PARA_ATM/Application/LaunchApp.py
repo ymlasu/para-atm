@@ -9,79 +9,56 @@ NASA NextGen NAS ULI Information Fusion
 Run this module to invoke the application. It contains the main features and functions to execute the system.
 
 '''
-
 import sys
+import math
+import glob
+import time
 from pathlib import Path
+from itertools import product
 
+import bokeh as bk
+import bokeh.layouts as bklayouts
+import bokeh.models.widgets as bkwidgets
+import bokeh.plotting as bkplot
+from bokeh.models import ColumnDataSource
+from bokeh.tile_providers import Vendors, get_provider
+
+#Question: Is this the best way to assign the pathing? Should we change the directory structure or the location of this application file to avoid this?
 src_dir = str(Path(__file__).parent.parent.parent)
 sys.path.insert(0, src_dir)
 
 from PARA_ATM import *
 from PARA_ATM.Commands import readNATS,readIFF,readTDDS
-from bokeh.io import output_file, show, curdoc
-from bokeh.layouts import row,column,WidgetBox,layout
-from bokeh.models import CategoricalColorMapper, Div, HoverTool, ColumnDataSource, Panel, CustomJS
-from bokeh.models.widgets import MultiSelect, Select, Slider, RangeSlider, TextInput, AutocompleteInput
-from bokeh.application import Application
-from bokeh.application.handlers import FunctionHandler
-from bokeh.embed import components
-from bokeh.tile_providers import get_provider, Vendors
-from bokeh.plotting import figure
-from bokeh.server.server import Server
-from bokeh.transform import factor_cmap
-from bokeh.palettes import Category10
-from itertools import product
-import time
-import math
-import glob
-
-def merc(lats,lons):
-    coords_xy = ([],[])
-    for i in range(len(lats)):
-        r_major = 6378137.0
-        x = r_major * math.radians(lons[i])
-        scale = x/lons[i]
-        y = 180./math.pi * math.log(math.tan(math.pi/4 + lats[i] * (math.pi/180)/2)) * scale
-        coords_xy[0].append(x)
-        coords_xy[1].append(y)
-    return coords_xy
-
-def inverse_merc(y):
-    r_major = 6378137.
-    lats = 360/math.pi * np.arctan(np.exp(y/r_major)) - 90.
-    return lats
+from plotting_tools import *
+from db_tools import *
 
 
-NATS_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)),'../../NATS/')
-SHERLOCK_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)),'../../../data/Sherlock/')
+# Variables for NATS and Sherlock directories
+NATS_DIR = os.path.join(os.path.dirname(
+    os.path.realpath(__file__)),'../../NATS/')
+SHERLOCK_DIR = os.path.join(os.path.dirname(
+    os.path.realpath(__file__)),'../../../data/Sherlock/')
+
 #Set connection to postgres database based on the credentials mentioned
-connection = psycopg2.connect(database="paraatm", user="paraatm_user", password="paraatm_user", host="localhost", port="5432")
+connection = psycopg2.connect(database="paraatm",
+                              user="paraatm_user",
+                              password="paraatm_user",
+                              host="localhost",
+                              port="5432")
 cursor = connection.cursor()
 
+#Todo: what to do with this? Is a global variable later?
 perf_results = None
+
 cmdpath = str(Path(__file__).parent.parent)+'/Commands/'
 
-def getTableList():
 
-    #Execute query to fetch flight data
-    query = "SELECT t.table_name \
-             FROM information_schema.tables t \
-             JOIN information_schema.columns c ON c.table_name = t.table_name \
-             WHERE c.column_name LIKE 'callsign'"
-    cursor.execute(query)
-    results = cursor.fetchall()
-    return [result[0] for result in results]
-
-def getCmdList():
-    cmdlist = [cmd.split('/')[-1].split('.')[0] for cmd in glob.glob(cmdpath+'*.py')]
-    return cmdlist 
-
-cmdline = TextInput()
+cmdline = bkwidgets.TextInput()
 
 colors = ['blue','orange','green','red','purple','brown','pink','grey','olive','cyan']
-tableList = getTableList()
-tables = Select(options=tableList,value=tableList[0])
-controls = WidgetBox()
+tableList = getTableList(cursor)
+tables = bkwidgets.Select(options=tableList,value=tableList[0])
+controls = bklayouts.widgetbox()
 
 #data source setup
 results = pd.DataFrame(columns=['id','time','callsign','latitude','longitude','heading','altitude','tas','param'])
@@ -89,29 +66,35 @@ source = ColumnDataSource(results)
 source2 = ColumnDataSource(results)
 source3 = ColumnDataSource({'top':[],'bottom':[],'left':[],'right':[]})
 
-#layout setup
-flights = MultiSelect()
-tile_provider = get_provider(Vendors.CARTODBPOSITRON)
-p = figure(x_axis_type='mercator', y_axis_type='mercator')
-p.add_tile(tile_provider)
-p2 = figure()
-lines = p2.line(x='time',y='param',source=source2)
-hist = p2.quad(source=source3,top='top',bottom='bottom',left='left',right='right')
-params = Select(options=['altitude','tas','fpf','performance_hist'],value='altitude')
-p2control=WidgetBox(params)
-layout = layout(controls,p)
-tables = Select(options=tableList,value=tableList[0])
-time = RangeSlider()
-populated = False
-
-#plot setup
-points = p.triangle(x='longitude',y='latitude',angle='heading',angle_units='deg',alpha=0.5,source=source)
-hover = HoverTool()
-hover.tooltips = [ ("Callsign", "@callsign"), ("Time","@time"), ("Phase","@status"), ("Heading","@heading"), ("Altitude","@altitude"), ("Speed","@tas") ]
-hover2 = HoverTool()
-hover2.tooltips = [ ("Callsign", "@callsign") ]
-p2.add_tools(hover2)
-p.add_tools(hover)
+def set_data_source(attr,new,old):
+    global populated,controls,results,flights,time
+    t = tables.value
+    if os.path.exists(NATS_DIR+t):
+        cmd = readNATS.Command(t)
+    elif os.path.exists(SHERLOCK_DIR+t):
+        cmd = readIFF.Command(t)
+    else:
+        cmd = readIFF.Command(t)
+    results = cmd.executeCommand()[1]
+    if os.path.exists(NATS_DIR+t):
+        results['time'] = results['time'].astype('datetime64[s]').astype(int)
+    else:
+        results['time'] = results['time'].astype('datetime64[s]').astype('int')
+    acids = np.unique(results['callsign']).tolist()
+    times = sorted(np.unique(results['time']))
+    flights = bkwidgets.MultiSelect(options=acids,value=[acids[0],])
+    flights.on_change('value',update)
+    time = bkwidgets.RangeSlider(title="time",value=(times[0],times[-1]),start=times[0],end=times[-1],step=1)
+    time.on_change('value',update)
+    if  populated:
+        controls.children[1] = flights
+        controls.children[2] = time
+    else:
+        controls.children.insert(1,flights)
+        controls.children.insert(2,time)
+        populated = True
+    results['longitude'],results['latitude'] = merc(np.asarray(results['latitude'].astype(float)),np.asarray(results['longitude'].astype(float)))
+    update('attr','new','old')
 
 def plot_param(attr,new,old):
     f = flights.value
@@ -144,41 +127,12 @@ def update(attr,new,old):
     data['heading'] = data['heading'] - 90
     data.loc[data['heading']<0,'heading'] = data.loc[data['heading']<0,'heading'] + 360
     points.data_source.data = data.to_dict(orient='list')
-    points.glyph.fill_color = factor_cmap('callsign',palette=Category10[10],factors=f)
-    points.glyph.line_color = factor_cmap('callsign',palette=Category10[10],factors=f)
+    points.glyph.fill_color = bk.transform.factor_cmap('callsign',palette=bk.palettes.Category10[10],factors=f)
+    points.glyph.line_color = bk.transform.factor_cmap('callsign',palette=bk.palettes.Category10[10],factors=f)
     plot_param(0,0,0)
 
-def set_data_source(attr,new,old):
-    global populated,controls,results,flights,time
-    t = tables.value
-    if os.path.exists(NATS_DIR+t):
-        cmd = readNATS.Command(t)
-    elif os.path.exists(SHERLOCK_DIR+t):
-        cmd = readIFF.Command(t)
-    else:
-        cmd = readIFF.Command(t)
-    results = cmd.executeCommand()[1]
-    if os.path.exists(NATS_DIR+t):
-        results['time'] = results['time'].astype('datetime64[s]').astype(int)
-    else:
-        results['time'] = results['time'].astype('datetime64[s]').astype('int')
-    acids = np.unique(results['callsign']).tolist()
-    times = sorted(np.unique(results['time']))
-    flights = MultiSelect(options=acids,value=[acids[0],])
-    flights.on_change('value',update)
-    time = RangeSlider(title="time",value=(times[0],times[-1]),start=times[0],end=times[-1],step=1)
-    time.on_change('value',update)
-    if  populated:
-        controls.children[1] = flights
-        controls.children[2] = time
-    else:
-        controls.children.insert(1,flights)
-        controls.children.insert(2,time)
-        populated = True
-    results['longitude'],results['latitude'] = merc(np.asarray(results['latitude'].astype(float)),np.asarray(results['longitude'].astype(float)))
-    update('attr','new','old')
 
-def runCmd(old,new,attr):
+def runCmd(attr,old,new):
     global tables,tableList
     commandInput = cmdline.value
     commandName = str(commandInput.split('(')[0])
@@ -215,11 +169,36 @@ def runCmd(old,new,attr):
         params.value = 'performance_hist'
         plot_param(0,0,0)
 
+
+#layout setup
+flights = bkwidgets.MultiSelect()
+tile_provider = get_provider(Vendors.CARTODBPOSITRON)
+p = bkplot.figure(x_axis_type='mercator', y_axis_type='mercator')
+p.add_tile(tile_provider)
+p2 = bkplot.figure()
+lines = p2.line(x='time',y='param',source=source2)
+hist = p2.quad(source=source3,top='top',bottom='bottom',left='left',right='right')
+params = bkwidgets.Select(options=['altitude','tas','fpf','performance_hist'],value='altitude')
+p2control=bklayouts.WidgetBox(params)
+layout = bklayouts.layout(controls,p)
+tables = bkwidgets.Select(options=tableList,value=tableList[0])
+time = bkwidgets.RangeSlider()
+populated = False
+
+#plot setup
+points = p.triangle(x='longitude',y='latitude',angle='heading',angle_units='deg',alpha=0.5,source=source)
+hover = bk.models.HoverTool()
+hover.tooltips = [ ("Callsign", "@callsign"), ("Time","@time"), ("Phase","@status"), ("Heading","@heading"), ("Altitude","@altitude"), ("Speed","@tas") ]
+hover2 = bk.models.HoverTool()
+hover2.tooltips = [ ("Callsign", "@callsign") ]
+p2.add_tools(hover2)
+p.add_tools(hover)
+
 #callback setup
 params.on_change('value',plot_param)
 tables.on_change('value',set_data_source)
 cmdline.on_change('value',runCmd)
 
-controls = row(WidgetBox(tables,cmdline),Div(width=20),p2control)
-layout = column(controls,row(p,p2))
-curdoc().add_root(layout)
+controls = bklayouts.row(bklayouts.WidgetBox(tables,cmdline),bk.models.Div(width=20),p2control)
+layout = bklayouts.column(controls,bklayouts.row(p,p2))
+bk.io.curdoc().add_root(layout)
