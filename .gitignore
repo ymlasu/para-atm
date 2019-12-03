@@ -1,6 +1,7 @@
 src/NATS/Server/share/FlightPlanData/FlightPlans
 **.trx~
-*.trx
 **.csv#
+**~
 **.py~
 **.pyc
+src/NATS/*.csv
