@@ -1,5 +1,4 @@
-'''
-
+"""
 NASA NextGen NAS ULI Information Fusion
         
 @organization: Southwest Research Institute (PI Dr. Yongming Liu)
@@ -7,17 +6,11 @@ NASA NextGen NAS ULI Information Fusion
 @date: 07/19/2019
 
 Run this module to invoke the application. It contains the main features and functions to execute the system.
+"""
 
-'''
-import subprocess
 import os
-
 import sys
-import math
-import glob
-import time
 from pathlib import Path
-from itertools import product
 
 import bokeh as bk
 import bokeh.layouts as bklayouts
