@@ -12,15 +12,6 @@ Run this module to invoke the application. It contains the main features and fun
 import subprocess
 import os
 
-def main():
-    proc = subprocess.Popen(['bokeh', 'serve', __file__])
-    os.system('python -mwebbrowser http://localhost:5006')
-    os.system('kill %d'%proc.pid)
-    quit()
-
-if __name__ == '__main__':
-    main()
-
 import sys
 import math
 import glob
@@ -34,6 +25,7 @@ import bokeh.models.widgets as bkwidgets
 import bokeh.plotting as bkplot
 from bokeh.models import ColumnDataSource
 from bokeh.tile_providers import Vendors, get_provider
+from bokeh.server.server import Server
 
 #Question: Is this the best way to assign the pathing? Should we change the directory structure or the location of this application file to avoid this?
 src_dir = str(Path(__file__).parent.parent.parent)
@@ -213,4 +205,18 @@ cmdline.on_change('value',runCmd)
 
 controls = bklayouts.row(bklayouts.WidgetBox(tables,cmdline),bk.models.Div(width=20),p2control)
 layout = bklayouts.column(controls,bklayouts.row(p,p2))
-bk.io.curdoc().add_root(layout)
+
+def bkapp(doc):
+    doc.add_root(layout)
+
+
+def main():
+    print('Opening Bokeh application on http://localhost:5006/')
+    server = Server({'/': bkapp})
+    server.start()    
+
+    server.io_loop.add_callback(server.show, "/")
+    server.io_loop.start()    
+
+if __name__ == '__main__':
+    main()
