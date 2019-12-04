@@ -1,8 +1,3 @@
-
-import time
-import math
-import glob
-
 def getTableList(cursor):
 
     #Execute query to fetch flight data
