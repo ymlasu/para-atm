@@ -9,6 +9,18 @@ NASA NextGen NAS ULI Information Fusion
 Run this module to invoke the application. It contains the main features and functions to execute the system.
 
 '''
+import subprocess
+import os
+
+def main():
+    proc = subprocess.Popen(['bokeh', 'serve', __file__])
+    os.system('python -mwebbrowser http://localhost:5006')
+    os.system('kill %d'%proc.pid)
+    quit()
+
+if __name__ == '__main__':
+    main()
+
 import sys
 import math
 import glob
@@ -29,8 +41,8 @@ sys.path.insert(0, src_dir)
 
 from PARA_ATM import *
 from PARA_ATM.Commands import readNATS,readIFF,readTDDS
-from plotting_tools import *
-from db_tools import *
+from PARA_ATM.Application.plotting_tools import *
+from PARA_ATM.Application.db_tools import *
 
 
 # Variables for NATS and Sherlock directories
