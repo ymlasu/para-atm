@@ -1,16 +1,18 @@
-'''
+"""
 NASA NextGen NAS ULI Information Fusion
         
 @organization: Southwest Research Institute
 @author: Michael Hartnett
 @date: 04/16/2019
 Visualize IFF file
-'''
+"""
 
-from PARA_ATM import *
+import numpy as np
+import pandas as pd
 from multiprocessing import Lock, Process, Queue
 from sqlalchemy import create_engine
-import pandas as pd
+
+from PARA_ATM import DataStore
 
 def value_change(x):
     try:
@@ -19,10 +21,10 @@ def value_change(x):
         return -100.
 
 class Command:
-    '''
+    """
         args:
             filename = name of the NATS simulation output csv
-    '''
+    """
     
     #Here, the database connector and the parameter are passed as arguments. This can be changed as per need.
     def __init__(self, filename, **kwargs):

@@ -1,4 +1,4 @@
-'''
+"""
 
 NASA NextGen NAS ULI Information Fusion
         
@@ -8,15 +8,13 @@ NASA NextGen NAS ULI Information Fusion
 
 Example user command to plot all airports in the US.
 
-'''
-
-from PARA_ATM import *
+"""
 
 class Command:
-    '''
+    """
         Class Command wraps the command methods and functions to be executed. For user-defined commands, this name 
         should be kept the same (Command).
-    '''
+    """
     
     #Here, the database connector and the parameter are passed as arguments. This can be changed as per need.
     def __init__(self, cursor, airportIATA):

@@ -1,4 +1,4 @@
-'''
+"""
 
 NASA NextGen NAS ULI Information Fusion
         
@@ -8,20 +8,23 @@ NASA NextGen NAS ULI Information Fusion
 
 Command call to interface NATS module with PARA-ATM to fetch generated trajectories.
 
-'''
+"""
+
+import numpy as np
 
 from PARA_ATM.Commands import runNATS,readNATS
-import PARA_ATM
-from PARA_ATM.Commands.Helpers import DataStore
-import numpy as np
+import PARA_ATM.Commands
+from PARA_ATM import DataStore
+
 import centaur
+
 centaur.CentaurUtils.initialize_centaur()
 
 class Command:
-    '''
+    """
         Class Command wraps the command methods and functions to be executed. For user-defined commands, this name 
         should be kept the same (Command).
-    '''
+    """
     
     def __init__(self,safety_module):
         """

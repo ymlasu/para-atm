@@ -1,4 +1,4 @@
-'''
+"""
 
 NASA NextGen NAS ULI Information Fusion
         
@@ -8,16 +8,22 @@ NASA NextGen NAS ULI Information Fusion
 
 Visualize NATS output CSV file
 
-'''
+"""
 
-from PARA_ATM import *
+from pathlib import Path
+import pandas as pd
+import numpy as np
+
 from sqlalchemy import create_engine
 
+from PARA_ATM import DataStore
+
+
 class Command:
-    '''
+    """
         args:
             filename = name of the NATS simulation output csv
-    '''
+    """
     
     #Here, the database connector and the parameter are passed as arguments. This can be changed as per need.
     def __init__(self, filename, **kwargs):
