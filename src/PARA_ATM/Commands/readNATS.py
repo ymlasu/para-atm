@@ -10,9 +10,6 @@ Visualize NATS output CSV file
 
 '''
 
-from PARA_ATM import *
-from sqlalchemy import create_engine
-
 class Command:
     '''
         args:
@@ -40,12 +37,6 @@ class Command:
         interp = False
         if self.filename == '':
             return ('readNATS',pd.DataFrame())
-        db_access = DataStore.Access()
-        try:
-            return db_access.getNATSdata(self.filename,self.kwargs)
-        except Exception as e:
-            print(e)
-            db_access.connection.rollback()
         #src directory
         parentPath = str(Path(__file__).parent.parent.parent)
         #trajectory record rows have different fields than header rows
@@ -88,14 +79,5 @@ class Command:
                     print(e)
                 temp = temp.append(interp,ignore_index=True)
             results = temp.fillna(method='ffill')
-
-
-        #add to database
-        engine = create_engine('postgresql://paraatm_user:paraatm_user@localhost:5432/paraatm')
-        
-        try:
-            results.to_sql(self.filename, engine)
-        except:
-            print('DB Error')
 
         return ["readNATS", results]

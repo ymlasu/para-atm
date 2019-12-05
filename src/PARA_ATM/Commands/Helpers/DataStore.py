@@ -1,6 +1,7 @@
 import psycopg2
 import pandas as pd
 import centaur
+from sqlalchemy import create_engine
 
 class dbError(Exception):
     def __init__(self):
@@ -24,6 +25,13 @@ class Access:
         results = self.cursor.fetchall()
         return results
     
+    def addTable(self, filename, data):
+        engine = create_engine('postgresql://paraatm_user:paraatm_user@localhost:5432/paraatm')
+        try:
+            data.to_sql(self.filename, engine)
+        except Exception as e:
+            raise(e)
+
     def getIFFdata(self, filename, kwargs):
         query = "SELECT * FROM \"%s\""%filename
         conditions = []
@@ -53,16 +61,20 @@ class Access:
             query += " WHERE "
             query += " AND ".join(conditions)
         self.cursor.execute(query)
-        results = pd.DataFrame(self.cursor.fetchall())
-        results.columns = ['id','time','callsign','origin','destination','latitude','longitude','altitude','rocd','tas','heading','sector','status']
-        del results['id']
-        del results['sector']
-        return ['readNATS',results,filename]
+        if bool(self.cursor.rowcount):
+            results = pd.DataFrame(self.cursor.fetchall())
+            results.columns = ['id','time','callsign','origin','destination','latitude','longitude','altitude','rocd','tas','heading','sector','status']
+            del results['id']
+            del results['sector']
+            return ['readNATS',results,filename]
+        else: raise dbError
 
     def getSMESData(self, airport):
         self.cursor.execute("SELECT * FROM smes WHERE airport = %s" %airport)
-        results = self.cursor.fetchall()
-        return results
+        if bool(self.cursor.rowcount):
+            results = self.cursor.fetchall()
+            return results
+        else: raise dbError
 
     def getCentaurDist(self,table='distributionDB',key=''):
         """
