@@ -29,13 +29,16 @@ class Access:
         self.cursor.execute("SELECT * FROM flight_data WHERE callsign = %s", ("" + callsign,))
         results = self.cursor.fetchall()
         return results
+
+    def tableExists(self, table_name):
+        """Check whether a table exists in the database"""
+        self.cursor.execute("SELECT EXISTS(SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME='{}')".format(table_name))
+        return self.cursor.fetchone()[0]
     
     def addTable(self, filename, data):
-        engine = create_engine('postgresql://paraatm_user:paraatm_user@localhost:5432/paraatm')
-        try:
-            data.to_sql(self.filename, engine)
-        except Exception as e:
-            raise(e)
+        if not self.tableExists(filename):
+            engine = create_engine('postgresql://paraatm_user:paraatm_user@localhost:5432/paraatm')
+            data.to_sql(filename, engine)
 
     def getIFFdata(self, filename, kwargs):
         query = "SELECT * FROM \"%s\""%filename
