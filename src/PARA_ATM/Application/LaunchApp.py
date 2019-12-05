@@ -24,7 +24,7 @@ from bokeh.server.server import Server
 src_dir = str(Path(__file__).parent.parent.parent)
 sys.path.insert(0, src_dir)
 
-from PARA_ATM import *
+from PARA_ATM.Commands.Helpers.DataStore import Access
 from PARA_ATM.Commands import readNATS,readIFF,readTDDS
 from PARA_ATM.Application.plotting_tools import *
 from PARA_ATM.Application.db_tools import *
@@ -37,12 +37,9 @@ SHERLOCK_DIR = os.path.join(os.path.dirname(
     os.path.realpath(__file__)),'../../../data/Sherlock/')
 
 #Set connection to postgres database based on the credentials mentioned
-connection = psycopg2.connect(database="paraatm",
-                              user="paraatm_user",
-                              password="paraatm_user",
-                              host="localhost",
-                              port="5432")
-cursor = connection.cursor()
+db_access = Access()
+connection = db_access.connection
+cursor = db_access.cursor
 
 cmdpath = str(Path(__file__).parent.parent)+'/Commands/'
 
@@ -101,17 +98,21 @@ class Container:
 
     def set_data_source(self,attr,new,old):
         t = self.tables.value
-        if os.path.exists(NATS_DIR+t):
-            cmd = readNATS.Command(t)
-        elif os.path.exists(SHERLOCK_DIR+t):
-            cmd = readIFF.Command(t)
-        else:
-            cmd = readIFF.Command(t)
-        self.results = cmd.executeCommand()[1]
-        if os.path.exists(NATS_DIR+t):
-            self.results['time'] = self.results['time'].astype('datetime64[s]').astype(int)
-        else:
-            self.results['time'] = self.results['time'].astype('datetime64[s]').astype('int')
+        try:
+            self.results = checkForTable(t)
+        except:
+            if os.path.exists(NATS_DIR+t):
+                cmd = readNATS.Command(t)
+            elif os.path.exists(SHERLOCK_DIR+t):
+                cmd = readIFF.Command(t)
+            else:
+                cmd = readIFF.Command(t)
+            self.results = cmd.executeCommand()[1]
+            db_access.addTable(t,self.results)
+            if os.path.exists(NATS_DIR+t):
+                self.results['time'] = self.results['time'].astype('datetime64[s]').astype(int)
+            else:
+                self.results['time'] = self.results['time'].astype('datetime64[s]').astype('int')
         acids = np.unique(self.results['callsign']).tolist()
         times = sorted(np.unique(self.results['time']))
         self.flights = bkwidgets.MultiSelect(options=acids,value=[acids[0],])
@@ -140,9 +141,9 @@ class Container:
         else:
             data = pd.DataFrame()
             data_dict = {'time':[],'callsign':[],'param':[]}
-            within_time = np.bitwise_and(self.results['time']>=t[0],self.results['time']<=t[1])
+            within_time = np.logical_and(self.results['time']>=t[0],self.results['time']<=t[1])
             for i,acid in enumerate(f):
-                data = data.append(self.results.loc[np.bitwise_and(self.results['callsign']==acid,within_time),['time','callsign',param]])
+                data = data.append(self.results.loc[np.logical_and(self.results['callsign']==acid,within_time),['time','callsign',param]])
             data.columns=['time','callsign','param']
             data['time'] = (data['time'] - np.min(data['time']))/1e9
             self.lines.data_source.data = data.to_dict(orient='list')
@@ -153,9 +154,9 @@ class Container:
         f = self.flights.value
         t = self.time.value
         data = pd.DataFrame()
-        within_time = np.bitwise_and(self.results['time']>=t[0],self.results['time']<=t[1])
+        within_time = np.logical_and(self.results['time']>=t[0],self.results['time']<=t[1])
         for acid in f:
-            data = data.append(self.results.loc[np.bitwise_and(self.results['callsign']==acid,within_time)])
+            data = data.append(self.results.loc[np.logical_and(self.results['callsign']==acid,within_time)])
         data['heading'] = data['heading'] - 90
         data.loc[data['heading']<0,'heading'] = data.loc[data['heading']<0,'heading'] + 360
         self.points.data_source.data = data.to_dict(orient='list')
@@ -187,6 +188,7 @@ class Container:
             self.tableList.append(commandArguments[0] if type(commandArguments)==list else commandArguments)
             self.tables.options=self.tableList
             self.tables.value = commandArguments[0] if type(commandArguments)==list else commandArguments
+            db_access.addTable(self.tables.value)
             self.set_data_source('attr','old','new')
         elif 'run' in commandName:
             print(commandParameters)
