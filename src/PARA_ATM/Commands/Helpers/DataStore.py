@@ -1,6 +1,11 @@
 import psycopg2
 import pandas as pd
-import centaur
+
+try:
+    import centaur
+except ImportError:
+    # Allow centaur to be optional
+    pass
 
 class dbError(Exception):
     def __init__(self):
