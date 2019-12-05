@@ -1,4 +1,4 @@
-'''
+"""
 
 NASA NextGen NAS ULI Information Fusion
         
@@ -13,7 +13,7 @@ airportIATA - 3 letter airport ID
 separation - the distance threshold for conflict, in meters
 
 SSD calculations from https://github.com/TUDelft-CNS-ATM/bluesky by TU Delft
-'''
+"""
 
 import pandas as pd
 import numpy as np
@@ -28,10 +28,10 @@ nm = 0.868976
 ft_per_m = 0.3048
 
 class Command:
-    '''
+    """
         Class Command wraps the command methods and functions to be executed. For user-defined commands, this name 
         should be kept the same (Command).
-    '''
+    """
     
     #Here, the database connector and the parameter are passed as arguments. This can be changed as per need.
     def __init__(self, args=[]):
@@ -231,7 +231,7 @@ class Command:
         circle_tup,circle_lst = tuple(),[]
         for i in range(len(traffic)):
             
-            '''
+            """
             if ac_info[i]['vmax'] == 30*nm: #taxi
                 heading = traffic.iloc[i]['heading']
                 #put between 0-360
@@ -244,7 +244,7 @@ class Command:
                     xyc[opp_heading_ind-45+j] = xyc[opp_heading_ind-45+j] * (1+j/45)
                 for j in range(45):
                     xyc[opp_heading_ind+j] = xyc[opp_heading_ind+j] * (2-j/45)
-            '''
+            """
 
             circle_tup+=((tuple(map(tuple, np.flipud(xyc * ac_info[i]['vmax']))), tuple(map(tuple , xyc * ac_info[i]['vmin'])),),)
             circle_lst.append([list(map(list, np.flipud(xyc * ac_info[i]['vmax']))), list(map(list , xyc * ac_info[i]['vmin'])),])

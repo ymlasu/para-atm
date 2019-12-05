@@ -1,4 +1,4 @@
-'''
+"""
 
 NASA NextGen NAS ULI Information Fusion
         
@@ -8,7 +8,7 @@ NASA NextGen NAS ULI Information Fusion
 
 Command to plot airspeed vs altitude regression curve for a given callsign as argument.
 
-'''
+"""
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -16,10 +16,10 @@ import matplotlib.pyplot as plt
 from PARA_ATM import DataStore
 
 class Command:
-    '''
+    """
         Class Command wraps the command methods and functions to be executed. For user-defined commands, this name 
         should be kept the same (Command).
-    '''
+    """
     
     #Here, the database connector and the parameter are passed as arguments. This can be changed as per need.
     def __init__(self, cursor, flightCallsign):
