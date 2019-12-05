@@ -1,4 +1,4 @@
-'''
+"""
 
 NASA NextGen NAS ULI Information Fusion
         
@@ -7,7 +7,7 @@ NASA NextGen NAS ULI Information Fusion
 @date: 06/05/2019
 
 call groundSSD in a loop, given input variable distributions
-'''
+"""
 
 import sys
 import os
@@ -115,7 +115,7 @@ def main(infile):
 
 if __name__ == '__main__':
     main(sys.argv[1])
-    '''
+    """
     fig = plt.figure(figsize=(16,9),tight_layout=True)
     look = get_lookahead_list()
     for j,res in enumerate(results):
@@ -133,4 +133,4 @@ if __name__ == '__main__':
             ax.set_title(ac)
         plt.savefig('fpf_%f_nominal.png'%look[j])
         plt.clf()
-    '''
+    """

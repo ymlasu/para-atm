@@ -1,14 +1,15 @@
-'''
+"""
 NASA NextGen NAS ULI Information Fusion
         
 @organization: Southwest Research Institute
 @author: Michael Hartnett
 @date: 04/16/2019
 Visualize IFF file
-'''
+"""
 
-from multiprocessing import Lock, Process, Queue
+import numpy as np
 import pandas as pd
+from multiprocessing import Lock, Process, Queue
 
 def value_change(x):
     try:
@@ -17,10 +18,10 @@ def value_change(x):
         return -100.
 
 class Command:
-    '''
+    """
         args:
             filename = name of the NATS simulation output csv
-    '''
+    """
     
     #Here, the database connector and the parameter are passed as arguments. This can be changed as per need.
     def __init__(self, filename, **kwargs):
@@ -51,9 +52,9 @@ class Command:
         data.loc[:,'cid'] = self.data.iat[last_index,11]
         ind = np.where(data['groundSpeed'] <= 4)[0]
         data.iloc[ind,-1] = 'PUSHBACK'
-        ind = np.where(np.bitwise_and(data['groundSpeed'] > 4,data['groundSpeed'] <= 30))[0]
+        ind = np.where(np.logical_and(data['groundSpeed'] > 4,data['groundSpeed'] <= 30))[0]
         data.iloc[ind,-1] = 'TAXI'
-        ind = np.where(np.bitwise_and(data['groundSpeed'] > 30,data['groundSpeed'] <= 200))[0]
+        ind = np.where(np.logical_and(data['groundSpeed'] > 30,data['groundSpeed'] <= 200))[0]
         data.iloc[ind,-1] = 'TAKEOFF/LANDING'
         self.q.put(data[['recTime','AcId','bcnCode','cid','coord1','coord2','alt','rateOfClimb','groundSpeed','course','EvType']])
 

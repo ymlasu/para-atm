@@ -1,4 +1,4 @@
-'''
+"""
 
 NASA NextGen NAS ULI Information Fusion
         
@@ -8,13 +8,14 @@ NASA NextGen NAS ULI Information Fusion
 
 Command to run a query against an example query against an ontology and return results. 
 
-'''
+"""
 
-from PARA_ATM import *
+from pathlib import Path
+import rdflib
 
-'''
+"""
     query() runs the query based on the queryInput from the user's command call.
-'''
+"""
 def query(queryInput = ""):
     
     #Instantiate the RDF Graph

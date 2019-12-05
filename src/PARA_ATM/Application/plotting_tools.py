@@ -1,7 +1,4 @@
-
-import time
 import math
-import glob
 
 def merc(lats,lons):
     coords_xy = ([],[])

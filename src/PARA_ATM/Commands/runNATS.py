@@ -1,4 +1,4 @@
-'''
+"""
 
 NASA NextGen NAS ULI Information Fusion
         
@@ -8,16 +8,17 @@ NASA NextGen NAS ULI Information Fusion
 
 Command call to interface NATS module with PARA-ATM to fetch generated trajectories.
 
-'''
-from PARA_ATM import *
-from PARA_ATM.Commands import readNATS
+"""
+
+import os
 import imp
+from pathlib import Path
 
 class Command:
-    '''
+    """
         Class Command wraps the command methods and functions to be executed. For user-defined commands, this name 
         should be kept the same (Command).
-    '''
+    """
     
     def __init__(self, params):
         """

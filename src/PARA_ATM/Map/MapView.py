@@ -1,4 +1,4 @@
-'''
+"""
 
 NASA NextGen NAS ULI Information Fusion
         
@@ -8,14 +8,14 @@ NASA NextGen NAS ULI Information Fusion
 
 MapView wraps the map to be displayed on the application UI.
 
-'''
+"""
 
-'''
+"""
     buildMap() returns the map to be rendered onto the application layout, with all the map features and functions 
     embedded according to user request.
-'''
+"""
 
-from PARA_ATM import *
+import numpy as np
 
 def buildMap(flightSelected, dateRangeSelected, filterToggles, cursor, commandParameters):
 

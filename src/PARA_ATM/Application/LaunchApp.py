@@ -9,8 +9,11 @@ Run this module to invoke the application. It contains the main features and fun
 """
 
 import os
-import sys
 from pathlib import Path
+
+import psycopg2
+import pandas as pd
+import numpy as np
 
 import bokeh as bk
 import bokeh.layouts as bklayouts
@@ -20,14 +23,10 @@ from bokeh.models import ColumnDataSource
 from bokeh.tile_providers import Vendors, get_provider
 from bokeh.server.server import Server
 
-#Question: Is this the best way to assign the pathing? Should we change the directory structure or the location of this application file to avoid this?
-src_dir = str(Path(__file__).parent.parent.parent)
-sys.path.insert(0, src_dir)
-
 from PARA_ATM.Commands.Helpers.DataStore import Access
 from PARA_ATM.Commands import readNATS,readIFF,readTDDS
-from PARA_ATM.Application.plotting_tools import *
-from PARA_ATM.Application.db_tools import *
+from .plotting_tools import merc
+from .db_tools import getTableList,checkTable
 
 
 # Variables for NATS and Sherlock directories
