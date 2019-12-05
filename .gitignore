@@ -5,3 +5,6 @@ src/NATS/Server/share/FlightPlanData/FlightPlans
 *.py~
 *.pyc
 src/NATS/*.csv
+src/NATS/*.log
+data/Sherlock
+*.egg-info
