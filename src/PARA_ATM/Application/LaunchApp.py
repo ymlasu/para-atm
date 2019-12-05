@@ -26,7 +26,7 @@ from bokeh.server.server import Server
 from PARA_ATM.Commands.Helpers.DataStore import Access
 from PARA_ATM.Commands import readNATS,readIFF,readTDDS
 from .plotting_tools import merc
-from .db_tools import getTableList,checkTable
+from .db_tools import getTableList,checkForTable
 
 
 # Variables for NATS and Sherlock directories
