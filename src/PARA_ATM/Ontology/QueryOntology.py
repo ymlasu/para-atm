@@ -10,7 +10,8 @@ Command to run a query against an example query against an ontology and return r
 
 '''
 
-from PARA_ATM import *
+from pathlib import Path
+import rdflib
 
 '''
     query() runs the query based on the queryInput from the user's command call.

@@ -10,8 +10,6 @@ Example user command to plot all airports in the US.
 
 '''
 
-from PARA_ATM import *
-
 class Command:
     '''
         Class Command wraps the command methods and functions to be executed. For user-defined commands, this name 

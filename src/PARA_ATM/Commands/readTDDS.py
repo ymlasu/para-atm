@@ -10,7 +10,6 @@ Pull ASDE-X and SMES data for visualization at given airport
 
 '''
 
-from PARA_ATM import *
 import pandas as pd
 
 class Command:

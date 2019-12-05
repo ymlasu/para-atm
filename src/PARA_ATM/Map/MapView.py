@@ -15,7 +15,7 @@ MapView wraps the map to be displayed on the application UI.
     embedded according to user request.
 '''
 
-from PARA_ATM import *
+import numpy as np
 
 def buildMap(flightSelected, dateRangeSelected, filterToggles, cursor, commandParameters):
 

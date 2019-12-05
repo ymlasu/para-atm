@@ -10,7 +10,7 @@ Conduct reliability analysis
 
 '''
 
-from PARA_ATM import *
+
 
 class Command:
     '''

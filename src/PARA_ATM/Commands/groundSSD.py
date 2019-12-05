@@ -15,7 +15,6 @@ separation - the distance threshold for conflict, in meters
 SSD calculations from https://github.com/TUDelft-CNS-ATM/bluesky by TU Delft
 '''
 
-from PARA_ATM import *
 import pandas as pd
 import numpy as np
 import pyclipper

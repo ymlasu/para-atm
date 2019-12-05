@@ -10,8 +10,10 @@ Command call to interface NATS module with PARA-ATM to fetch generated trajector
 
 '''
 
-from PARA_ATM import *
+import time
+import os
 import imp
+from pathlib import Path
 
 class Command:
     '''

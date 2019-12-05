@@ -7,10 +7,12 @@ NASA NextGen NAS ULI Information Fusion
 Visualize IFF file
 '''
 
-from PARA_ATM import *
+import numpy as np
+import pandas as pd
 from multiprocessing import Lock, Process, Queue
 from sqlalchemy import create_engine
-import pandas as pd
+
+from PARA_ATM import DataStore
 
 def value_change(x):
     try:

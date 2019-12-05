@@ -10,7 +10,10 @@ Command to plot airspeed vs altitude regression curve for a given callsign as ar
 
 '''
 
-from PARA_ATM import *
+import numpy as np
+import matplotlib.pyplot as plt
+
+from PARA_ATM import DataStore
 
 class Command:
     '''

@@ -10,7 +10,9 @@ Command to plot airspeed vs altitude graph for a given callsign as argument.
 
 '''
 
-from PARA_ATM import *
+import matplotlib.pyplot as plt
+
+from PARA_ATM import DataStore
 
 class Command:
     '''
