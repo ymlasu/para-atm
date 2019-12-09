@@ -184,10 +184,11 @@ class Container:
             self.params.value = 'fpf'
             self.plot_param('attr','new','old')
         elif 'read' in commandName:
-            self.tableList.append(commandArguments[0] if type(commandArguments)==list else commandArguments)
+            filename = commandArguments[0] if type(commandArguments)==list else commandArguments
+            self.tableList.append(filename)
             self.tables.options=self.tableList
-            self.tables.value = commandArguments[0] if type(commandArguments)==list else commandArguments
-            db_access.addTable(self.tables.value)
+            self.tables.value = filename
+            db_access.addTable(filename, self.tables.value)
             self.set_data_source('attr','old','new')
         elif 'run' in commandName:
             print(commandParameters)
