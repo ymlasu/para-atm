@@ -16,6 +16,8 @@ class Access:
     
     def __init__(self):
         self.connection = psycopg2.connect(database="paraatm", user="paraatm_user", password="paraatm_user", host="localhost", port="5432")
+        # See pyscopg documentation: autocommit is recommended for "long lived scripts"
+        self.connection.autocommit = True
         self.cursor = self.connection.cursor()
         
     def getAirportLocation(self, airportCode):
@@ -35,10 +37,16 @@ class Access:
         self.cursor.execute("SELECT EXISTS(SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME='{}')".format(table_name))
         return self.cursor.fetchone()[0]
     
-    def addTable(self, filename, data):
-        if not self.tableExists(filename):
+    def addTable(self, name, data, **kwargs):
+        if not self.tableExists(name):
             engine = create_engine('postgresql://paraatm_user:paraatm_user@localhost:5432/paraatm')
-            data.to_sql(filename, engine)
+            data.to_sql(name, engine, **kwargs)
+
+    def readTable(self, table, **kwargs):
+        return pd.read_sql("SELECT * FROM {};".format(table), self.connection, **kwargs)
+
+    def dropTable(self, table):
+        self.cursor.execute("DROP TABLE IF EXISTS {};".format(table))
 
     def getIFFdata(self, filename, **kwargs):
         query = "SELECT * FROM \"%s\""%filename
