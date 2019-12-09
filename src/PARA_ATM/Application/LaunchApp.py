@@ -108,11 +108,7 @@ class Container:
                 cmd = readIFF.Command(t)
             self.results = cmd.executeCommand()[1]
             db_access.addTable(t,self.results)
-        # Todo: remove this dependency on NATS file check
-        if os.path.exists(NATS_DIR+t):
-            self.results['time'] = self.results['time'].astype('datetime64[s]').astype(int)
-        else:
-            self.results['time'] = self.results['time'].astype('datetime64[s]').astype('int')
+        self.results['time'] = self.results['time'].astype('datetime64[s]').astype(int)
         acids = np.unique(self.results['callsign']).tolist()
         times = sorted(np.unique(self.results['time']))
         self.flights = bkwidgets.MultiSelect(options=acids,value=[acids[0],])
