@@ -14,6 +14,10 @@ def getTableList(cursor):
 def checkForTable(filename):
 
     db_access = DataStore.Access()
+    if not db_access.tableExists(filename):
+        # Hacky way to indicate table doesn't exist
+        raise DataStore.dbError
+    
     try:
         return db_access.getNATSdata(filename)[1]
     except DataStore.dbError:
