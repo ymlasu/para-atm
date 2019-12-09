@@ -40,7 +40,7 @@ class Access:
             engine = create_engine('postgresql://paraatm_user:paraatm_user@localhost:5432/paraatm')
             data.to_sql(filename, engine)
 
-    def getIFFdata(self, filename, kwargs):
+    def getIFFdata(self, filename, **kwargs):
         query = "SELECT * FROM \"%s\""%filename
         conditions = []
         for k,v in kwargs.items():
@@ -60,7 +60,7 @@ class Access:
             return ['readIFF', results, filename]
         else: raise dbError
 
-    def getNATSdata(self, filename, kwargs):
+    def getNATSdata(self, filename, **kwargs):
         query = "SELECT * FROM \"%s\""%filename
         conditions = []
         for k,v in kwargs.items():

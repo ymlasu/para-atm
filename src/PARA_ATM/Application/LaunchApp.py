@@ -23,7 +23,7 @@ from bokeh.models import ColumnDataSource
 from bokeh.tile_providers import Vendors, get_provider
 from bokeh.server.server import Server
 
-from PARA_ATM.Commands.Helpers.DataStore import Access
+from PARA_ATM.Commands.Helpers.DataStore import Access, dbError
 from PARA_ATM.Commands import readNATS,readIFF,readTDDS
 from .plotting_tools import merc
 from .db_tools import getTableList,checkForTable
@@ -99,7 +99,7 @@ class Container:
         t = self.tables.value
         try:
             self.results = checkForTable(t)
-        except:
+        except dbError:
             if os.path.exists(NATS_DIR+t):
                 cmd = readNATS.Command(t)
             elif os.path.exists(SHERLOCK_DIR+t):
@@ -108,10 +108,11 @@ class Container:
                 cmd = readIFF.Command(t)
             self.results = cmd.executeCommand()[1]
             db_access.addTable(t,self.results)
-            if os.path.exists(NATS_DIR+t):
-                self.results['time'] = self.results['time'].astype('datetime64[s]').astype(int)
-            else:
-                self.results['time'] = self.results['time'].astype('datetime64[s]').astype('int')
+        # Todo: remove this dependency on NATS file check
+        if os.path.exists(NATS_DIR+t):
+            self.results['time'] = self.results['time'].astype('datetime64[s]').astype(int)
+        else:
+            self.results['time'] = self.results['time'].astype('datetime64[s]').astype('int')
         acids = np.unique(self.results['callsign']).tolist()
         times = sorted(np.unique(self.results['time']))
         self.flights = bkwidgets.MultiSelect(options=acids,value=[acids[0],])
@@ -184,10 +185,11 @@ class Container:
             self.params.value = 'fpf'
             self.plot_param('attr','new','old')
         elif 'read' in commandName:
-            self.tableList.append(commandArguments[0] if type(commandArguments)==list else commandArguments)
+            filename = commandArguments[0] if type(commandArguments)==list else commandArguments
+            self.tableList.append(filename)
             self.tables.options=self.tableList
-            self.tables.value = commandArguments[0] if type(commandArguments)==list else commandArguments
-            db_access.addTable(self.tables.value)
+            self.tables.value = filename
+            db_access.addTable(filename, self.tables.value)
             self.set_data_source('attr','old','new')
         elif 'run' in commandName:
             print(commandParameters)

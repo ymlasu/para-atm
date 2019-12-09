@@ -10,6 +10,7 @@ Visualize IFF file
 import numpy as np
 import pandas as pd
 from multiprocessing import Lock, Process, Queue
+import time
 
 def value_change(x):
     try:

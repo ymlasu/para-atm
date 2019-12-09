@@ -16,6 +16,7 @@ setup(
         #package_dir={'': 'src/PARA_ATM'},
         packages=find_packages(),
         install_requires=[
+            'pandas',
             'pyclipper',
             'rdflib',
             'psycopg2-binary',
