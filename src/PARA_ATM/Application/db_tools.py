@@ -15,10 +15,10 @@ def checkForTable(filename):
 
     db_access = DataStore.Access()
     try:
-        return db_access.getNATSdata(filename)
-    except:
+        return db_access.getNATSdata(filename)[1]
+    except DataStore.dbError:
         db_access.connection.rollback()
         try:
-            return db_access.getIFFdata(filename)
-        except:
-            return db_access.getSMESdata(filename)
+            return db_access.getIFFdata(filename)[1]
+        except DataStore.dbError:
+            return db_access.getSMESdata(filename)[1]
