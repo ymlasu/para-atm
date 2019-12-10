@@ -18,6 +18,3 @@ from PARA_ATM.Commands import (
     Reliability
 )
 from PARA_ATM.Map import MapView
-from PARA_ATM.Ontology import QueryOntology
-
-
