@@ -36,7 +36,6 @@ def read_nats_output_file(filename, interp=False):
     strs = ['callsign','origin','destination','sector','status']
     results[floats] = results[floats].astype(float)
     results[strs] = results[strs].astype(str).fillna('unknown')
-    print(results)
     if interp and (results.at[2,'time'] - results.at[1,'time']) >= pd.to_timedelta('1s'):
         temp = pd.DataFrame()
         results = results.set_index('time')

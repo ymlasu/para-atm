@@ -46,5 +46,6 @@ class Command:
 
         parentPath = str(Path(__file__).parent.parent.parent)
         results = read_nats_output_file(os.path.join(parentPath, 'NATS', self.filename))
+        print(results)
 
         return ["readNATS", results]
