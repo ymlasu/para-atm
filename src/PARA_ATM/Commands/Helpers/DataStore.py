@@ -1,4 +1,5 @@
 import psycopg2
+from psycopg2 import sql
 import pandas as pd
 from sqlalchemy import create_engine
 
@@ -34,7 +35,7 @@ class Access:
 
     def tableExists(self, table_name):
         """Check whether a table exists in the database"""
-        self.cursor.execute("SELECT EXISTS(SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME='{}')".format(table_name))
+        self.cursor.execute("SELECT EXISTS(SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = %s)", (table_name,))
         return self.cursor.fetchone()[0]
     
     def addTable(self, name, data, **kwargs):
@@ -43,10 +44,11 @@ class Access:
             data.to_sql(name, engine, **kwargs)
 
     def readTable(self, table, **kwargs):
-        return pd.read_sql("SELECT * FROM {};".format(table), self.connection, **kwargs)
+        engine = create_engine('postgresql://paraatm_user:paraatm_user@localhost:5432/paraatm')
+        return pd.read_sql_table(table, engine, **kwargs)
 
     def dropTable(self, table):
-        self.cursor.execute("DROP TABLE IF EXISTS {};".format(table))
+        self.cursor.execute(sql.SQL("DROP TABLE IF EXISTS {};").format(sql.Identifier(table)))
 
     def getIFFdata(self, filename, **kwargs):
         query = "SELECT * FROM \"%s\""%filename
