@@ -17,4 +17,3 @@ from PARA_ATM.Commands import (
     readIFF,
     Reliability
 )
-from PARA_ATM.Map import MapView
