@@ -13,6 +13,11 @@ sample_nats_file = os.path.join(THIS_DIR, '..', 'sample_data/NATS_output_SFO_PHX
 class TestApp(unittest.TestCase):
     def setUp(self):
         self.container = LaunchApp.Container()
+        self.db_access = Access()
+
+    def tearDown(self):
+        # Ensure table is removed even if test fails (safe to call on non-existent table)
+        self.db_access.dropTable('test_table')
     
     def test_construction(self):
         """Test construction of LaunchApp container"""
@@ -32,24 +37,23 @@ class TestApp(unittest.TestCase):
     def testTableSelect(self):
         """Test the callback when the table selection changes"""
         
-        db_access = Access()
-
         # First we need to ensure there is a valid table in the
         # database, so we do this by reading in a sample NATS output
         # file and adding it to the database
         df = read_nats_output_file(sample_nats_file)
-        db_access.addTable('test_table', df)
+        self.db_access.addTable('test_table', df)
 
         # Try and select the new table
         self.container.tables.value = 'test_table'
 
-        # Remove the table
-        db_access.dropTable('test_table')
-        
 
 class TestDB(unittest.TestCase):
     def setUp(self):
         self.db_access = Access()
+
+    def tearDown(self):
+        # Ensure table is removed even if test fails (safe to call on non-existent table)
+        self.db_access.dropTable('test_table')        
 
     def testTableNotExists(self):
         self.assertFalse(self.db_access.tableExists('nonexistent_table'))
