@@ -2,7 +2,6 @@
 
 import pandas as pd
 import numpy as np
-import linecache
 from io import StringIO
 
 
@@ -18,14 +17,17 @@ def read_nats_output_file(filename):
     -------
     Single formatted data frame"""
 
-    # Read header information out of specific line numbers
-    header_cols = linecache.getline(filename, 5).strip()[3:].split(',')
-    data_cols = linecache.getline(filename, 6).strip()[3:].split(',')
-    start_time = int(linecache.getline(filename, 8))
-
-    # Read all lines after header
+    # Read all lines:
     with open(filename, 'r') as f:
-        lines = f.readlines()[9:]
+        lines = f.readlines()
+
+    # Read header information out of specific line numbers
+    header_cols = lines[4].strip()[3:].split(',')
+    data_cols = lines[5].strip()[3:].split(',')
+    start_time = int(lines[7])
+
+    # Store all lines after header
+    lines = lines[9:]
 
     # Flag header lines, which may occur throughout the file
     is_header_line = [line.split(',')[0].isalpha() for line in lines]
