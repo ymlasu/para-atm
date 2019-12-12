@@ -6,6 +6,7 @@ import os
 from PARA_ATM.Commands.Helpers.DataStore import Access
 from PARA_ATM.Application import LaunchApp
 from PARA_ATM.io.nats import read_nats_output_file
+from PARA_ATM.io.iff import read_iff_file
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 sample_nats_file = os.path.join(THIS_DIR, '..', 'sample_data/NATS_output_SFO_PHX.csv')
@@ -90,6 +91,17 @@ class TestNATSFiles(unittest.TestCase):
         self.assertEqual(len(df), 510)
         self.assertEqual(len(df['callsign'].unique()), 5)
         self.assertEqual(df.isnull().sum().sum(), 0)
+        
+class TestIFFFiles(unittest.TestCase):
+    def test_read_iff(self):
+        filename = os.path.join(THIS_DIR, '..', 'sample_data/IFF_SFO_ASDEX_ABC123.csv')
+        df_dict = read_iff_file(filename, 'all')
 
+        expected_rows = {0:1, 1:1, 2:1, 3:724, 4:6}
+
+        # Basic consistency check on number of entries for each record:
+        for rec, df in df_dict.items():
+            self.assertEqual(len(df), expected_rows[rec])
+        
 if __name__ == '__main__':
     unittest.main()
