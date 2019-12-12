@@ -83,5 +83,13 @@ class TestNATSFiles(unittest.TestCase):
         # Simple check:
         self.assertEqual(len(df), 369)
 
+    def test_read_nats_output_5ac(self):
+        filename = os.path.join(THIS_DIR, '..', 'sample_data/NATS_demo_5_aircraft.csv')
+        df = read_nats_output_file(filename)
+        # Perform some basic consistency checks:
+        self.assertEqual(len(df), 510)
+        self.assertEqual(len(df['callsign'].unique()), 5)
+        self.assertEqual(df.isnull().sum().sum(), 0)
+
 if __name__ == '__main__':
     unittest.main()
