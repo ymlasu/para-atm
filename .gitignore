@@ -8,3 +8,7 @@ src/NATS/*.csv
 src/NATS/*.log
 data/Sherlock
 *.egg-info
+
+# Created by setup.py install:
+src/build/
+src/dist/
