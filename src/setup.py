@@ -24,7 +24,7 @@ setup(
             'bokeh'],
         entry_points={
             'console_scripts': [
-                'para_atm=PARA_ATM.Application.LaunchApp:main',
+                'para_atm=PARA_ATM.para_atm:main',
             ],
         },
     )
