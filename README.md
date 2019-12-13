@@ -58,6 +58,14 @@ To test the PARA_ATM installation, run the following command from the `src` dire
 python3 -m unittest
 ```
 
+## Usage
+
+The PARA_ATM package may be used from within Python via `import PARA_ATM`, or through the command-line interface provided by the `para_atm` command.  For help with the command-line interface, run:
+
+```
+para_atm -h
+```
+
 ## Contributors
 
 The project has been developed under the guidance of ULI PI Dr. Yongming Liu, with student contributors 
