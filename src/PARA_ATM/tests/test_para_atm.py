@@ -7,6 +7,8 @@ from PARA_ATM.Commands.Helpers.DataStore import Access
 from PARA_ATM.Application import LaunchApp
 from PARA_ATM.io.nats import read_nats_output_file
 from PARA_ATM.io.iff import read_iff_file
+from PARA_ATM.io.utils import read_csv_file
+from PARA_ATM.safety.ground_ssd import ground_ssd_safety_analysis
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 sample_nats_file = os.path.join(THIS_DIR, '..', 'sample_data/NATS_output_SFO_PHX.csv')
@@ -102,6 +104,18 @@ class TestIFFFiles(unittest.TestCase):
         # Basic consistency check on number of entries for each record:
         for rec, df in df_dict.items():
             self.assertEqual(len(df), expected_rows[rec])
+
+class TestGroundSSD(unittest.TestCase):
+    def test_ground_ssd(self):
+        filename = os.path.join(THIS_DIR, '..', 'sample_data/IFF_SFO_window.csv')
+        df = read_csv_file(filename)
+        safety = ground_ssd_safety_analysis(df)
+
+        # Basic consistency checks:
+        self.assertEqual(len(safety['callsign'].unique()), 16)
+        self.assertTrue(all(safety['fpf'] <= 1.0))
+        self.assertTrue(all(safety['fpf'] >= 0.0))
+        self.assertEqual(sum(safety['fpf'].isnull()), 0)
         
 if __name__ == '__main__':
     unittest.main()
