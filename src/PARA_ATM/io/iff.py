@@ -5,13 +5,25 @@ import numpy as np
 import io
 from pkg_resources import parse_version
 
-def read_iff_file(filename, record_types='all', interp=False):
+def read_iff_file(filename, record_types=3, interp=False):
     """
+    Read IFF file and return data frames for requested record types
+    
+    From IFF 2.15 specification, record types include:
+    2: header
+    3: track point
+    4: flight plan
+    5: data source program
+    6: sectorization
+    7: minimum safe altitude
+    8: flight progress
+    9: aircraft state
+
     Parameters
     ----------
     filename : str
     record_types : int, sequence of ints, or 'all'
-        Record types to return
+        Record types to return.
     
     Returns
     -------
@@ -20,6 +32,9 @@ def read_iff_file(filename, record_types='all', interp=False):
        data for that record type only.  Otherwise, return a dictionary
        mapping each requested record type to a corresponding DataFrame.
     """
+    # Note default record_type of 3 (track point) is used for
+    # consistency with the behavior of other functions that expect
+    # flight tracking data
 
     # Determine file format version.  This is in record type 1, which
     # for now we assume to occur on the first line.
