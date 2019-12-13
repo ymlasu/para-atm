@@ -14,9 +14,6 @@ import pandas as pd
 import numpy as np
 import pyclipper
 
-# import warnings
-# warnings.filterwarnings("ignore")
-
 #conversion from miles to nautical miles
 nm = 0.868976
 #conversion from feet to meters
@@ -37,14 +34,14 @@ def ground_ssd_safety_analysis(df, lookahead_seconds=1):
     DataFrame
         Data frame with columns 'time', 'callsign', and 'fpf'
     """
+    traf = df[['time','callsign','latitude','longitude','altitude','rocd','tas','heading']].copy()
+
     #convert heading to radians
     rad = np.deg2rad(df['heading'])
     #extract x and y velocities from heading and tas
-    x = np.sin(rad) * df['tas'].astype(float)
-    y = np.cos(rad) * df['tas'].astype(float)
-    traf = df[['time','callsign','latitude','longitude','altitude','rocd','tas','heading']]
-    traf['x'] = x
-    traf['y'] = y
+    traf['x'] = np.sin(rad) * df['tas'].astype(float)
+    traf['y'] = np.cos(rad) * df['tas'].astype(float)
+    
     if 'status' in df:
         traf['status'] = status
     else:
