@@ -68,10 +68,11 @@ def read_iff_file(filename, record_types=3, interp=False):
         
     # Read entire file and store as an array of lines:
     with open(filename, 'r') as f:
-        data = np.array(f.readlines())
+        # Note: storing this in np.array instead of list may significantly increase memory usage
+        data = f.readlines()
 
     # Create an array of the record types:
-    line_record_types = np.array([int(line.split(',')[0]) for line in data])
+    line_record_types = [int(line.split(',')[0]) for line in data]
 
     #print('available record types:', np.unique(line_record_types))
 
@@ -90,13 +91,14 @@ def read_iff_file(filename, record_types=3, interp=False):
     # DataFrame:
     data_frames = dict()
     for record_type in record_types:
-        lines = data[line_record_types == record_type]
+        # Grab subset of lines with given record type:
+        lines = [line for line,lr in zip(data,line_record_types) if lr==record_type]
         string_data = io.StringIO( '\n'.join(lines) )
         # Passing usecols is necessary because for some records, the
         # actual data has extraneous empty columns at the end, in
         # which case the data does not seem to get read correctly
         # without usecols
-        df = pd.read_csv(string_data, header=None, names=cols[record_type], low_memory=False, usecols=cols[record_type], na_values='?')
+        df = pd.read_csv(string_data, header=None, names=cols[record_type], low_memory=True, usecols=cols[record_type], na_values='?')
 
         # For consistency with other PARA-ATM data:
         df.rename(columns={'recTime':'time',
