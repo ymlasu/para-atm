@@ -3,6 +3,7 @@
 import pandas as pd
 import numpy as np
 import io
+from pkg_resources import parse_version
 
 def read_iff_file(filename, record_types='all', interp=False):
     """
@@ -23,7 +24,7 @@ def read_iff_file(filename, record_types='all', interp=False):
     # Determine file format version.  This is in record type 1, which
     # for now we assume to occur on the first line.
     with open(filename, 'r') as f:
-        version = float(f.readline().split(',')[2])
+        version = parse_version(f.readline().split(',')[2])
 
     # Columns for each record type, from version 2.6 specification.
     cols = {0:['recType','comment'],
@@ -42,12 +43,11 @@ def read_iff_file(filename, record_types='all', interp=False):
     # this code could be commented out, and it should still be
     # compatible with newer versions, but just ignoring the additional
     # columns.
-    EPS = 1e-7 # Avoid rounding issues when comparing versions
-    if version >= 2.13 + EPS:
+    if version >= parse_version('2.13'):
         cols[2] += ['modeSCode']
         cols[3] += ['trackNumber','tptReturnType','modeSCode']
         cols[4] += ['coordinationPoint','coordinationPointType','trackNumber','modeSCode']
-    elif version >= 2.15 + EPS:
+    elif version >= parse_version('2.15'):
         cols[3] += ['sensorTrackNumberList','spi','dvs','dupM3a','tid']
 
         
