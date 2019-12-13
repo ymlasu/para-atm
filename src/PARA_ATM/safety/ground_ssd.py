@@ -34,7 +34,7 @@ def ground_ssd_safety_analysis(df, lookahead_seconds=1):
     DataFrame
         Data frame with columns 'time', 'callsign', and 'fpf'
     """
-    traf = df[['time','callsign','latitude','longitude','altitude','rocd','tas','heading']].copy()
+    traf = df[['time','callsign','latitude','longitude','tas','heading']].copy()
 
     #convert heading to radians
     rad = np.deg2rad(df['heading'])
