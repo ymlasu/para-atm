@@ -35,15 +35,12 @@ NATS_DIR = os.path.join(os.path.dirname(
 SHERLOCK_DIR = os.path.join(os.path.dirname(
     os.path.realpath(__file__)),'../../../data/Sherlock/')
 
-#Set connection to postgres database based on the credentials mentioned
-db_access = Access()
-connection = db_access.connection
-cursor = db_access.cursor
-
-cmdpath = str(Path(__file__).parent.parent)+'/Commands/'
-
 class Container:
     def __init__(self):
+
+        #Set connection to postgres database based on the credentials mentioned
+        self.db_access = Access()
+        cursor = self.db_access.cursor
 
         self.cmdline = bkwidgets.TextInput()
 
@@ -107,7 +104,7 @@ class Container:
             else:
                 cmd = readIFF.Command(t)
             self.results = cmd.executeCommand()[1]
-            db_access.addTable(t,self.results)
+            self.db_access.addTable(t,self.results)
         self.results['time'] = self.results['time'].astype('datetime64[s]').astype(int)
         acids = np.unique(self.results['callsign']).tolist()
         times = sorted(np.unique(self.results['time']))
@@ -185,7 +182,7 @@ class Container:
             self.tableList.append(filename)
             self.tables.options=self.tableList
             self.tables.value = filename
-            db_access.addTable(filename, self.tables.value)
+            self.db_access.addTable(filename, self.tables.value)
             self.set_data_source('attr','old','new')
         elif 'run' in commandName:
             print(commandParameters)
