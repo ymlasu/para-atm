@@ -43,7 +43,7 @@ def ground_ssd_safety_analysis(df, lookahead_seconds=1):
     traf['y'] = np.cos(rad) * df['tas'].astype(float)
     
     if 'status' in df:
-        traf['status'] = status
+        traf['status'] = df['status']
     else:
         traf['status'] = infer_status(df)
     traf = traf.dropna()
