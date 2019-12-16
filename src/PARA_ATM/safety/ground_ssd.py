@@ -15,9 +15,9 @@ import numpy as np
 import pyclipper
 
 #conversion from miles to nautical miles
-nm = 0.868976
+MILES_TO_NM = 0.868976
 #conversion from feet to meters
-ft_per_m = 0.3048
+FT_TO_M = 0.3048
 
 
 def ground_ssd_safety_analysis(df, lookahead_seconds=1):
@@ -100,13 +100,13 @@ def _load_BADA(statuses):
     """
     for status in statuses:
         if status == None:  #TODO: currently assumes pushback for missing phase
-            yield {'vmin':0,'vmax':4*nm,'sep':175*ft_per_m}
+            yield {'vmin':0,'vmax':4*MILES_TO_NM,'sep':175*FT_TO_M}
         elif status == 'onsurface' or 'GATE' in status or 'PUSHBACK' in status: #pushback phase as labeled in TDDS and NATS
-            yield {'vmin':0,'vmax':4*nm,'sep':175*ft_per_m}
+            yield {'vmin':0,'vmax':4*MILES_TO_NM,'sep':175*FT_TO_M}
         elif status == 'onramp' or 'DEPARTING' in status: #taxi
-            yield {'vmin':0,'vmax':30*nm,'sep':200*ft_per_m}
+            yield {'vmin':0,'vmax':30*MILES_TO_NM,'sep':200*FT_TO_M}
         else:   #takeoff/landing, assuming no enroute data
-            yield {'vmin':0,'vmax':200*nm,'sep':2640*ft_per_m}
+            yield {'vmin':0,'vmax':200*MILES_TO_NM,'sep':2640*FT_TO_M}
 
 #NOTE we are not currently using this function. it is part of the more complex qdr and dist matrix calculation
 def _rwgs84_matrix(latd):
@@ -256,7 +256,7 @@ def _conflict(traffic,ac_info):
     N_angle = 180
     alpham  = 0.4999 * np.pi
     betalos = np.pi / 4
-    adsbmax = 65 * 5280 * ft_per_m
+    adsbmax = 65 * 5280 * FT_TO_M
     beta = 1.5 * betalos
     angles = np.arange(0, 2*np.pi, 2*np.pi/N_angle)
     #segments of the unit circle
@@ -264,7 +264,7 @@ def _conflict(traffic,ac_info):
     circle_tup,circle_lst = tuple(),[]
     for i in range(len(traffic)):
 
-        # if ac_info[i]['vmax'] == 30*nm: #taxi
+        # if ac_info[i]['vmax'] == 30*MILES_TO_NM: #taxi
         #     heading = traffic.iloc[i]['heading']
         #     #put between 0-360
         #     if heading < 0:
