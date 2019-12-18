@@ -27,7 +27,7 @@ def ground_ssd_safety_analysis(df, lookahead_seconds=1):
     df : DataFrame
         Scenario data to analyze
     lookahead_seconds : numeric
-        Lokahead time in seconds
+        Lookahead time in seconds
 
     Returns
     -------
@@ -60,7 +60,7 @@ def ground_ssd_safety_analysis(df, lookahead_seconds=1):
         ac_info = list(_load_BADA(group['status']))
         #conflict returns a list of lists with timestamp, acid, and FPF of the aircraft.
         fpf = _conflict(group,ac_info)
-        if type(fpf) != list and type(fpf) != type(None) and not fpf.empty:
+        if (fpf is not None) and not fpf.empty:
             results.append(fpf)
 
     results = pd.concat(results)
@@ -234,7 +234,8 @@ def _conflict(traffic,ac_info):
             traffic = pandas dataframe at the current time
             ac_info = the output of load_bada command
         returns:
-            FPF = pandas dataframe of aircraft in the current timeframe and each respective FPF measure
+            FPF = pandas dataframe of aircraft in the current timeframe and each respective FPF measure,
+            or None in the case of only 1 aircraft
     """
     #convert string in dataframe to float
     lat,lon = np.array(traffic['latitude']).astype(float),np.array(traffic['longitude']).astype(float)
@@ -277,7 +278,7 @@ def _conflict(traffic,ac_info):
 
     #only one aircraft reported in this timeframe
     if len(traffic) < 2:
-        return
+        return None
     #generate the dist matrix pairs
     ind1, ind2 = _qdrdist_matrix_indices(len(traffic))
     #do the same thing in a way that we can pass to the next function in python3
