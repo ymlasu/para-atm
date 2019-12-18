@@ -53,18 +53,13 @@ def ground_ssd_safety_analysis(df, lookahead_seconds=1):
     #convert to milliseconds
     timestep = int(lookahead_seconds*1e3)
     #group aircraft by time
-    for g in traf.groupby(pd.Grouper(key='time',freq='%dms'%timestep)):
-        # Todo: clean this up
-        try:
-            if g[1].empty:
-                continue
-        except Exception as e:
-            print(e)
+    for name, group in traf.groupby(pd.Grouper(key='time',freq='%dms'%timestep)):
+        if group.empty:
             continue
         #find vmin and vmax
-        ac_info = list(_load_BADA(g[1]['status']))
+        ac_info = list(_load_BADA(group['status']))
         #conflict returns a list of lists with timestamp, acid, and FPF of the aircraft.
-        fpf = _conflict(g[1],ac_info)
+        fpf = _conflict(group,ac_info)
         if type(fpf) != list and type(fpf) != type(None) and not fpf.empty:
             results.append(fpf)
 
