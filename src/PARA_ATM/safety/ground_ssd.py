@@ -189,13 +189,13 @@ def _qdrdist_matrix(lat1, lon1, lat2, lon2):
         condition = prodla < 0
 
         r = np.zeros(prodla.shape)
-        r = np.where(condition, r, self.rwgs84_matrix(lat1.T + lat2))
+        r = np.where(condition, r, _rwgs84_matrix(lat1.T + lat2))
 
         a = 6378137.0
 
         r = np.where(np.invert(condition), r, (np.divide(np.multiply
-          (0.5, ((np.multiply(abs(lat1), (self.rwgs84_matrix(lat1)+a))).T +
-           np.multiply(abs(lat2), (self.rwgs84_matrix(lat2)+a)))),
+          (0.5, ((np.multiply(abs(lat1), (_rwgs84_matrix(lat1)+a))).T +
+           np.multiply(abs(lat2), (_rwgs84_matrix(lat2)+a)))),
           (abs(lat1)).T+(abs(lat2)))))#+(lat1 == 0.)*0.000001))))  # different hemisphere
 
         diff_lat = lat2-lat1.T
