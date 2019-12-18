@@ -111,6 +111,8 @@ def read_iff_file(filename, record_types=3, interp=False):
 
         if 'time' in df:
             df['time'] = pd.to_datetime(df['time'], unit='s')
+        if 'altitude' in df:
+            df['altitude'] *= 100 # Convert 100s ft to ft
 
         # Store to dict of data frames
         data_frames[record_type] = df
