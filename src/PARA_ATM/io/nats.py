@@ -5,6 +5,7 @@ import numpy as np
 from io import StringIO
 import os
 import jpype
+import tempfile
 
 
 def get_nats_constant(name):
@@ -54,8 +55,22 @@ class NatsSimulationWrapper:
         """Users must implement this method in the derived class"""
         raise NotImplementedError("derived class must implement 'simulation' method")
 
-    def __call__(self, output_file=None, *args, **kwargs):
-        """Execute NATS simulation and write output to specified file"""
+    def __call__(self, output_file=None, return_df=True, *args, **kwargs):
+        """Execute NATS simulation and write output to specified file
+
+        Parameters
+        ----------
+        output_file : str
+            Output file to write to.  If not provided, a temporary file is used
+        return_df : bool
+            Whether to read the output into a DataFrame and return it
+
+        Returns
+        -------
+        DataFrame
+            If return_df is True, read the output into a DataFrame and
+            return that
+        """
         self.cwd = os.getcwd() # Save current working directory
 
         # It is necssary to change directories because the NATS
@@ -72,13 +87,34 @@ class NatsSimulationWrapper:
         # using the cwd attribute.
         os.chdir(self.cwd)
 
-        if output_file:
+        if output_file is None:
+            # Create a temporary directory to store the output, so it
+            # can be read back
+            tempdir = tempfile.mkdtemp()
+            output_file = os.path.join(tempdir, 'nats.csv')
+        else:
+            tempdir = None
+
+        try:
             self.write_output(self._get_output_file_path(output_file))
+            if return_df:
+                df = read_nats_output_file(output_file)
+        finally:
+            # This ensures we clean up the temporary directory and
+            # file even if an exception occurs above.  If there is an
+            # exception, it is automatically re-raised after finally.
+            if tempdir:
+                if os.path.isfile(output_file):
+                    os.remove(output_file)
+                os.rmdir(tempdir)
 
         if hasattr(self, 'cleanup'):
             self.cleanup()
 
         self._stop_jvm()
+
+        if return_df:
+            return df
 
     def _start_jvm(self):
         classpath = self.NATS_HOME + "dist/nats-standalone.jar"
