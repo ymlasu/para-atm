@@ -10,6 +10,8 @@ from PARA_ATM.io.iff import read_iff_file
 from PARA_ATM.io.utils import read_csv_file
 from PARA_ATM.safety.ground_ssd import ground_ssd_safety_analysis
 
+from .nats_gate_to_gate import GateToGate
+
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 sample_nats_file = os.path.join(THIS_DIR, '..', 'sample_data/NATS_output_SFO_PHX.csv')
 
@@ -116,6 +118,16 @@ class TestGroundSSD(unittest.TestCase):
         self.assertTrue(all(safety['fpf'] <= 1.0))
         self.assertTrue(all(safety['fpf'] >= 0.0))
         self.assertEqual(sum(safety['fpf'].isnull()), 0)
+
+class TestNatsSimulation(unittest.TestCase):
+    # Note that for this test to run, NATS must be installed and the
+    # NATS_HOME environment variable must be set appropriately
+    def test_gate_to_gate(self):
+        nats = GateToGate()
+        df = nats()
+
+        # Basic consistency checks:
+        self.assertEqual(len(df), 369)
         
 if __name__ == '__main__':
     unittest.main()
