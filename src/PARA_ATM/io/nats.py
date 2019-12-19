@@ -27,7 +27,11 @@ class NatsSimulationWrapper:
     
     simulation: This method runs the actual NATS simulation.  The user
         can assume that the jvm is already started and that it will be
-        shutdown by the parent class
+        shutdown by the parent class.  If the simulation code needs to
+        access data files relative to the original working directory,
+        use the get_path method, which will produce an appropriate
+        path to work around the fact that NATS simulation occurs in
+        the NATS_HOME directory.
 
     write_output: This method writes output to the specified filename.
 
@@ -98,7 +102,7 @@ class NatsSimulationWrapper:
                 tempdir = None
 
             try:
-                self.write_output(self._get_output_file_path(output_file))
+                self.write_output(self.get_path(output_file))
                 if return_df:
                     df = read_nats_output_file(output_file)
             finally:
@@ -129,13 +133,13 @@ class NatsSimulationWrapper:
 
         jpype.startJVM(jpype.getDefaultJVMPath(), "-ea", "-Djava.class.path=%s" % classpath)
 
-    def _get_output_file_path(self, filename):
-        """Return a full path for writing the output_file
+    def get_path(self, filename):
+        """Return a path to filename that behaves as if original directory is current working directory
 
         This will internally convert relative paths to be relative to
         the original working directory (otherwise, NATS considers
-        NATS_HOME to be the working directory)."""
-        
+        NATS_HOME to be the working directory).
+        """
         if not os.path.isabs(filename):
             filename = os.path.join(self.cwd, filename)
         return filename
