@@ -3,10 +3,14 @@
 #__version__ = "0.2.0"
 
 import argparse
+import inspect
+import os
+import sys
 
 from PARA_ATM.Application import LaunchApp
 from PARA_ATM.io.utils import read_data_file
 from PARA_ATM.plotting.plotting import plot_trajectory
+from PARA_ATM.io.nats import NatsSimulationWrapper
 
 def main():
 
@@ -23,6 +27,11 @@ def main():
     p_plot = subparsers.add_parser('plot', help='plot flight trajectory for a specified data file')
     p_plot.add_argument('file', help='data file to plot (NATS or IFF format)')
 
+    p_nats = subparsers.add_parser('nats', help='run NATS simulation implemented via NatsSimulationWrapper')
+    p_nats.add_argument('file', help='python module with a class that derives from NatsSimulationWrapper')
+    p_nats.add_argument('--output', help='file to store nats results')
+    p_nats.add_argument('--plot', action='store_true', help='plot results')
+
 
     args = parser.parse_args()
 
@@ -31,6 +40,23 @@ def main():
     # have different signatures
     if args.command == 'app':
         LaunchApp.main()
+        
     elif args.command == 'plot':
         df = read_data_file(args.file)
         plot_trajectory(df)
+        
+    elif args.command == 'nats':
+        dirname = os.path.dirname(args.file)
+        if dirname:
+            sys.path.append(dirname)
+        module = __import__(os.path.basename(args.file).replace('.py',''))
+        # Find appropriate classes in the user-specified module:
+        classes = inspect.getmembers(module, lambda member: inspect.isclass(member) and issubclass(member, NatsSimulationWrapper) and member is not NatsSimulationWrapper)
+        if len(classes) < 1:
+            raise ValueError('no subclass of NatsSimulationWrapper found in {}'.format(args.file))
+        class_name, the_class = classes[0] # Use the first available class
+        print('Creating NATS simulation from: {}'.format(class_name))
+        nats = the_class() # Instatiate class
+        df = nats(output_file=args.output) # Run simulation
+        if args.plot:
+            plot_trajectory(df)
