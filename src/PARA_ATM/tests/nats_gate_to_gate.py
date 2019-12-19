@@ -78,6 +78,7 @@ class GateToGate(NatsSimulationWrapper):
         self.simulationInterface = simulationInterface
         self.environmentInterface = environmentInterface
         self.aircraftInterface = aircraftInterface
+        self.natsStandalone = natsStandalone
 
 
     def write_output(self, filename):
@@ -88,4 +89,5 @@ class GateToGate(NatsSimulationWrapper):
 
         self.aircraftInterface.release_aircraft()
         self.environmentInterface.release_rap()
+        self.natsStandalone.stop()
 

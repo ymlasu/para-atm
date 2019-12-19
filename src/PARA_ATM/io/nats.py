@@ -100,13 +100,6 @@ class NatsSimulationWrapper:
         try:
             self.simulation(*args, **kwargs)
 
-            # Go back to where we where.  Even though this is issued prior
-            # to writing output, the NATS commands that write output still
-            # seem to treat NATS_HOME as the working directory.  The
-            # workaround is that the user code can form an absolute path
-            # using the cwd attribute.
-            os.chdir(self.cwd)
-
             if output_file is None:
                 # Create a temporary directory to store the output, so it
                 # can be read back
@@ -134,6 +127,15 @@ class NatsSimulationWrapper:
         finally:
             # Make sure that jvm gets stopped even if an exception occurs
             self._stop_jvm()
+
+            # Go back to where we where.  Note that calling this prior
+            # to natsStandalone.stop() (which may be called by the
+            # user's cleanup method) seeems to result in
+            # crashes/hangs.  Also note that trying to do this
+            # directory change prior to writing the output file does
+            # not seem to eliminate the need to fixup the paths
+            # manually.
+            os.chdir(self.cwd)
 
         if return_df:
             return df
