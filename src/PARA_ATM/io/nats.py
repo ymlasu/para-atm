@@ -1,8 +1,108 @@
-"""Functions for interfacing to NATS input/output files"""
+"""Functions for interfacing to NATS simulation"""
 
 import pandas as pd
 import numpy as np
 from io import StringIO
+import os
+import jpype
+
+
+def get_nats_constant(name):
+    """Return the variable that stores the named NATS constant
+    
+    This must be called while the JVM is running, e.g., within a
+    NatsSimulationWrapper instance
+    """
+    return getattr(jpype.JPackage('com').osi.util.Constants, name)
+
+class NatsSimulationWrapper:
+    """Parent class for creating a NATS simulation instance
+
+    This class handles path issues behind the scenes, making it
+    possible to run NATS from any directory, with output files being
+    written back to the current working directory.
+
+    Users should implement the following methods in the derived class:
+    
+    simulation: This method runs the actual NATS simulation.  The user
+        can assume that the jvm is already started and that it will be
+        shutdown by the parent class
+
+    write_output: This method writes output to the specified filename.
+
+    cleanup: Cleanup code that will be called after simulation and
+        write_output.  Having cleanup code in a separate method makes
+        it possible for cleanup to occur after write_output.
+
+    """
+    def __init__(self, nats_home=None):
+        """
+        Parameters
+        ----------
+        nats_home : str
+            Full path to NATS home directory.  This will override the
+            NATS_HOME environment variable, if it exists.
+        """
+        if nats_home is None:
+            self.NATS_HOME = os.environ.get('NATS_HOME')
+            if self.NATS_HOME is None:
+                raise RuntimeError('either NATS_HOME environment variable must be set, or nats_home argument must be provided')
+        else:
+            self.NATS_HOME = nats_home
+
+    def simulation(self, *args, **kwargs):
+        """Users must implement this method in the derived class"""
+        raise NotImplementedError("derived class must implement 'simulation' method")
+
+    def __call__(self, output_file=None, *args, **kwargs):
+        """Execute NATS simulation and write output to specified file"""
+        self.cwd = os.getcwd() # Save current working directory
+
+        # It is necssary to change directories because the NATS
+        # simulation issues a system call to "./run"
+        os.chdir(os.path.abspath(self.NATS_HOME))
+        
+        self._start_jvm()
+        self.simulation(*args, **kwargs)
+
+        # Go back to where we where.  Even though this is issued prior
+        # to writing output, the NATS commands that write output still
+        # seem to treat NATS_HOME as the working directory.  The
+        # workaround is that the user code can form an absolute path
+        # using the cwd attribute.
+        os.chdir(self.cwd)
+
+        if output_file:
+            self.write_output(self._get_output_file_path(output_file))
+
+        if hasattr(self, 'cleanup'):
+            self.cleanup()
+
+        self._stop_jvm()
+
+    def _start_jvm(self):
+        classpath = self.NATS_HOME + "dist/nats-standalone.jar"
+        classpath = classpath + ":" + self.NATS_HOME + "dist/nats-client.jar"
+        classpath = classpath + ":" + self.NATS_HOME + "dist/nats-shared.jar"
+        classpath = classpath + ":" + self.NATS_HOME + "dist/json.jar"
+        classpath = classpath + ":" + self.NATS_HOME + "dist/commons-logging-1.2.jar"
+
+        jpype.startJVM(jpype.getDefaultJVMPath(), "-ea", "-Djava.class.path=%s" % classpath)
+
+    def _get_output_file_path(self, filename):
+        """Return a full path for writing the output_file
+
+        This will internally convert relative paths to be relative to
+        the original working directory (otherwise, NATS considers
+        NATS_HOME to be the working directory)."""
+        
+        if not os.path.isabs(filename):
+            filename = os.path.join(self.cwd, filename)
+        return filename
+
+    def _stop_jvm(self):
+        jpype.shutdownJVM()
+
 
 
 def read_nats_output_file(filename):
@@ -66,3 +166,4 @@ def read_nats_output_file(filename):
     df = df[selected_cols]
 
     return df
+

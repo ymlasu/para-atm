@@ -21,7 +21,8 @@ setup(
             'rdflib',
             'psycopg2-binary',
             'sqlalchemy',
-            'bokeh'],
+            'bokeh',
+            'jpype1==0.6.3'],
         entry_points={
             'console_scripts': [
                 'para_atm=PARA_ATM.para_atm:main',
