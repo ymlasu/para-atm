@@ -78,40 +78,44 @@ class NatsSimulationWrapper:
         os.chdir(os.path.abspath(self.NATS_HOME))
         
         self._start_jvm()
-        self.simulation(*args, **kwargs)
-
-        # Go back to where we where.  Even though this is issued prior
-        # to writing output, the NATS commands that write output still
-        # seem to treat NATS_HOME as the working directory.  The
-        # workaround is that the user code can form an absolute path
-        # using the cwd attribute.
-        os.chdir(self.cwd)
-
-        if output_file is None:
-            # Create a temporary directory to store the output, so it
-            # can be read back
-            tempdir = tempfile.mkdtemp()
-            output_file = os.path.join(tempdir, 'nats.csv')
-        else:
-            tempdir = None
 
         try:
-            self.write_output(self._get_output_file_path(output_file))
-            if return_df:
-                df = read_nats_output_file(output_file)
+            self.simulation(*args, **kwargs)
+
+            # Go back to where we where.  Even though this is issued prior
+            # to writing output, the NATS commands that write output still
+            # seem to treat NATS_HOME as the working directory.  The
+            # workaround is that the user code can form an absolute path
+            # using the cwd attribute.
+            os.chdir(self.cwd)
+
+            if output_file is None:
+                # Create a temporary directory to store the output, so it
+                # can be read back
+                tempdir = tempfile.mkdtemp()
+                output_file = os.path.join(tempdir, 'nats.csv')
+            else:
+                tempdir = None
+
+            try:
+                self.write_output(self._get_output_file_path(output_file))
+                if return_df:
+                    df = read_nats_output_file(output_file)
+            finally:
+                # This ensures we clean up the temporary directory and
+                # file even if an exception occurs above.  If there is an
+                # exception, it is automatically re-raised after finally.
+                if tempdir:
+                    if os.path.isfile(output_file):
+                        os.remove(output_file)
+                    os.rmdir(tempdir)
+
+            if hasattr(self, 'cleanup'):
+                self.cleanup()
+
         finally:
-            # This ensures we clean up the temporary directory and
-            # file even if an exception occurs above.  If there is an
-            # exception, it is automatically re-raised after finally.
-            if tempdir:
-                if os.path.isfile(output_file):
-                    os.remove(output_file)
-                os.rmdir(tempdir)
-
-        if hasattr(self, 'cleanup'):
-            self.cleanup()
-
-        self._stop_jvm()
+            # Make sure that jvm gets stopped even if an exception occurs
+            self._stop_jvm()
 
         if return_df:
             return df

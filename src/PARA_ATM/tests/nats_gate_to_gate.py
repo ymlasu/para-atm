@@ -14,8 +14,7 @@ class GateToGate(NatsSimulationWrapper):
         # Start NATS Standalone environment
         natsStandalone = clsNATSStandalone.start()
 
-        if (natsStandalone is None) :
-            # Todo: shutdown jvm?
+        if natsStandalone is None:
             raise RuntimeError("Can't start NATS Standalone")
 
         simulationInterface = natsStandalone.getSimulationInterface()
@@ -30,7 +29,6 @@ class GateToGate(NatsSimulationWrapper):
         aircraftInterface = equipmentInterface.getAircraftInterface()
 
         if simulationInterface is None:
-            # Todo shutdown jvm?
             natsStandalone.stop()
             raise RuntimeError("Can't get SimulationInterface")
 
