@@ -56,10 +56,24 @@ class NatsSimulationWrapper:
             self.NATS_HOME = nats_home
 
     def simulation(self, *args, **kwargs):
-        """Users must implement this method in the derived class"""
+        """Users must implement this method in the derived class
+
+        Assume that the jvm is already started and that it will be
+        shutdown by the parent class.
+        """
         raise NotImplementedError("derived class must implement 'simulation' method")
 
+    def write_output(self, filename):
+        """Users must implement this method in the derived class
+
+        It will be called after the simulation method and should issue
+        the commands necessary to write the output to the specified
+        file.
+        """
+        raise NotImplementedError("derived class must implement 'write_output' method")
+
     def __call__(self, output_file=None, return_df=True, *args, **kwargs):
+
         """Execute NATS simulation and write output to specified file
 
         Parameters
