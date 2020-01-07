@@ -143,11 +143,11 @@ class NatsSimulationWrapper:
             return df
 
     def _start_jvm(self):
-        classpath = self.NATS_HOME + "dist/nats-standalone.jar"
-        classpath = classpath + ":" + self.NATS_HOME + "dist/nats-client.jar"
-        classpath = classpath + ":" + self.NATS_HOME + "dist/nats-shared.jar"
-        classpath = classpath + ":" + self.NATS_HOME + "dist/json.jar"
-        classpath = classpath + ":" + self.NATS_HOME + "dist/commons-logging-1.2.jar"
+        classpath = os.path.join(self.NATS_HOME, "dist/nats-standalone.jar")
+        classpath = classpath + ":" + os.path.join(self.NATS_HOME, "dist/nats-client.jar")
+        classpath = classpath + ":" + os.path.join(self.NATS_HOME, "dist/nats-shared.jar")
+        classpath = classpath + ":" + os.path.join(self.NATS_HOME, "dist/json.jar")
+        classpath = classpath + ":" + os.path.join(self.NATS_HOME, "dist/commons-logging-1.2.jar")
 
         jpype.startJVM(jpype.getDefaultJVMPath(), "-ea", "-Djava.class.path=%s" % classpath)
 
