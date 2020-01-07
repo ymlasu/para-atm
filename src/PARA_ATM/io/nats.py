@@ -6,54 +6,192 @@ from io import StringIO
 import os
 import jpype
 import tempfile
+import atexit
 
 
-def get_nats_constant(name):
-    """Return the variable that stores the named NATS constant
-    
-    This must be called while the JVM is running, e.g., within a
-    NatsSimulationWrapper instance
+# Note: NatsEnvironment is implemented as a class wtih static methods.
+# The same effect could be achieved using globally defined functions
+# and state variables, but the class is used in order to provide some
+# organization and encapuslation.
+#
+# Implementation of these utilities was challenging because the JVM
+# and NATS servers can only be started once.  After they are stopped,
+# they cannot be started again within the same Python process.  This
+# is why we need global (static) variables to track the state and trap
+# conditions that would otherwise lead to crashes.
+#
+# Other approaches that were considered: Use of a context manager
+# class was considered, which is nice because it clearly delineates
+# where in the code the environment is valid and will handle shtudown
+# once the context exits.  The problem is that the JVM can't be
+# started again, so only one such context instatiation would be
+# allowed.  A regular class was also considered (not using static
+# methods and state), but there is the same issue: since the JVM
+# cannot be restarted, only once such instance could be created.
+class NatsEnvironment:
+    """Class that provides static methods to start and stop the JVM for NATS
     """
-    return getattr(jpype.JPackage('com').osi.util.Constants, name)
+
+    # Class state variables to track (globally) whether the JVM has
+    # been started and stopped
+    jvm_started = False
+    jvm_stopped = False
+
+    @classmethod
+    def start_jvm(cls, nats_home=None):
+        """Start java virtual machine and NATS standalone server
+
+        If the JVM is already running, this will do nothing.  If the
+        JVM has already been stopped, this will raise an error, since
+        it cannot be restarted.
+
+        This function takes care of setting the Java classpath,
+        changing directories, starting the JVM, and starting the NATS
+        standalone server.
+
+        Path issues with NATS are handled behind the scenes by setting
+        the classpath and changing directories prior to starting the
+        JVM.  The original directory is remembered, and it is restored
+        after the JVM is stopped.
+
+        Parameters
+        ----------
+        nats_home : str, optional
+            Path to NATS home directory.  If not provided, the
+            NATS_HOME environment variable will be used.
+        """
+        if cls.jvm_started:
+            # It's already started, so do nothing.  Trying to start it
+            # again would cause a crash.
+            return
+        if cls.jvm_stopped:
+            raise RuntimeError("attempt to restart JVM after stopping; doing so is not allowed and will crash Java")
+
+        if nats_home is None:
+            NATS_HOME = os.environ.get('NATS_HOME')
+            if NATS_HOME is None:
+                raise RuntimeError('either NATS_HOME environment variable must be set, or nats_home argument must be provided')
+        else:
+            NATS_HOME = nats_home        
+        
+        cls.cwd = os.getcwd() # Save current working directory
+
+        # It is necssary to change directories because the NATS
+        # simulation issues a system call to "./run"
+        os.chdir(os.path.abspath(NATS_HOME))
+
+        classpath = os.path.join(NATS_HOME, "dist/nats-standalone.jar")
+        classpath = classpath + ":" + os.path.join(NATS_HOME, "dist/nats-client.jar")
+        classpath = classpath + ":" + os.path.join(NATS_HOME, "dist/nats-shared.jar")
+        classpath = classpath + ":" + os.path.join(NATS_HOME, "dist/json.jar")
+        classpath = classpath + ":" + os.path.join(NATS_HOME, "dist/commons-logging-1.2.jar")
+
+        jpype.startJVM(jpype.getDefaultJVMPath(), "-ea", "-Djava.class.path=%s" % classpath)
+
+        clsNATSStandalone = jpype.JClass('NATSStandalone')
+        # Start NATS Standalone environment
+        cls.natsStandalone = clsNATSStandalone.start()
+
+        if cls.natsStandalone is None:
+            raise RuntimeError("Can't start NATS Standalone")
+
+        cls.jvm_started = True
+
+    @classmethod
+    def stop_jvm(cls):
+        """Stop java virtual machine and NATS server
+
+        This also moves back to the original directory that was set
+        prior to starting the JVM
+
+        If this function is not called manually, it will be called
+        automatically at exit to make sure that the JVM is properly
+        shutdown.  Multiple calls are OK.
+
+        """
+        if not cls.jvm_started:
+            # Not yet started, do nothing
+            return
+        if cls.jvm_stopped:
+            # Already started, do nothing
+            return
+
+        cls.natsStandalone.stop()
+
+        # Note: have observed that calls to shutdownJVM after a jpype
+        # exception can lead to a hang.  It should be safe here due to
+        # the jvm_started check, but keep it in mind if reorganizing
+        # the code.
+        jpype.shutdownJVM()
+
+        # Go back to where we where.  Note that calling this prior to
+        # natsStandalone.stop() seeems to result in crashes/hangs.
+        # Also note that trying to do this directory change prior to
+        # writing the output file does not seem to eliminate the need
+        # to fixup the paths manually.
+        os.chdir(cls.cwd)
+
+        cls.jvm_stopped = True
+
+    @classmethod
+    def get_nats_standalone(cls):
+        """Retrieve reference to NATSStandalone class instance"""
+        if not cls.jvm_started:
+            raise RuntimeError("JVM not yet started")
+        if cls.jvm_stopped:
+            raise RuntimeError("JVM already stopped")
+        return cls.natsStandalone
+
+    @classmethod
+    def get_nats_constant(cls, name):
+        """Return the variable that stores the named NATS constant
+
+        Parameters
+        ----------
+        name : str
+            Name of NATS constant to retrieve
+        """
+        if not cls.jvm_started:
+            raise RuntimeError("JVM not yet started")
+        if cls.jvm_stopped:
+            raise RuntimeError("JVM already stopped")        
+        return getattr(jpype.JPackage('com').osi.util.Constants, name)
+
+    
+
+# Register stop_jvm to be called automatically when Python exits.
+# This ensures that the JVM is shutdown properly.  The user can still
+# manually call stop_jvm at any point, as it is safe to have multiple
+# stop_jvm calls.
+atexit.register(NatsEnvironment.stop_jvm)
+
 
 class NatsSimulationWrapper:
     """Parent class for creating a NATS simulation instance
 
-    This class handles path issues behind the scenes, making it
-    possible to run NATS from any directory, with output files being
-    written back to the current working directory.
-
     Users should implement the following methods in the derived class:
     
-    simulation: This method runs the actual NATS simulation.  The user
-        can assume that the jvm is already started and that it will be
-        shutdown by the parent class.  If the simulation code needs to
-        access data files relative to the original working directory,
-        use the get_path method, which will produce an appropriate
-        path to work around the fact that NATS simulation occurs in
-        the NATS_HOME directory.
+    simulation: This method runs the actual NATS simulation.  If the
+        simulation code needs to access data files relative to the
+        original working directory, use the get_path method, which
+        will produce an appropriate path to work around the fact that
+        NATS simulation occurs in the NATS_HOME directory.
 
     write_output: This method writes output to the specified filename.
 
     cleanup: Cleanup code that will be called after simulation and
         write_output.  Having cleanup code in a separate method makes
-        it possible for cleanup to occur after write_output.
+        it possible for cleanup to occur after write_output.  The
+        cleanup code should not stop the NATS standalone server or the
+        JVM, as this is handled by the NatsEnvironment class.
+
+    Once an instance of the class is created, the simulation is run by
+    calling the instance as a function, which will go to the __call__
+    method.  This will call the user's simulation method, with
+    additional pre- and post-processing steps.  Note that the JVM must
+    be started first, via a call to NatsEnvironment.start_jvm.
 
     """
-    def __init__(self, nats_home=None):
-        """
-        Parameters
-        ----------
-        nats_home : str
-            Full path to NATS home directory.  This will override the
-            NATS_HOME environment variable, if it exists.
-        """
-        if nats_home is None:
-            self.NATS_HOME = os.environ.get('NATS_HOME')
-            if self.NATS_HOME is None:
-                raise RuntimeError('either NATS_HOME environment variable must be set, or nats_home argument must be provided')
-        else:
-            self.NATS_HOME = nats_home
 
     def simulation(self, *args, **kwargs):
         """Users must implement this method in the derived class
@@ -89,14 +227,7 @@ class NatsSimulationWrapper:
             If return_df is True, read the output into a DataFrame and
             return that
         """
-        self.cwd = os.getcwd() # Save current working directory
-
-        # It is necssary to change directories because the NATS
-        # simulation issues a system call to "./run"
-        os.chdir(os.path.abspath(self.NATS_HOME))
         
-        self._start_jvm()
-
         self.simulation(*args, **kwargs)
 
         if output_file is None:
@@ -123,33 +254,9 @@ class NatsSimulationWrapper:
         if hasattr(self, 'cleanup'):
             self.cleanup()
 
-        # Note: do not put this stop call in a finally block to be
-        # executed if there is an exception in the simulation call.
-        # If a jpype exception occurs during simulation and then
-        # shutdownJVM is called (via try/finallY), that causes
-        # everything to hang.
-        self._stop_jvm()
-
-        # Go back to where we where.  Note that calling this prior
-        # to natsStandalone.stop() (which may be called by the
-        # user's cleanup method) seeems to result in
-        # crashes/hangs.  Also note that trying to do this
-        # directory change prior to writing the output file does
-        # not seem to eliminate the need to fixup the paths
-        # manually.
-        os.chdir(self.cwd)
-
         if return_df:
             return df
 
-    def _start_jvm(self):
-        classpath = os.path.join(self.NATS_HOME, "dist/nats-standalone.jar")
-        classpath = classpath + ":" + os.path.join(self.NATS_HOME, "dist/nats-client.jar")
-        classpath = classpath + ":" + os.path.join(self.NATS_HOME, "dist/nats-shared.jar")
-        classpath = classpath + ":" + os.path.join(self.NATS_HOME, "dist/json.jar")
-        classpath = classpath + ":" + os.path.join(self.NATS_HOME, "dist/commons-logging-1.2.jar")
-
-        jpype.startJVM(jpype.getDefaultJVMPath(), "-ea", "-Djava.class.path=%s" % classpath)
 
     def get_path(self, filename):
         """Return a path to filename that behaves as if original directory is current working directory
@@ -161,9 +268,6 @@ class NatsSimulationWrapper:
         if not os.path.isabs(filename):
             filename = os.path.join(self.cwd, filename)
         return filename
-
-    def _stop_jvm(self):
-        jpype.shutdownJVM()
 
 
 

@@ -5,7 +5,7 @@ import os
 
 from PARA_ATM.Commands.Helpers.DataStore import Access
 from PARA_ATM.Application import LaunchApp
-from PARA_ATM.io.nats import read_nats_output_file
+from PARA_ATM.io.nats import read_nats_output_file, NatsEnvironment
 from PARA_ATM.io.iff import read_iff_file
 from PARA_ATM.io.utils import read_csv_file
 from PARA_ATM.safety.ground_ssd import ground_ssd_safety_analysis
@@ -122,9 +122,18 @@ class TestGroundSSD(unittest.TestCase):
 class TestNatsSimulation(unittest.TestCase):
     # Note that for this test to run, NATS must be installed and the
     # NATS_HOME environment variable must be set appropriately
+
+    @classmethod
+    def setUpClass(cls):
+        NatsEnvironment.start_jvm()
+
+    @classmethod
+    def tearDownClass(cls):
+        NatsEnvironment.stop_jvm()
+    
     def test_gate_to_gate(self):
-        nats = GateToGate()
-        df = nats()
+        simulation = GateToGate()
+        df = simulation()
 
         # Basic consistency checks:
         self.assertEqual(len(df), 369)

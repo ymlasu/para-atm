@@ -1,21 +1,14 @@
-import jpype
 import time
 
-from PARA_ATM.io.nats import NatsSimulationWrapper, get_nats_constant
+from PARA_ATM.io.nats import NatsSimulationWrapper, NatsEnvironment
 
 class GateToGate(NatsSimulationWrapper):
     def simulation(self, *args, **kwargs):
 
-        NATS_SIMULATION_STATUS_PAUSE = get_nats_constant('NATS_SIMULATION_STATUS_PAUSE')
-        NATS_SIMULATION_STATUS_ENDED = get_nats_constant('NATS_SIMULATION_STATUS_ENDED')
+        NATS_SIMULATION_STATUS_PAUSE = NatsEnvironment.get_nats_constant('NATS_SIMULATION_STATUS_PAUSE')
+        NATS_SIMULATION_STATUS_ENDED = NatsEnvironment.get_nats_constant('NATS_SIMULATION_STATUS_ENDED')
 
-
-        clsNATSStandalone = jpype.JClass('NATSStandalone')
-        # Start NATS Standalone environment
-        natsStandalone = clsNATSStandalone.start()
-
-        if natsStandalone is None:
-            raise RuntimeError("Can't start NATS Standalone")
+        natsStandalone = NatsEnvironment.get_nats_standalone()
 
         simulationInterface = natsStandalone.getSimulationInterface()
 
@@ -74,20 +67,14 @@ class GateToGate(NatsSimulationWrapper):
             else:
                 time.sleep(1)
 
-        # Store attributes so they can be accessed by write_output and cleanup:
+        # Store attribute for access by write_output and cleanup:
         self.simulationInterface = simulationInterface
         self.environmentInterface = environmentInterface
         self.aircraftInterface = aircraftInterface
-        self.natsStandalone = natsStandalone
-
 
     def write_output(self, filename):
-
         self.simulationInterface.write_trajectories(filename)
 
     def cleanup(self):
-
         self.aircraftInterface.release_aircraft()
-        self.environmentInterface.release_rap()
-        self.natsStandalone.stop()
-
+        self.environmentInterface.release_rap()        
