@@ -97,45 +97,47 @@ class NatsSimulationWrapper:
         
         self._start_jvm()
 
+        self.simulation(*args, **kwargs)
+
+        if output_file is None:
+            # Create a temporary directory to store the output, so it
+            # can be read back
+            tempdir = tempfile.mkdtemp()
+            output_file = os.path.join(tempdir, 'nats.csv')
+        else:
+            tempdir = None
+
         try:
-            self.simulation(*args, **kwargs)
-
-            if output_file is None:
-                # Create a temporary directory to store the output, so it
-                # can be read back
-                tempdir = tempfile.mkdtemp()
-                output_file = os.path.join(tempdir, 'nats.csv')
-            else:
-                tempdir = None
-
-            try:
-                self.write_output(self.get_path(output_file))
-                if return_df:
-                    df = read_nats_output_file(output_file)
-            finally:
-                # This ensures we clean up the temporary directory and
-                # file even if an exception occurs above.  If there is an
-                # exception, it is automatically re-raised after finally.
-                if tempdir:
-                    if os.path.isfile(output_file):
-                        os.remove(output_file)
-                    os.rmdir(tempdir)
-
-            if hasattr(self, 'cleanup'):
-                self.cleanup()
-
+            self.write_output(self.get_path(output_file))
+            if return_df:
+                df = read_nats_output_file(output_file)
         finally:
-            # Make sure that jvm gets stopped even if an exception occurs
-            self._stop_jvm()
+            # This ensures we clean up the temporary directory and
+            # file even if an exception occurs above.  If there is an
+            # exception, it is automatically re-raised after finally.
+            if tempdir:
+                if os.path.isfile(output_file):
+                    os.remove(output_file)
+                os.rmdir(tempdir)
 
-            # Go back to where we where.  Note that calling this prior
-            # to natsStandalone.stop() (which may be called by the
-            # user's cleanup method) seeems to result in
-            # crashes/hangs.  Also note that trying to do this
-            # directory change prior to writing the output file does
-            # not seem to eliminate the need to fixup the paths
-            # manually.
-            os.chdir(self.cwd)
+        if hasattr(self, 'cleanup'):
+            self.cleanup()
+
+        # Note: do not put this stop call in a finally block to be
+        # executed if there is an exception in the simulation call.
+        # If a jpype exception occurs during simulation and then
+        # shutdownJVM is called (via try/finallY), that causes
+        # everything to hang.
+        self._stop_jvm()
+
+        # Go back to where we where.  Note that calling this prior
+        # to natsStandalone.stop() (which may be called by the
+        # user's cleanup method) seeems to result in
+        # crashes/hangs.  Also note that trying to do this
+        # directory change prior to writing the output file does
+        # not seem to eliminate the need to fixup the paths
+        # manually.
+        os.chdir(self.cwd)
 
         if return_df:
             return df
