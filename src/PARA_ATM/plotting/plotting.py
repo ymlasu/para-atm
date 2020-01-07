@@ -7,7 +7,7 @@ from bokeh.tile_providers import Vendors, get_provider
 from PARA_ATM.Application.plotting_tools import merc
 
 
-def plot_trajectory(df_in, output_file=None):
+def plot_trajectory(df_in, output_file=None, output_notebook=False):
     """Plot scenario trajectory to static html and open browser
     
     Parameters
@@ -17,9 +17,13 @@ def plot_trajectory(df_in, output_file=None):
         'heading', and 'callsign' columns
     output_file : str
         Output file for html (if None, use bokeh default)
+    output_notebook : bool
+        If True, output to jupyter notebook
     """
     if output_file is not None:
         bkplot.output_file(output_file)
+    elif output_notebook:
+        bkplot.output_notebook()
 
     p = bkplot.figure(x_axis_type='mercator', y_axis_type='mercator')
     tile_provider = get_provider(Vendors.CARTODBPOSITRON)
