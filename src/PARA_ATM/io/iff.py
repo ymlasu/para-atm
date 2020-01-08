@@ -4,7 +4,7 @@ import pandas as pd
 import numpy as np
 from pkg_resources import parse_version
 
-def read_iff_file(filename, record_types=3, interp=False):
+def read_iff_file(filename, record_types=3):
     """
     Read IFF file and return data frames for requested record types
     
