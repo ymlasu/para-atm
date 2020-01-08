@@ -123,10 +123,9 @@ class TestNatsSimulation(unittest.TestCase):
     # Note that for this test to run, NATS must be installed and the
     # NATS_HOME environment variable must be set appropriately
 
-    @classmethod
-    def setUpClass(cls):
-        NatsEnvironment.start_jvm()
-
+    # Although the JVM will be shutdown automatically at program exit,
+    # we do it manually here to restore the current working directory,
+    # in case subsequent tests depend on it.
     @classmethod
     def tearDownClass(cls):
         NatsEnvironment.stop_jvm()

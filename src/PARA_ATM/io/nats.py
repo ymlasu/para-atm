@@ -60,13 +60,13 @@ class NatsEnvironment:
             Path to NATS home directory.  If not provided, the
             NATS_HOME environment variable will be used.
         """
+        if cls.jvm_stopped:
+            raise RuntimeError("attempt to restart JVM after stopping; doing so is not allowed and will crash Java")
         if cls.jvm_started:
             # It's already started, so do nothing.  Trying to start it
             # again would cause a crash.
             return
-        if cls.jvm_stopped:
-            raise RuntimeError("attempt to restart JVM after stopping; doing so is not allowed and will crash Java")
-
+        
         if nats_home is None:
             NATS_HOME = os.environ.get('NATS_HOME')
             if NATS_HOME is None:
@@ -188,8 +188,8 @@ class NatsSimulationWrapper:
     Once an instance of the class is created, the simulation is run by
     calling the instance as a function, which will go to the __call__
     method.  This will call the user's simulation method, with
-    additional pre- and post-processing steps.  Note that the JVM must
-    be started first, via a call to NatsEnvironment.start_jvm.
+    additional pre- and post-processing steps.  The JVM will be
+    started automatically if it is not already running.
 
     """
 
@@ -227,6 +227,9 @@ class NatsSimulationWrapper:
             If return_df is True, read the output into a DataFrame and
             return that
         """
+        # Make sure that the JVM has been started.  This is safe to
+        # call even if it has already been started.
+        NatsEnvironment.start_jvm()
         
         self.simulation(*args, **kwargs)
 
