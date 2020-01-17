@@ -107,6 +107,14 @@ On other operating systems, the exact commands will differ, but the general step
 
 Installation of NATS is optional.  Refer to the NATS [README.txt](src/NATS/README.txt).  NATS may be distributed separately in the future.
 
+On Ubuntu, the following commands install dependencies needed by NATS 1.7:
+
+``` shell
+sudo apt install default-jdk
+sudo apt install libcurl4-gnutls-dev
+sudo apt install libxml2-dev
+```
+
 ## Testing
 
 To test the PARA_ATM installation, run the following command from the `src` directory:
