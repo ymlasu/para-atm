@@ -87,11 +87,17 @@ On Ubuntu 18, if the installation is not performed within a virtual environment,
 
 ### Database setup (optional)
 
-Setting up the database is optional.  Currently, the database is required for the GUI application that is launched via `para_atm app`.
+Setting up the database is optional.  Currently, the database only is required for the GUI application that is launched via `para_atm app`.
 
-To set up the database on Ubuntu, run:
-
+To set up the database on Ubuntu, first install the necessary packages:
+``` shell
+sudo apt install postgresql
+sudo apt install pgadmin3
+sudo apt install postgresql-contrib
 ```
+
+Then run the setup script to configure the database:
+``` shell
 ./dbSetup.sh
 ```
 
