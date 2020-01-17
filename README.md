@@ -1,5 +1,4 @@
-# NASA NAS ULI InfoFusion
-
+# NASA ULI InfoFusion
 
 ## Introduction
 
@@ -11,7 +10,7 @@ Note that [install_PARA-ATM.sh](install_PARA-ATM.sh) was originally developed to
 
 In short, the steps are:
 - Install Python 3
-- From the `src` directory, run: `python setup.py install`
+- From the `src` directory, run: `python setup.py develop`
 
 The following sections provide further details.
 
@@ -26,42 +25,67 @@ On Ubuntu 18, this can be done using:
 ```
 sudo apt install python3
 ```
-Note that with this installation, python commands must be issued as `python3` or `pip3`, because on Ubuntu 18, the default `python` command refers to Python 2.  An alternative is to install Python via Anaconda: https://docs.anaconda.com/anaconda/install/, which provides a local installation of Python that is separate from the one managed by the system package manager.  With a Python 3 Anaconda installation, the `python` command will refer to the Anaconda Python 3 installation (although Anaconda also provides a `python3` command that points to the same executable).
 
 #### Windows
 
-There are different ways to install Python on Windows.  One approach is to use Anaconda.  In particular, the "miniconda" installation provides a minimal install, to which further packages can be added as necessary: https://docs.conda.io/en/latest/miniconda.html.  With Anaconda on Windows, it is common to use the default settings that do not add Python to the system `PATH` environment variable, in which case all Python commands are then done within the special command prompt provided by Anaconda.
+There are different ways to install Python on Windows.  One approach is to use the Anaconda distribution.  In particular, the "miniconda" installation provides a minimal install, to which further packages can be added as necessary: https://docs.conda.io/en/latest/miniconda.html.  With Anaconda on Windows, it is common to use the default settings that do not add Python to the system `PATH` environment variable, in which case all Python commands are then done within the special command prompt provided by Anaconda.
 
-If the Python install will be used for other projects in addition to PARA_ATM, it is good practice to create a virtual environment so that packages needed by PARA_ATM are isolated from other Python projects.  To do this from the Anacdona prompt:
+### Virtual environments
 
+Although not strictly necessary, it is recommended to create a Python virtual environment for PARA_ATM.  This way, all packages that are installed by PARA_ATM are isolated and will not interfere with packages that may be needed for other projects.
+
+#### Virtual environment on Linux
+
+These steps should apply to any Linux distribution.  We will install the virtual environment within a directory named `venv` under the home directory, and the virtual environment will be named `patm`.  However, any name and location for the virtual environment may be used.
+
+``` shell
+python3 -m venv ~/venv/patm
 ```
-conda create --name para_atm python=3.7
-conda activate para_atm
+
+The above command creates the new virtual environment.  To activate the virtual environment, run:
+
+``` shell
+source ~/venv/patm/bin/activate
+```
+Upon activation, the command prompt will change to show the name of the virtual environment.  The above command can be added to the `~/.bashrc` file to automatically activate the virtual environment each time a new terminal is started.  To deactivate the virtual environment, type `deactivate`.
+
+#### Virtual environment on Windows using Anaconda
+
+Although the above approach can be used on Windows as well (see https://docs.python.org/3.8/library/venv.html for Windows-specific information), Anaconda provides functions that make virtual environments more convenient.  From the Anaconda prompt, use:
+
+``` shell
+conda create --name patm python=3.7
 ```
 
-Creating the virtual environment is optional.  It is also possible to manage virtual environments using a "plain" Python installation (not Anaconda), although the commands are slightly different.
+The virtual environment can then be activated directly, with no need to specify the path:
+
+``` shell
+conda activate patm
+```
+
+See https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html for more information about working with virtual environments in Anaconda.
 
 ### Install PARA_ATM Python package
 
-In the following, the `python3` command is used to explicitly refer to Python 3.  This may be necessary on some Linux systems, such as Ubuntu 18 using a system install of Python.  If using Windows with an Anaconda Python install, replace the command `python3` with `python`.
-
-Navigate to the `src` directory and run:
+Installation is handled via the `setup.py` script in the `src` directory.  If using a virtual environment, activate the appropriate virtual environment as described above.  Then navigate to the `src` directory and run the following command:
 
 ```
-python3 setup.py install --user
+python setup.py develop
 ```
-This command will use `pip` to automatically install necessary Python dependencies, and then it will install the PARA_ATM package.  Make sure to use the correct `python` command: if using the system version of Python 3 on Ubuntu, the command must be `python3`.  The `--user` flags instructs the installation to go into a directory that is separate from the standard system python files.  If using a virtual environment, do not include the `--user` flag.
 
-Developers may instead want to use:
+The `develop` command is similar to `install`, but instead of copying files into the installation directory, it creates a link to the source files.  This way, there is no need to reinstall when changes are made to PARA_ATM.
 
+If the installation is not being performed within a virtual environment, the following command is recommended:
+
+``` shell
+python setup.py develop --user
 ```
-python3 setup.py develop --user
-```
-which will create a link to the source directory, so that changes can be made to the source code without needing to re-install the package.
+The `--user` flag ensures that the dependencies installed by PARA_ATM do not interfere with system-wide Python packages installed via the package manager (i.e., `apt install`).
 
-Once installed, the package can be imported in Python using `import PARA_ATM`.  Also, a standalone command `para_atm` is created, which will launch the graphical interface in a web browser.
+On Ubuntu 18, if the installation is not performed within a virtual environment, it will be necessary to replace the `python` command with `python3`.  This is because by default, `python` refers to `python2` on this system.
 
-### Set up database (optional)
+
+### Database setup (optional)
 
 Setting up the database is optional.  Currently, the database is required for the GUI application that is launched via `para_atm app`.
 
@@ -82,7 +106,7 @@ Installation of NATS is optional.  Refer to the NATS [README.txt](src/NATS/READM
 To test the PARA_ATM installation, run the following command from the `src` directory:
 
 ```
-python3 -m unittest
+python -m unittest
 ```
 
 ## Usage
@@ -92,6 +116,8 @@ The PARA_ATM package may be used from within Python via `import PARA_ATM`, or th
 ```
 para_atm -h
 ```
+
+If PARA_ATM was installed within a virtual environment, make sure that environment is activated.
 
 ## Contributors
 
