@@ -6,8 +6,6 @@ Information fusion for real-time national air transportation system prognostics 
 
 ## Installation
 
-Note that [install_PARA-ATM.sh](install_PARA-ATM.sh) was originally developed to provide a single script to handle installation of Anaconda Python, dependencies, NATS, and database setup.  This script uses package management commands that are specific to the Ubuntu Linux operating system.  It is recommended to follow the instructions below instead, although new users may prefer the script as a "one-shot" setup.
-
 In short, the steps are:
 - Install Python 3
 - From the `src` directory, run: `python setup.py develop`
