@@ -6,6 +6,7 @@ import argparse
 import inspect
 import os
 import sys
+import importlib
 
 from PARA_ATM.Application import LaunchApp
 from PARA_ATM.io.utils import read_data_file
@@ -46,10 +47,9 @@ def main():
         plot_trajectory(df)
         
     elif args.command == 'nats':
-        dirname = os.path.dirname(args.file)
-        if dirname:
-            sys.path.append(dirname)
-        module = __import__(os.path.basename(args.file).replace('.py',''))
+        dirname = os.path.dirname(os.path.abspath(args.file))
+        sys.path.insert(0, dirname)
+        module = importlib.import_module(os.path.basename(args.file).replace('.py',''))
         # Find appropriate classes in the user-specified module:
         classes = inspect.getmembers(module, lambda member: inspect.isclass(member) and issubclass(member, NatsSimulationWrapper) and member is not NatsSimulationWrapper)
         if len(classes) < 1:
