@@ -83,24 +83,6 @@ The `--user` flag ensures that the dependencies installed by PARA_ATM do not int
 On Ubuntu 18, if the installation is not performed within a virtual environment, it will be necessary to replace the `python` command with `python3`.  This is because by default, `python` refers to `python2` on this system.
 
 
-### Database setup (optional)
-
-Setting up the database is optional.  Currently, the database only is required for the GUI application that is launched via `para_atm app`.
-
-To set up the database on Ubuntu, first install the necessary packages:
-``` shell
-sudo apt install postgresql
-sudo apt install pgadmin3
-sudo apt install postgresql-contrib
-```
-
-Then run the setup script to configure the database:
-``` shell
-./dbSetup.sh
-```
-
-On other operating systems, the exact commands will differ, but the general steps are the same.  Refer to operating system specific instructions for installing postgresql.
-
 ### Install NATS (optional)
 
 Installation of NATS is optional.  Refer to the NATS [README.txt](src/NATS/README.txt).  NATS may be distributed separately in the future.
