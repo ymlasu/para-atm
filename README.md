@@ -85,9 +85,9 @@ On Ubuntu 18, if the installation is not performed within a virtual environment,
 
 ### Install NATS (optional)
 
-Installation of NATS is optional.  Refer to the NATS [README.txt](src/NATS/README.txt).  NATS may be distributed separately in the future.
+Installation of the NATS (National Airspace Trajectory-Prediction System) software is optional.  Refer to the NATS documentation for installation information.
 
-On Ubuntu, the following commands install dependencies needed by NATS 1.7:
+On Ubuntu Linux, the following commands install dependencies needed by NATS 1.7:
 
 ``` shell
 sudo apt install default-jdk
