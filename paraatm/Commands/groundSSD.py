@@ -437,7 +437,7 @@ class Command:
             self.cursor.execute("SELECT time,callsign,status,lat,lon FROM smes WHERE lat>'%f' AND lat<'%f' AND lon>'%f' AND lon<'%f'" %(lat-1,lat+1,lon-1,lon+1))
             traf = pd.DataFrame(self.cursor.fetchall(),columns=['time','callsign','status','latitude','longitude'])
         elif self.NATS_path: #use nats sim output
-            from PARA_ATM.Commands import readNATS as vn
+            from paraatm.Commands import readNATS as vn
             cmd = vn.Command(self.NATS_path)
             data = cmd.executeCommand()[1]
             #convert to radians
@@ -449,7 +449,7 @@ class Command:
             #add simulation start time to delta t
             traf['time'] = pd.to_datetime(1121238067+traf['time'].astype(int),unit='s')
         elif self.IFF_path: #use sherlock data
-            from PARA_ATM.Commands import readIFF as ir
+            from paraatm.Commands import readIFF as ir
             cmd = ir.Command(self.IFF_path)
             data = cmd.executeCommand()[1]
             #convert heading to radians

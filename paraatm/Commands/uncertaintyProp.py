@@ -12,9 +12,9 @@ Command call to interface NATS module with PARA-ATM to fetch generated trajector
 
 import numpy as np
 
-import PARA_ATM.Commands
-from PARA_ATM.Commands import runNATS,readNATS
-from PARA_ATM import DataStore
+import paraatm.Commands
+from paraatm.Commands import runNATS,readNATS
+from paraatm import DataStore
 
 import centaur
 
@@ -37,7 +37,7 @@ class Command:
         self.mod_name = safety_module.split('(')[0]
         self.in_file = safety_module.split('(')[1]
         #load the module
-        self.safety_module = getattr(PARA_ATM.Commands,self.mod_name)
+        self.safety_module = getattr(paraatm.Commands,self.mod_name)
 
         #future args for uncertaintyProp
         self.n_samples = 1000

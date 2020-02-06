@@ -8,10 +8,10 @@ import os
 import sys
 import importlib
 
-from PARA_ATM.Application import LaunchApp
-from PARA_ATM.io.utils import read_data_file
-from PARA_ATM.plotting.plotting import plot_trajectory
-from PARA_ATM.io.nats import NatsSimulationWrapper
+from paraatm.Application import LaunchApp
+from paraatm.io.utils import read_data_file
+from paraatm.plotting.plotting import plot_trajectory
+from paraatm.io.nats import NatsSimulationWrapper
 
 def main():
 

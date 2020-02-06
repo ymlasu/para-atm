@@ -7,7 +7,7 @@ import scipy.stats
 import sys
 sys.path.append('./Helpers/')
 sys.path.insert(0, '/home/dyn.datasys.swri.edu/mhartnett/NASA_ULI/NASA_ULI_InfoFusion/src/')
-import PARA_ATM
+import paraatm
 from sys import argv
 import DataStore
 
@@ -29,7 +29,7 @@ rv_vector = np.array([np.array(dist.sample(Nsamples)) for dist in dist_objs]).re
 print(rv_vector)
 
 #propagate
-mod = getattr(PARA_ATM.Commands,cmdName).Command
+mod = getattr(paraatm.Commands,cmdName).Command
 results = [mod(db_file,rv).executeCommand() for rv in rv_vector]
 print(results)
 

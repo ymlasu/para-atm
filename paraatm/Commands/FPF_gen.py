@@ -13,9 +13,9 @@ import sys
 import os
 sys.path.insert(0,os.path.join(os.environ['HOME'],'NASA_ULI/NASA_ULI_InfoFusion/src/'))
 
-from PARA_ATM.Commands import groundSSD
-from PARA_ATM.Commands import readNATS as vn
-from PARA_ATM.Commands import readIFF
+from paraatm.Commands import groundSSD
+from paraatm.Commands import readNATS as vn
+from paraatm.Commands import readIFF
 
 import psycopg2
 import pandas as pd

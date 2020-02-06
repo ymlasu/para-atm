@@ -15,7 +15,7 @@ import pandas as pd
 import numpy as np
 import os
 
-from PARA_ATM.io.nats import read_nats_output_file
+from paraatm.io.nats import read_nats_output_file
 
 class Command:
     """

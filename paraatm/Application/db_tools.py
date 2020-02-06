@@ -1,4 +1,4 @@
-from PARA_ATM.Commands.Helpers import DataStore
+from paraatm.Commands.Helpers import DataStore
 
 def getTableList(cursor):
 

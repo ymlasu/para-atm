@@ -1,6 +1,6 @@
 import time
 
-from PARA_ATM.io.nats import NatsSimulationWrapper, NatsEnvironment
+from paraatm.io.nats import NatsSimulationWrapper, NatsEnvironment
 
 class GateToGate(NatsSimulationWrapper):
     def simulation(self, *args, **kwargs):

@@ -23,8 +23,8 @@ from bokeh.models import ColumnDataSource
 from bokeh.tile_providers import Vendors, get_provider
 from bokeh.server.server import Server
 
-from PARA_ATM.Commands.Helpers.DataStore import Access, dbError
-from PARA_ATM.Commands import readNATS,readIFF,readTDDS
+from paraatm.Commands.Helpers.DataStore import Access, dbError
+from paraatm.Commands import readNATS,readIFF,readTDDS
 from .plotting_tools import merc
 from .db_tools import getTableList,checkForTable
 
@@ -161,7 +161,7 @@ class Container:
     def runCmd(self,attr,old,new):
         commandInput = self.cmdline.value
         commandName = str(commandInput.split('(')[0])
-        cmd = getattr(__import__('PARA_ATM.Commands',fromlist=[commandName]), commandName)
+        cmd = getattr(__import__('paraatm.Commands',fromlist=[commandName]), commandName)
         commandArguments = '('.join(commandInput.split('(')[1:])[:-1]
         if ',' in commandArguments:
             commandArguments = commandArguments.split(',') 

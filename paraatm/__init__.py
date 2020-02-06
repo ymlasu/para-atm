@@ -8,8 +8,8 @@ NASA NextGen NAS ULI Information Fusion
 
 """
 
-from PARA_ATM.Commands.Helpers import DataStore
-from PARA_ATM.Commands import (
+from paraatm.Commands.Helpers import DataStore
+from paraatm.Commands import (
     readTDDS,
     groundSSD,
     enrouteSSD,

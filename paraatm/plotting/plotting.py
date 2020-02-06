@@ -4,7 +4,7 @@ import bokeh as bk
 import bokeh.plotting as bkplot
 from bokeh.tile_providers import Vendors, get_provider
 
-from PARA_ATM.Application.plotting_tools import merc
+from paraatm.Application.plotting_tools import merc
 
 
 def plot_trajectory(df_in, output_file=None, output_notebook=False):
