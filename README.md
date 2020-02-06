@@ -97,7 +97,7 @@ sudo apt install libxml2-dev
 
 ## Testing
 
-To test the para-atm installation, run the following command from the `src` directory:
+To test the para-atm installation, run the following command from the base directory:
 
 ```
 python -m unittest
