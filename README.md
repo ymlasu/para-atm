@@ -1,8 +1,8 @@
-# NASA ULI InfoFusion
+# para-atm
 
 ## Introduction
 
-Information fusion for real-time national air transportation system prognostics under uncertainty. This project highlights integration of two main software systems, PARA-ATM (Arizona State University), and NATS (Optimal Synthesis Inc).
+para-atm is a Python package that provides tools for analysis of the national air transportation system.  The project stems from the Prognostic Analysis and Reliability Assessment Laboratory (PARA) at Arizona State University.
 
 ## Installation
 
