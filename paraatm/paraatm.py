@@ -15,10 +15,10 @@ from paraatm.io.nats import NatsSimulationWrapper
 
 def main():
 
-    parser = argparse.ArgumentParser(description="PARA_ATM command-line interface.  Try 'para_atm <cmd> -h' for information on how to use a particular command")
+    parser = argparse.ArgumentParser(description="para-atm command-line interface.  Try 'para-atm <cmd> -h' for information on how to use a particular command")
     #parser.add_argument('-v','--version', action='version', version='%(prog)s '+__version__)
 
-    subparsers = parser.add_subparsers(title='command', dest='command', help='available para_atm commands')
+    subparsers = parser.add_subparsers(title='command', dest='command', help='available para-atm commands')
 
     # set_defaults is used to associate a function to call with each subparser mode
 
