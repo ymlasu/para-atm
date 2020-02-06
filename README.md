@@ -30,7 +30,7 @@ There are different ways to install Python on Windows.  One approach is to use t
 
 ### Virtual environments
 
-Although not strictly necessary, it is recommended to create a Python virtual environment for PARA_ATM.  This way, all packages that are installed by PARA_ATM are isolated and will not interfere with packages that may be needed for other projects.
+Although not strictly necessary, it is recommended to create a Python virtual environment for para-atm.  This way, all packages that are installed by para-atm are isolated and will not interfere with packages that may be needed for other projects.
 
 #### Virtual environment on Linux
 
@@ -63,7 +63,7 @@ conda activate patm
 
 See https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html for more information about working with virtual environments in Anaconda.
 
-### Install PARA_ATM Python package
+### Install para-atm Python package
 
 Installation is handled via the `setup.py` script in the `src` directory.  If using a virtual environment, activate the appropriate virtual environment as described above.  Then navigate to the `src` directory and run the following command:
 
@@ -71,14 +71,14 @@ Installation is handled via the `setup.py` script in the `src` directory.  If us
 python setup.py develop
 ```
 
-The `develop` command is similar to `install`, but instead of copying files into the installation directory, it creates a link to the source files.  This way, there is no need to reinstall when changes are made to PARA_ATM.
+The `develop` command is similar to `install`, but instead of copying files into the installation directory, it creates a link to the source files.  This way, there is no need to reinstall when changes are made to para-atm.
 
 If the installation is not being performed within a virtual environment, the following command is recommended:
 
 ``` shell
 python setup.py develop --user
 ```
-The `--user` flag ensures that the dependencies installed by PARA_ATM do not interfere with system-wide Python packages installed via the package manager (i.e., `apt install`).
+The `--user` flag ensures that the dependencies installed by para-atm do not interfere with system-wide Python packages installed via the package manager (i.e., `apt install`).
 
 On Ubuntu 18, if the installation is not performed within a virtual environment, it will be necessary to replace the `python` command with `python3`.  This is because by default, `python` refers to `python2` on this system.
 
@@ -97,7 +97,7 @@ sudo apt install libxml2-dev
 
 ## Testing
 
-To test the PARA_ATM installation, run the following command from the `src` directory:
+To test the para-atm installation, run the following command from the `src` directory:
 
 ```
 python -m unittest
@@ -105,13 +105,13 @@ python -m unittest
 
 ## Usage
 
-The PARA_ATM package may be used from within Python via `import PARA_ATM`, or through the command-line interface provided by the `para_atm` command.  For help with the command-line interface, run:
+The para-atm package may be used from within Python via `import paraatm`, or through the command-line interface provided by the `para-atm` command.  For help with the command-line interface, run:
 
 ```
-para_atm -h
+para-atm -h
 ```
 
-If PARA_ATM was installed within a virtual environment, make sure that environment is activated.
+If para-atm was installed within a virtual environment, make sure that environment is activated.
 
 ## Contributors
 
