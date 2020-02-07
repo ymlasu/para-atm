@@ -34,16 +34,16 @@ Although not strictly necessary, it is recommended to create a Python virtual en
 
 #### Virtual environment on Linux
 
-These steps should apply to any Linux distribution.  We will install the virtual environment within a directory named `venv` under the home directory, and the virtual environment will be named `patm`.  However, any name and location for the virtual environment may be used.
+These steps should apply to any Linux distribution.  We will install the virtual environment within a directory named `venv` under the home directory, and the virtual environment will be named `para-atm`.  However, any name and location for the virtual environment may be used.
 
 ``` shell
-python3 -m venv ~/venv/patm
+python3 -m venv ~/venv/para-atm
 ```
 
 The above command creates the new virtual environment.  To activate the virtual environment, run:
 
 ``` shell
-source ~/venv/patm/bin/activate
+source ~/venv/para-atm/bin/activate
 ```
 Upon activation, the command prompt will change to show the name of the virtual environment.  The above command can be added to the `~/.bashrc` file to automatically activate the virtual environment each time a new terminal is started.  To deactivate the virtual environment, type `deactivate`.
 
@@ -52,13 +52,13 @@ Upon activation, the command prompt will change to show the name of the virtual 
 Although the above approach can be used on Windows as well (see https://docs.python.org/3.8/library/venv.html for Windows-specific information), Anaconda provides functions that make virtual environments more convenient.  From the Anaconda prompt, use:
 
 ``` shell
-conda create --name patm python=3.7
+conda create --name para-atm python=3.7
 ```
 
 The virtual environment can then be activated directly, with no need to specify the path:
 
 ``` shell
-conda activate patm
+conda activate para-atm
 ```
 
 See https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html for more information about working with virtual environments in Anaconda.
