@@ -10,6 +10,8 @@ Welcome to para-atm's documentation!
    :maxdepth: 2
    :caption: Contents:
 
+   src/io
+
 
 
 Indices and tables
