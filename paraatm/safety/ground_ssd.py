@@ -76,7 +76,7 @@ def infer_status(df):
     pd.Series
     """
 
-    status = pd.Series(index=df.index)
+    status = pd.Series(index=df.index, dtype="object")
     status[df['tas'] <= 4] = 'PUSHBACK'
     status[(df['tas'] >4) & (df['tas'] <= 30)] = 'TAXI'
     status[(df['tas'] > 30) & (df['tas'] <= 200)] = 'TAKEOFF/LANDING'
