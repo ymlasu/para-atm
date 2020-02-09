@@ -9,14 +9,15 @@ def read_iff_file(filename, record_types=3, callsigns=None, chunksize=50000, enc
     Read IFF file and return data frames for requested record types
     
     From IFF 2.15 specification, record types include:
-    2: header
-    3: track point
-    4: flight plan
-    5: data source program
-    6: sectorization
-    7: minimum safe altitude
-    8: flight progress
-    9: aircraft state
+
+    2. header
+    3. track point
+    4. flight plan
+    5. data source program
+    6. sectorization
+    7. minimum safe altitude
+    8. flight progress
+    9. aircraft state
 
     Parameters
     ----------
