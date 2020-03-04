@@ -1,11 +1,9 @@
 import numpy as np
+import math
 
 import bokeh as bk
 import bokeh.plotting as bkplot
 from bokeh.tile_providers import Vendors, get_provider
-
-from paraatm.Application.plotting_tools import merc
-
 
 def plot_trajectory(df_in, output_file=None, output_notebook=False):
     """Plot scenario trajectory to static html and open browser
@@ -30,7 +28,7 @@ def plot_trajectory(df_in, output_file=None, output_notebook=False):
     p.add_tile(tile_provider)
 
     df = df_in[['latitude','longitude','heading','callsign']].copy()
-    df['longitude'], df['latitude'] = merc(df['latitude'].values, df['longitude'].values)
+    df['longitude'], df['latitude'] = _merc(df['latitude'].values, df['longitude'].values)
 
     points = p.triangle(x='longitude', y='latitude', angle='heading', angle_units='deg', alpha=0.5, source=df)
 
@@ -39,3 +37,14 @@ def plot_trajectory(df_in, output_file=None, output_notebook=False):
     points.glyph.line_color = bk.transform.factor_cmap('callsign', palette=bk.palettes.Category10[10], factors=callsigns)
 
     bkplot.show(p)
+
+def _merc(lats,lons):
+    coords_xy = ([],[])
+    for i in range(len(lats)):
+        r_major = 6378137.0
+        x = r_major * math.radians(lons[i])
+        scale = x/lons[i]
+        y = 180./math.pi * math.log(math.tan(math.pi/4 + lats[i] * (math.pi/180)/2)) * scale
+        coords_xy[0].append(x)
+        coords_xy[1].append(y)
+    return coords_xy

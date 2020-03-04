@@ -8,7 +8,6 @@ import os
 import sys
 import importlib
 
-from paraatm.Application import LaunchApp
 from paraatm.io.utils import read_data_file
 from paraatm.plotting.plotting import plot_trajectory
 from paraatm.io.nats import NatsSimulationWrapper
@@ -21,9 +20,6 @@ def main():
     subparsers = parser.add_subparsers(title='command', dest='command', help='available para-atm commands')
 
     # set_defaults is used to associate a function to call with each subparser mode
-
-    p_app = subparsers.add_parser('app', help='launch standalone graphical application')
-    p_app.set_defaults(func=LaunchApp.main)
 
     p_plot = subparsers.add_parser('plot', help='plot flight trajectory for a specified data file')
     p_plot.add_argument('file', help='data file to plot (NATS or IFF format)')
@@ -39,10 +35,7 @@ def main():
 
     # At this point, could just call args.func(), but some commands may
     # have different signatures
-    if args.command == 'app':
-        LaunchApp.main()
-        
-    elif args.command == 'plot':
+    if args.command == 'plot':
         df = read_data_file(args.file)
         plot_trajectory(df)
         
