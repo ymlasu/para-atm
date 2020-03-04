@@ -111,6 +111,17 @@ class TestIFFFiles(unittest.TestCase):
         for rec, df in df_dict.items():
             self.assertEqual(len(df), expected_rows[rec])
 
+    def test_read_iff_callsigns(self):
+        filename = os.path.join(THIS_DIR, '..', 'sample_data/IFF_SFO_ASDEX_3aircraft.csv')
+
+        df = read_iff_file(filename, callsigns='ABC123')
+        self.assertEqual(len(df), 194)
+        self.assertEqual(len(df['callsign'].unique()), 1)
+
+        df = read_iff_file(filename, callsigns=['DEF456','GHI789'])
+        self.assertEqual(len(df), 372)
+        self.assertEqual(len(df['callsign'].unique()), 2)
+
 class TestGroundSSD(unittest.TestCase):
     def test_ground_ssd(self):
         filename = os.path.join(THIS_DIR, '..', 'sample_data/IFF_SFO_window.csv')
