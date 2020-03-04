@@ -78,7 +78,7 @@ def read_iff_file(filename, record_types=3, callsigns=None, chunksize=50000, enc
         cols[2] += ['modeSCode']
         cols[3] += ['trackNumber','tptReturnType','modeSCode']
         cols[4] += ['coordinationPoint','coordinationPointType','trackNumber','modeSCode']
-    elif version >= parse_version('2.15'):
+    if version >= parse_version('2.15'):
         cols[3] += ['sensorTrackNumberList','spi','dvs','dupM3a','tid']
 
     # Determine the record type of each row
