@@ -13,11 +13,3 @@ Welcome to para-atm's documentation!
    src/io
    src/nats
 
-
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
