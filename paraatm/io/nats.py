@@ -175,25 +175,28 @@ class NatsSimulationWrapper:
 
     Users should implement the following methods in the derived class:
     
-    simulation: This method runs the actual NATS simulation.  If the
-        simulation code needs to access data files relative to the
-        original working directory, use the get_path method, which
-        will produce an appropriate path to work around the fact that
-        NATS simulation occurs in the NATS_HOME directory.
+    simulation
+      This method runs the actual NATS simulation.  If the simulation
+      code needs to access data files relative to the original working
+      directory, use the :py:meth:`get_path` method, which will
+      produce an appropriate path to work around the fact that NATS
+      simulation occurs in the NATS_HOME directory.
 
-    write_output: This method writes output to the specified filename.
+    write_output
+      This method writes output to the specified filename.
 
-    cleanup: Cleanup code that will be called after simulation and
-        write_output.  Having cleanup code in a separate method makes
-        it possible for cleanup to occur after write_output.  The
-        cleanup code should not stop the NATS standalone server or the
-        JVM, as this is handled by the NatsEnvironment class.
+    cleanup
+      Cleanup code that will be called after simulation and
+      write_output.  Having cleanup code in a separate method makes it
+      possible for cleanup to occur after write_output.  The cleanup
+      code should not stop the NATS standalone server or the JVM, as
+      this is handled by the NatsEnvironment class.
 
     Once an instance of the class is created, the simulation is run by
-    calling the instance as a function, which will go to the __call__
-    method.  This will call the user's simulation method, with
-    additional pre- and post-processing steps.  The JVM will be
-    started automatically if it is not already running.
+    calling the instance as a function, which will go to the
+    :py:meth:`__call__` method.  This will call the user's simulation
+    method, with additional pre- and post-processing steps.  The JVM
+    will be started automatically if it is not already running.
 
     """
 
