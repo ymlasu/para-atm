@@ -11,6 +11,7 @@ Welcome to para-atm's documentation!
    :caption: Contents:
 
    src/io
+   src/nats
 
 
 

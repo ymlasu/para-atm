@@ -40,6 +40,10 @@ class NatsEnvironment:
     @classmethod
     def start_jvm(cls, nats_home=None):
         """Start java virtual machine and NATS standalone server
+        
+        This function is called automatically by
+        :py:class:`NatsSimulationWrapper`, so normally there is no
+        need for the user to call it directly.
 
         If the JVM is already running, this will do nothing.  If the
         JVM has already been stopped, this will raise an error, since
