@@ -1,3 +1,5 @@
+.. _nats:
+
 NATS Simulation
 ===============
 
