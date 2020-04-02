@@ -15,5 +15,6 @@ para-atm is a Python package that provides tools for analysis of the national ai
    src/io
    src/plotting
    src/nats
+   src/safety
    src/command
 
