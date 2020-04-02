@@ -3,8 +3,10 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to para-atm's documentation!
-====================================
+para-atm documentation
+======================
+
+para-atm is a Python package that provides tools for analysis of the national air transportation system.  This manual covers the features by topic area.  The software is still in early stages of development, so the functionality and API are expected to change.
 
 .. toctree::
    :maxdepth: 2
