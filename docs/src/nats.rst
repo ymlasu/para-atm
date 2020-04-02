@@ -48,6 +48,36 @@ As compared to the NATS sample file, some key differences in this implementation
 * NATS constants are retrieved using the utility function :py:meth:`~paraatm.io.nats.NatsEnvironment.get_nats_constant`, as opposed to importing the constants from `NATS_Python_Header.py`, where each constant is manually defined
 
 
+Running the NATS simulation
+---------------------------
+
+Once the user-defined class deriving from :py:class:`~paraatm.io.nats.NatsSimulationWrapper` has been created, the simulation is executed by creating an instance of the class and calling its :py:meth:`~paraatm.io.nats.NatsSimulationWrapper.__call__` method.  This method will handle various setup behind the scenes, such as starting the JVM, creating the :code:`NATSStandalone` instance, and preparing the current working directory.  Once the simulation is prepared, the user's :py:meth:`~paraatm.io.nats.NatsSimulationWrapper.simulation` method is called automatically.  The output file is automatically created by communicating with the user-defined :py:meth:`~paraatm.io.nats.NatsSimulationWrapper.write_output` method, and the simulation results are returned as a DataFrame.
+
+For example, the :py:class:`GateToGate` simulation class defined above could be invoked as:
+
+.. code-block:: python
+   :linenos:
+
+   g2g_sim = GateToGate()
+   df = g2g_sim()
+
+Here, line 1 creates an instance of the :py:class:`GateToGate` class.  Line 2 executes the simulation, passing no arguments (note that the :code:`()` operator invokes the :code:`__call__` method).  The return value is stored in :code:`df`, which will contain the resulting trajectory data as a DataFrame.
+
+The values of the :code:`*args` and :code:`**kwargs` arguments provided to :py:meth:`~paraatm.io.nats.NatsSimulationWrapper.__call__` are passed on to :py:meth:`~paraatm.io.nats.NatsSimulationWrapper.simulation`.  This makes it possible to create a simulation instance that accepts parameter values.  For example:
+
+.. code-block:: python
+   :linenos:
+
+   class MySim(NatsSimulationWrapper):
+       def simulation(self, my_parameter):
+           # .. Perform simulation using the value of my_parameter
+
+   my_sim = MySim()
+   df1 = my_sim(1)
+   df2 = my_sim(2)
+
+Here, the user-defined :py:meth:`simulation` method on line 2 is defined to accept an argument, :code:`my_parameter`.  Once the simulation class is instantiated, repeated calls can be made using different parameter values, as shown on lines 6 and 7.  The same approach can also be used with keyword arguments.
+
 
 The API
 -------
