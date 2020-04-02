@@ -1,6 +1,6 @@
 .. _nats:
 
-NATS Simulation
+NATS simulation
 ===============
 
 .. py:module:: paraatm.io.nats
