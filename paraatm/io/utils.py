@@ -38,7 +38,13 @@ def read_csv_file(filename):
     return df
 
 def write_csv_file(df, filename):
-    """Write a DataFrame to csv"""
+    """Write a DataFrame to csv
+
+    Parameters
+    ----------
+    df : DataFrame
+    filename : str
+    """
     df.to_csv(filename, index=False)
 
 def read_data_file(filename, *args, **kwargs):
