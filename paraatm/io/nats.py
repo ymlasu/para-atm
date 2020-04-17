@@ -7,6 +7,7 @@ import os
 import jpype
 import tempfile
 import atexit
+import platform
 
 
 # Note: NatsEnvironment is implemented as a class wtih static methods.
@@ -84,11 +85,16 @@ class NatsEnvironment:
         # simulation issues a system call to "./run"
         os.chdir(os.path.abspath(NATS_HOME))
 
-        classpath = os.path.join(NATS_HOME, "dist/nats-standalone.jar")
-        classpath = classpath + ":" + os.path.join(NATS_HOME, "dist/nats-client.jar")
-        classpath = classpath + ":" + os.path.join(NATS_HOME, "dist/nats-shared.jar")
-        classpath = classpath + ":" + os.path.join(NATS_HOME, "dist/json.jar")
-        classpath = classpath + ":" + os.path.join(NATS_HOME, "dist/commons-logging-1.2.jar")
+        if platform.system() == 'Windows':
+            dist_dir = 'dist_win'
+        else:
+            dist_win = 'dist'
+
+        classpath = os.path.join(NATS_HOME, os.path.join(dist_dir, "nats-standalone.jar"))
+        classpath = classpath + os.pathsep + os.path.join(NATS_HOME, dist_dir, "nats-client.jar")
+        classpath = classpath + os.pathsep + os.path.join(NATS_HOME, dist_dir, "nats-shared.jar")
+        classpath = classpath + os.pathsep + os.path.join(NATS_HOME, dist_dir, "json.jar")
+        classpath = classpath + os.pathsep + os.path.join(NATS_HOME, dist_dir, "commons-logging-1.2.jar")
 
         jpype.startJVM(jpype.getDefaultJVMPath(), "-ea", "-Djava.class.path=%s" % classpath)
 
