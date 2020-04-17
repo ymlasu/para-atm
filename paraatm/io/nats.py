@@ -88,7 +88,7 @@ class NatsEnvironment:
         if platform.system() == 'Windows':
             dist_dir = 'dist_win'
         else:
-            dist_win = 'dist'
+            dist_dir = 'dist'
 
         classpath = os.path.join(NATS_HOME, os.path.join(dist_dir, "nats-standalone.jar"))
         classpath = classpath + os.pathsep + os.path.join(NATS_HOME, dist_dir, "nats-client.jar")
