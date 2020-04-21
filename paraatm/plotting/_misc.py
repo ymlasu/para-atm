@@ -5,12 +5,12 @@ import bokeh as bk
 import bokeh.plotting as bkplot
 from bokeh.tile_providers import Vendors, get_provider
 
-def plot_trajectory(df_in, output_file=None, output_notebook=False):
+def plot_trajectory(df, output_file=None, output_notebook=False):
     """Plot scenario trajectory to static html and open browser
     
     Parameters
     ----------
-    df_in : DataFrame
+    df : DataFrame
         DataFrame containing a scenario with 'latitude', 'longitude',
         'heading', and 'callsign' columns
     output_file : str
@@ -27,12 +27,12 @@ def plot_trajectory(df_in, output_file=None, output_notebook=False):
     tile_provider = get_provider(Vendors.CARTODBPOSITRON)
     p.add_tile(tile_provider)
 
-    df = df_in[['latitude','longitude','heading','callsign']].copy()
-    df['longitude'], df['latitude'] = _merc(df['latitude'].values, df['longitude'].values)
+    df_plot = df[['latitude','longitude','heading','callsign']].copy()
+    df_plot['longitude'], df_plot['latitude'] = _merc(df_plot['latitude'].values, df_plot['longitude'].values)
 
-    points = p.triangle(x='longitude', y='latitude', angle='heading', angle_units='deg', alpha=0.5, source=df)
+    points = p.triangle(x='longitude', y='latitude', angle='heading', angle_units='deg', alpha=0.5, source=df_plot)
 
-    callsigns = df['callsign'].unique()
+    callsigns = df_plot['callsign'].unique()
     points.glyph.fill_color = bk.transform.factor_cmap('callsign', palette=bk.palettes.Category10[10], factors=callsigns)
     points.glyph.line_color = bk.transform.factor_cmap('callsign', palette=bk.palettes.Category10[10], factors=callsigns)
 
