@@ -9,7 +9,7 @@ import sys
 import importlib
 
 from paraatm.io.utils import read_data_file
-from paraatm.plotting.plotting import plot_trajectory
+from paraatm.plotting import plot_trajectory
 from paraatm.io.nats import NatsSimulationWrapper
 
 def main():
