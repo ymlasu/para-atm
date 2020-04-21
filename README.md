@@ -116,7 +116,7 @@ If para-atm was installed within a virtual environment, make sure that environme
 ## Documentation
 
 The documentation is written using [Sphinx](https://www.sphinx-doc.org).  It is not yet hosted online.  In the meantime, the HTML documentation can be created locally using these steps:
-- Install sphinx (`sudo apt install sphinx-doc` on Ubuntu Linux)
+- Install sphinx (`sudo apt install python3-sphinx` on Ubuntu Linux)
 - From the `docs` directory, run `make html`
 - Open `_build/html/index.html` in a web browser
 
