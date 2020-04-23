@@ -13,6 +13,8 @@ setup(
             'psycopg2-binary',
             'sqlalchemy',
             'bokeh',
+            # matplotlib is used by some GNATS examples
+            'matplotlib',
             'jpype1==0.6.3'],
         entry_points={
             'console_scripts': [
