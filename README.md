@@ -8,7 +8,7 @@ para-atm is a Python package that provides tools for analysis of the national ai
 
 In short, the steps are:
 - Install Python 3
-- From the `src` directory, run: `python setup.py develop`
+- From the base directory, run: `python setup.py develop`
 
 The following sections provide further details.
 
