@@ -1,4 +1,4 @@
-"""Functions for interfacing to NATS simulation"""
+"""Functions for interfacing to GNATS simulation"""
 
 import pandas as pd
 import numpy as np
@@ -10,13 +10,13 @@ import atexit
 import platform
 
 
-# Note: NatsEnvironment is implemented as a class wtih static methods.
+# Note: GnatsEnvironment is implemented as a class wtih static methods.
 # The same effect could be achieved using globally defined functions
 # and state variables, but the class is used in order to provide some
 # organization and encapuslation.
 #
 # Implementation of these utilities was challenging because the JVM
-# and NATS servers can only be started once.  After they are stopped,
+# and GNATS servers can only be started once.  After they are stopped,
 # they cannot be started again within the same Python process.  This
 # is why we need global (static) variables to track the state and trap
 # conditions that would otherwise lead to crashes.
@@ -29,8 +29,8 @@ import platform
 # allowed.  A regular class was also considered (not using static
 # methods and state), but there is the same issue: since the JVM
 # cannot be restarted, only once such instance could be created.
-class NatsEnvironment:
-    """Class that provides static methods to start and stop the JVM for NATS
+class GnatsEnvironment:
+    """Class that provides static methods to start and stop the JVM for GNATS
     """
 
     # Class state variables to track (globally) whether the JVM has
@@ -39,11 +39,11 @@ class NatsEnvironment:
     jvm_stopped = False
 
     @classmethod
-    def start_jvm(cls, nats_home=None):
-        """Start java virtual machine and NATS standalone server
+    def start_jvm(cls, gnats_home=None):
+        """Start java virtual machine and GNATS standalone server
         
         This function is called automatically by
-        :py:class:`NatsSimulationWrapper`, so normally there is no
+        :py:class:`GnatsSimulationWrapper`, so normally there is no
         need for the user to call it directly.
 
         If the JVM is already running, this will do nothing.  If the
@@ -51,19 +51,19 @@ class NatsEnvironment:
         it cannot be restarted.
 
         This function takes care of setting the Java classpath,
-        changing directories, starting the JVM, and starting the NATS
+        changing directories, starting the JVM, and starting the GNATS
         standalone server.
 
-        Path issues with NATS are handled behind the scenes by setting
+        Path issues with GNATS are handled behind the scenes by setting
         the classpath and changing directories prior to starting the
         JVM.  The original directory is remembered, and it is restored
         after the JVM is stopped.
 
         Parameters
         ----------
-        nats_home : str, optional
-            Path to NATS home directory.  If not provided, the
-            NATS_HOME environment variable will be used.
+        gnats_home : str, optional
+            Path to GNATS home directory.  If not provided, the
+            GNATS_HOME environment variable will be used.
         """
         if cls.jvm_stopped:
             raise RuntimeError("attempt to restart JVM after stopping; doing so is not allowed and will crash Java")
@@ -72,44 +72,44 @@ class NatsEnvironment:
             # again would cause a crash.
             return
         
-        if nats_home is None:
-            NATS_HOME = os.environ.get('NATS_HOME')
-            if NATS_HOME is None:
-                raise RuntimeError('either NATS_HOME environment variable must be set, or nats_home argument must be provided')
+        if gnats_home is None:
+            GNATS_HOME = os.environ.get('GNATS_HOME')
+            if GNATS_HOME is None:
+                raise RuntimeError('either GNATS_HOME environment variable must be set, or gnats_home argument must be provided')
         else:
-            NATS_HOME = nats_home        
+            GNATS_HOME = gnats_home        
         
         cls.cwd = os.getcwd() # Save current working directory
 
-        # It is necssary to change directories because the NATS
+        # It is necssary to change directories because the GNATS
         # simulation issues a system call to "./run"
-        os.chdir(os.path.abspath(NATS_HOME))
+        os.chdir(os.path.abspath(GNATS_HOME))
 
         if platform.system() == 'Windows':
             dist_dir = 'dist_win'
         else:
             dist_dir = 'dist'
 
-        classpath = os.path.join(NATS_HOME, os.path.join(dist_dir, "nats-standalone.jar"))
-        classpath = classpath + os.pathsep + os.path.join(NATS_HOME, dist_dir, "nats-client.jar")
-        classpath = classpath + os.pathsep + os.path.join(NATS_HOME, dist_dir, "nats-shared.jar")
-        classpath = classpath + os.pathsep + os.path.join(NATS_HOME, dist_dir, "json.jar")
-        classpath = classpath + os.pathsep + os.path.join(NATS_HOME, dist_dir, "commons-logging-1.2.jar")
+        classpath = os.path.join(GNATS_HOME, os.path.join(dist_dir, "gnats-standalone.jar"))
+        classpath = classpath + os.pathsep + os.path.join(GNATS_HOME, dist_dir, "gnats-client.jar")
+        classpath = classpath + os.pathsep + os.path.join(GNATS_HOME, dist_dir, "gnats-shared.jar")
+        classpath = classpath + os.pathsep + os.path.join(GNATS_HOME, dist_dir, "json.jar")
+        classpath = classpath + os.pathsep + os.path.join(GNATS_HOME, dist_dir, "commons-logging-1.2.jar")
 
         jpype.startJVM(jpype.getDefaultJVMPath(), "-ea", "-Djava.class.path=%s" % classpath)
 
-        clsNATSStandalone = jpype.JClass('NATSStandalone')
-        # Start NATS Standalone environment
-        cls.natsStandalone = clsNATSStandalone.start()
+        clsGNATSStandalone = jpype.JClass('GNATSStandalone')
+        # Start GNATS Standalone environment
+        cls.gnatsStandalone = clsGNATSStandalone.start()
 
-        if cls.natsStandalone is None:
-            raise RuntimeError("Can't start NATS Standalone")
+        if cls.gnatsStandalone is None:
+            raise RuntimeError("Can't start GNATS Standalone")
 
         cls.jvm_started = True
 
     @classmethod
     def stop_jvm(cls):
-        """Stop java virtual machine and NATS server
+        """Stop java virtual machine and GNATS server
 
         This also moves back to the original directory that was set
         prior to starting the JVM
@@ -126,7 +126,7 @@ class NatsEnvironment:
             # Already started, do nothing
             return
 
-        cls.natsStandalone.stop()
+        cls.gnatsStandalone.stop()
 
         # Note: have observed that calls to shutdownJVM after a jpype
         # exception can lead to a hang.  It should be safe here due to
@@ -135,7 +135,7 @@ class NatsEnvironment:
         jpype.shutdownJVM()
 
         # Go back to where we where.  Note that calling this prior to
-        # natsStandalone.stop() seeems to result in crashes/hangs.
+        # gnatsStandalone.stop() seeems to result in crashes/hangs.
         # Also note that trying to do this directory change prior to
         # writing the output file does not seem to eliminate the need
         # to fixup the paths manually.
@@ -144,22 +144,22 @@ class NatsEnvironment:
         cls.jvm_stopped = True
 
     @classmethod
-    def get_nats_standalone(cls):
-        """Retrieve reference to NATSStandalone class instance"""
+    def get_gnats_standalone(cls):
+        """Retrieve reference to GNATSStandalone class instance"""
         if not cls.jvm_started:
             raise RuntimeError("JVM not yet started")
         if cls.jvm_stopped:
             raise RuntimeError("JVM already stopped")
-        return cls.natsStandalone
+        return cls.gnatsStandalone
 
     @classmethod
-    def get_nats_constant(cls, name):
-        """Return the variable that stores the named NATS constant
+    def get_gnats_constant(cls, name):
+        """Return the variable that stores the named GNATS constant
 
         Parameters
         ----------
         name : str
-            Name of NATS constant to retrieve
+            Name of GNATS constant to retrieve
         """
         if not cls.jvm_started:
             raise RuntimeError("JVM not yet started")
@@ -173,20 +173,20 @@ class NatsEnvironment:
 # This ensures that the JVM is shutdown properly.  The user can still
 # manually call stop_jvm at any point, as it is safe to have multiple
 # stop_jvm calls.
-atexit.register(NatsEnvironment.stop_jvm)
+atexit.register(GnatsEnvironment.stop_jvm)
 
 
-class NatsSimulationWrapper:
-    """Parent class for creating a NATS simulation instance
+class GnatsSimulationWrapper:
+    """Parent class for creating a GNATS simulation instance
 
     Users should implement the following methods in the derived class:
     
     simulation
-      This method runs the actual NATS simulation.  If the simulation
+      This method runs the actual GNATS simulation.  If the simulation
       code needs to access data files relative to the original working
       directory, use the :py:meth:`get_path` method, which will
-      produce an appropriate path to work around the fact that NATS
-      simulation occurs in the NATS_HOME directory.
+      produce an appropriate path to work around the fact that GNATS
+      simulation occurs in the GNATS_HOME directory.
 
     write_output
       This method writes output to the specified filename.
@@ -195,8 +195,8 @@ class NatsSimulationWrapper:
       Cleanup code that will be called after simulation and
       write_output.  Having cleanup code in a separate method makes it
       possible for cleanup to occur after write_output.  The cleanup
-      code should not stop the NATS standalone server or the JVM, as
-      this is handled by the NatsEnvironment class.
+      code should not stop the GNATS standalone server or the JVM, as
+      this is handled by the GnatsEnvironment class.
 
     Once an instance of the class is created, the simulation is run by
     calling the instance as a function, which will go to the
@@ -225,7 +225,7 @@ class NatsSimulationWrapper:
 
     def __call__(self, output_file=None, return_df=True, *args, **kwargs):
 
-        """Execute NATS simulation and write output to specified file
+        """Execute GNATS simulation and write output to specified file
 
         Parameters
         ----------
@@ -242,7 +242,7 @@ class NatsSimulationWrapper:
         """
         # Make sure that the JVM has been started.  This is safe to
         # call even if it has already been started.
-        NatsEnvironment.start_jvm()
+        GnatsEnvironment.start_jvm()
         
         self.simulation(*args, **kwargs)
 
@@ -250,14 +250,14 @@ class NatsSimulationWrapper:
             # Create a temporary directory to store the output, so it
             # can be read back
             tempdir = tempfile.mkdtemp()
-            output_file = os.path.join(tempdir, 'nats.csv')
+            output_file = os.path.join(tempdir, 'gnats.csv')
         else:
             tempdir = None
 
         try:
             self.write_output(self.get_path(output_file))
             if return_df:
-                df = read_nats_output_file(output_file)
+                df = read_gnats_output_file(output_file)
         finally:
             # This ensures we clean up the temporary directory and
             # file even if an exception occurs above.  If there is an
@@ -278,8 +278,8 @@ class NatsSimulationWrapper:
         """Return a path to filename that behaves as if original directory is current working directory
 
         This will internally convert relative paths to be relative to
-        the original working directory (otherwise, NATS considers
-        NATS_HOME to be the working directory).
+        the original working directory (otherwise, GNATS considers
+        GNATS_HOME to be the working directory).
         """
         if not os.path.isabs(filename):
             filename = os.path.join(self.cwd, filename)
@@ -287,8 +287,8 @@ class NatsSimulationWrapper:
 
 
 
-def read_nats_output_file(filename):
-    """Read the specified NATS output file
+def read_gnats_output_file(filename):
+    """Read the specified GNATS output file
 
     Parameters
     ----------
