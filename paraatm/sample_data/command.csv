@@ -1,0 +1,7 @@
+Timestamp,gate,airline,acid,transcript,action1,action2,action3,new_alt,waypoint,new_speed,new_heading,vy,cs
+1544835212.31,App_Final,ASU,ASU123,maintain four thousand four thousand US one US ,maintain,,,4000,,,,-26.93,250
+1544835279.46,App_Final,ASU,ASU123,reduce speed to one seven zero,reduce speed,,,,,170,,,
+1544835354.59,App_Final,ASU,ASU123,turn right heading zero seven five intercept the localizer two five zero at one one thousand ,turn right heading,,,,,,75,,
+1544835396.75,App_Final,ASU,ASU123,reduce speed to one six zero then maintain three thousand one six hundred Cessna three thousand US ,maintain,reduce speed to,,3000,,160,,-19.12,160
+1544835422.49,App_Final,ASU,ASU123,three miles from two is maintain three thousand till established localizer Sir iLS PRM runway one zero ,maintain,,,3000,,,,-19.12,160
+1544835452.04,App_Final,ASU,ASU123,maintain one five zero knots till ZMANN US ,maintain,,,,ZMANN,150,,,
