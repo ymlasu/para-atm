@@ -66,7 +66,7 @@ See https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-envir
 
 ### Install para-atm Python package
 
-Installation is handled via the `setup.py` script in the `src` directory.  If using a virtual environment, activate the appropriate virtual environment as described above.  Then navigate to the `src` directory and run the following command:
+Installation is handled via the `setup.py` script in the base directory.  If using a virtual environment, activate the appropriate virtual environment as described above.  Then navigate to the base directory of the code and run the following command:
 
 ```
 python setup.py develop
