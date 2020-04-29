@@ -36,7 +36,8 @@ class VCAS(NatsSimulationWrapper, object):
         Parameters
         ----------
         cfg : dictionary
-            inputs to VCAS simulation
+            inputs to VCAS simulation with the following entries:
+            
             'fp_file' :  str
                 directory tp flight plan file for NATS simulation
             'mfl_file' : str
@@ -377,4 +378,3 @@ if __name__ == '__main__':
         ax2.plot(p[:, 0], p[:, 1])
     # ax2.set_ylim(0, 1)
     plt.show()
-
