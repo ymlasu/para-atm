@@ -9,9 +9,6 @@ setup(
         install_requires=[
             'pandas',
             'pyclipper',
-            'rdflib',
-            'psycopg2-binary',
-            'sqlalchemy',
             'bokeh',
             # matplotlib is used by some GNATS examples
             'matplotlib',
