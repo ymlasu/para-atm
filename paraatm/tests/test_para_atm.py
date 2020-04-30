@@ -12,6 +12,9 @@ from paraatm.safety.ground_ssd import ground_ssd_safety_analysis
 from . import nats_gate_to_gate
 from . import gnats_gate_to_gate
 
+# Change this to False to test NATS instead of GNATS
+USE_GNATS = True
+
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 sample_nats_file = os.path.join(THIS_DIR, '..', 'sample_data/NATS_output_SFO_PHX.csv')
 sample_gnats_file = os.path.join(THIS_DIR, '..', 'sample_data/GNATS_output_SFO_PHX.csv')
@@ -70,6 +73,7 @@ class TestGroundSSD(unittest.TestCase):
         self.assertTrue(all(safety['fpf'] >= 0.0))
         self.assertEqual(sum(safety['fpf'].isnull()), 0)
 
+@unittest.skipIf(USE_GNATS, "use GNATS instead of NATS")
 class TestNatsSimulation(unittest.TestCase):
     # Note that for this test to run, NATS must be installed and the
     # NATS_HOME environment variable must be set appropriately
@@ -88,6 +92,7 @@ class TestNatsSimulation(unittest.TestCase):
         # Basic consistency checks:
         self.assertEqual(len(df), 369)
 
+@unittest.skipIf(not USE_GNATS, "use NATS instead of GNATS")
 class TestGnatsSimulation(unittest.TestCase):
     # Note that for this test to run, GNATS must be installed and the
     # GNATS_HOME environment variable must be set appropriately
