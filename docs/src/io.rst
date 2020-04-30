@@ -6,10 +6,10 @@ Input and output
 Reading data
 ------------
 
-The :py:mod:`paraatm.io` module provides functions for reading from common data formats.  Currently, this includes the Integrated Flight Format (IFF) and NATS simulation output files.
+The :py:mod:`paraatm.io` module provides functions for reading from common data formats.  Currently, this includes the Integrated Flight Format (IFF) and GNATS simulation output files.
 
 .. autofunction:: paraatm.io.iff.read_iff_file
-.. autofunction:: paraatm.io.nats.read_nats_output_file
+.. autofunction:: paraatm.io.gnats.read_gnats_output_file
 
 Utilities
 ---------
