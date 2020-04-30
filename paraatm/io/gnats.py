@@ -232,26 +232,6 @@ class GnatsSimulationWrapper:
 
     """
 
-    def _setup(self):
-        simulationInterface = gnatsStandalone.getSimulationInterface()
-
-        entityInterface = gnatsStandalone.getEntityInterface()
-        controllerInterface = entityInterface.getControllerInterface()
-        pilotInterface = entityInterface.getPilotInterface()
-
-        environmentInterface = gnatsStandalone.getEnvironmentInterface()
-        airportInterface = environmentInterface.getAirportInterface()
-        weatherInterface = environmentInterface.getWeatherInterface()
-        terminalAreaInterface = environmentInterface.getTerminalAreaInterface()
-        terrainInterface = environmentInterface.getTerrainInterface()
-
-        equipmentInterface = gnatsStandalone.getEquipmentInterface()
-        aircraftInterface = equipmentInterface.getAircraftInterface()
-        cnsInterface = equipmentInterface.getCNSInterface()
-
-        safetyMetricsInterface = gnatsStandalone.getSafetyMetricsInterface()
-
-
     def simulation(self, *args, **kwargs):
         """Users must implement this method in the derived class
 
