@@ -84,11 +84,11 @@ The `--user` flag ensures that the dependencies installed by para-atm do not int
 On Ubuntu 18, if the installation is not performed within a virtual environment, it will be necessary to replace the `python` command with `python3`.  This is because by default, `python` refers to `python2` on this system.
 
 
-### Install NATS (optional)
+### Install GNATS (optional)
 
-Installation of the NATS (National Airspace Trajectory-Prediction System) software is optional.  Refer to the NATS documentation for installation information.
+Installation of the GNATS (Generalized National Airspace Trajectory-Prediction System) software is optional.  Refer to the [GNATS](https://github.com/OptimalSynthesisInc/GNATS) documentation for installation information.
 
-On Ubuntu Linux, the following commands install dependencies needed by NATS 1.7:
+On Ubuntu Linux, the following commands install dependencies that may be needed by GNATS:
 
 ``` shell
 sudo apt install default-jdk
@@ -103,6 +103,8 @@ To test the para-atm installation, run the following command from the base direc
 ```
 python -m unittest
 ```
+
+The test suite includes testing with GNATS.  To test NATS instead, set `USE_GNATS = False` in [test_para_atm.py](paraatm/tests/test_para_atm.py).
 
 ## Usage
 
