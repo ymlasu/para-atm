@@ -390,7 +390,9 @@ def read_gnats_output_file(filename):
     df['time'] = pd.to_datetime(df['time'], unit='s')
 
     # Keep only selected columns
-    selected_cols = ['time','callsign','origin','destination','latitude','longitude','altitude','rocd','tas','heading','sector','status']
+    selected_cols = ['time','callsign','origin','destination','latitude','longitude','altitude','rocd','tas','heading','status']
+    if 'sector' in df:
+        selected_cols += 'sector'
     df = df[selected_cols]
 
     return df
