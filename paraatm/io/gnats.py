@@ -54,6 +54,10 @@ class GnatsEnvironment:
         changing directories, starting the JVM, and starting the GNATS
         standalone server.
 
+        References to gnatsStandalone as well as other interface
+        objects, which are normally available via the GNATS header
+        file, are stored as attributes of the class.
+
         Path issues with GNATS are handled behind the scenes by setting
         the classpath and changing directories prior to starting the
         JVM.  The original directory is remembered, and it is restored
