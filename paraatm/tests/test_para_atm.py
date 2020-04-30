@@ -4,11 +4,13 @@ import numpy as np
 import os
 
 from paraatm.io.nats import read_nats_output_file, NatsEnvironment
+from paraatm.io.gnats import GnatsEnvironment
 from paraatm.io.iff import read_iff_file
 from paraatm.io.utils import read_csv_file
 from paraatm.safety.ground_ssd import ground_ssd_safety_analysis
 
-from .nats_gate_to_gate import GateToGate
+from . import nats_gate_to_gate
+from . import gnats_gate_to_gate
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 sample_nats_file = os.path.join(THIS_DIR, '..', 'sample_data/NATS_output_SFO_PHX.csv')
@@ -73,7 +75,25 @@ class TestNatsSimulation(unittest.TestCase):
         NatsEnvironment.stop_jvm()
     
     def test_gate_to_gate(self):
-        simulation = GateToGate()
+        simulation = nats_gate_to_gate.GateToGate()
+        df = simulation()
+
+        # Basic consistency checks:
+        self.assertEqual(len(df), 369)
+
+class TestGnatsSimulation(unittest.TestCase):
+    # Note that for this test to run, GNATS must be installed and the
+    # GNATS_HOME environment variable must be set appropriately
+
+    # Although the JVM will be shutdown automatically at program exit,
+    # we do it manually here to restore the current working directory,
+    # in case subsequent tests depend on it.
+    @classmethod
+    def tearDownClass(cls):
+       GnatsEnvironment.stop_jvm()
+
+    def test_gate_to_gate(self):
+        simulation = gnats_gate_to_gate.GateToGate()
         df = simulation()
 
         # Basic consistency checks:

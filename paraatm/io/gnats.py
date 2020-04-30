@@ -78,23 +78,23 @@ class GnatsEnvironment:
                 raise RuntimeError('either GNATS_HOME environment variable must be set, or gnats_home argument must be provided')
         else:
             GNATS_HOME = gnats_home        
-        
+
         cls.cwd = os.getcwd() # Save current working directory
+
+        cls.share_dir = os.path.join(GNATS_HOME, '..', 'GNATS_Server', 'share')
 
         # It is necssary to change directories because the GNATS
         # simulation issues a system call to "./run"
         os.chdir(os.path.abspath(GNATS_HOME))
 
-        if platform.system() == 'Windows':
-            dist_dir = 'dist_win'
-        else:
-            dist_dir = 'dist'
+        dist_dir = os.path.join(GNATS_HOME, 'dist')
+        client_dist_dir = os.path.join(GNATS_HOME,'..','GNATS_Client','dist')
 
-        classpath = os.path.join(GNATS_HOME, os.path.join(dist_dir, "gnats-standalone.jar"))
-        classpath = classpath + os.pathsep + os.path.join(GNATS_HOME, dist_dir, "gnats-client.jar")
-        classpath = classpath + os.pathsep + os.path.join(GNATS_HOME, dist_dir, "gnats-shared.jar")
-        classpath = classpath + os.pathsep + os.path.join(GNATS_HOME, dist_dir, "json.jar")
-        classpath = classpath + os.pathsep + os.path.join(GNATS_HOME, dist_dir, "commons-logging-1.2.jar")
+        classpath = os.path.join(dist_dir, "gnats-standalone.jar")
+        classpath += os.pathsep + os.path.join(client_dist_dir, "gnats-client.jar")
+        classpath += os.pathsep + os.path.join(client_dist_dir, "gnats-shared.jar")
+        classpath += os.pathsep + os.path.join(client_dist_dir, "json.jar")
+        classpath += os.pathsep + os.path.join(client_dist_dir, "commons-logging-1.2.jar")
 
         jpype.startJVM(jpype.getDefaultJVMPath(), "-ea", "-Djava.class.path=%s" % classpath)
 
@@ -105,7 +105,33 @@ class GnatsEnvironment:
         if cls.gnatsStandalone is None:
             raise RuntimeError("Can't start GNATS Standalone")
 
+        cls._get_interfaces()
+
         cls.jvm_started = True
+
+    @classmethod
+    def _get_interfaces(cls):
+        """Store references to interface objects"""
+        cls.simulationInterface = cls.gnatsStandalone.getSimulationInterface()
+
+        cls.entityInterface = cls.gnatsStandalone.getEntityInterface()
+        cls.controllerInterface = cls.entityInterface.getControllerInterface()
+        cls.pilotInterface = cls.entityInterface.getPilotInterface()
+
+        cls.environmentInterface = cls.gnatsStandalone.getEnvironmentInterface()
+        cls.airportInterface = cls.environmentInterface.getAirportInterface()
+        cls.weatherInterface = cls.environmentInterface.getWeatherInterface()
+        cls.terminalAreaInterface = cls.environmentInterface.getTerminalAreaInterface()
+        cls.terrainInterface = cls.environmentInterface.getTerrainInterface()
+
+        cls.equipmentInterface = cls.gnatsStandalone.getEquipmentInterface()
+        cls.aircraftInterface = cls.equipmentInterface.getAircraftInterface()
+        cls.cnsInterface = cls.equipmentInterface.getCNSInterface()
+
+        cls.safetyMetricsInterface = cls.gnatsStandalone.getSafetyMetricsInterface()
+
+        if cls.simulationInterface is None:
+            raise RuntimeError("Can't get simulationInterface")
 
     @classmethod
     def stop_jvm(cls):
@@ -205,6 +231,26 @@ class GnatsSimulationWrapper:
     will be started automatically if it is not already running.
 
     """
+
+    def _setup(self):
+        simulationInterface = gnatsStandalone.getSimulationInterface()
+
+        entityInterface = gnatsStandalone.getEntityInterface()
+        controllerInterface = entityInterface.getControllerInterface()
+        pilotInterface = entityInterface.getPilotInterface()
+
+        environmentInterface = gnatsStandalone.getEnvironmentInterface()
+        airportInterface = environmentInterface.getAirportInterface()
+        weatherInterface = environmentInterface.getWeatherInterface()
+        terminalAreaInterface = environmentInterface.getTerminalAreaInterface()
+        terrainInterface = environmentInterface.getTerrainInterface()
+
+        equipmentInterface = gnatsStandalone.getEquipmentInterface()
+        aircraftInterface = equipmentInterface.getAircraftInterface()
+        cnsInterface = equipmentInterface.getCNSInterface()
+
+        safetyMetricsInterface = gnatsStandalone.getSafetyMetricsInterface()
+
 
     def simulation(self, *args, **kwargs):
         """Users must implement this method in the derived class
