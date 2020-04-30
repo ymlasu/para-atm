@@ -3,7 +3,7 @@ from os import path
 
 setup(
         name='para-atm',
-        version='0.1',
+        version='0.2',
         description='Probabilistic toolset for air traffic safety analysis',
         packages=find_packages(),
         install_requires=[
