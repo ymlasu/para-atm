@@ -11,7 +11,7 @@ In short, the steps are:
 - Clone or download `para-atm`
 - From the base directory, run: `python setup.py develop`
 
-The following sections provide further details.
+Additional steps may be required on Windows.  The following sections provide further details.
 
 ### Install Python
 
@@ -82,6 +82,25 @@ python setup.py develop --user
 The `--user` flag ensures that the dependencies installed by para-atm do not interfere with system-wide Python packages installed via the package manager (i.e., `apt install`).
 
 On Ubuntu 18, if the installation is not performed within a virtual environment, it will be necessary to replace the `python` command with `python3`.  This is because by default, `python` refers to `python2` on this system.
+
+#### Package dependencies on Windows
+
+Some additional steps may be required if using Windows.  This is because some of the Python packages that para-atm depends on require compilation.  Running `setup.py` will try to install these dependencies automatically using `pip`, if they are not already installed.  This may produce the following error:
+
+``` shell
+error: Setup script exited with error: Microsoft Visual C++ 14.0 is required. Get it with "Microsoft Visual C++ Build Tools": https://visualstudio.microsoft.com/downloads/
+```
+
+There are two options.  One is to install the Microsoft Build tools as indicated by the error message.  Once installed, it should be possible for `setup.py` to install the dependencies.
+
+The second option is to install the dependencies manually using Anaconda, which provides versions of the packages that have already been compiled.  This can be done by first activating the virtual environment and then running:
+
+``` shell
+conda install -c conda-forge jpype=0.6.3 numpy pandas bokeh matplotlib pyclipper
+
+```
+
+Some care is needed with this option to avoid conflicts between conda and pip.  If a failed install via `setup.py` was already attempted, it may be necessary to delete and recreate the virtual environment prior to issuing the `conda install` commands.
 
 
 ### Install GNATS (optional)
