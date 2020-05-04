@@ -15,7 +15,7 @@ Additional steps may be required on Windows.  The following sections provide fur
 
 ### Install Python
 
-The first step is to install Python 3 on the system.
+The first step is to install Python 3 on the system.  para-atm requires Python >= 3.6 and has been tested with Python 3.6 and 3.7.
 
 #### Ubuntu Linux
 
