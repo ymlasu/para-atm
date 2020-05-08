@@ -4,7 +4,15 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
 class ResponseSurface:
-    """Base class for response surface models"""
+    """Base class for response surface models
+
+    Derived classes should:
+
+    * Implement an `__init__` method that fits the model and calls
+      `super().__init__`
+    * Implement a `__call__` method for making predictions.  See
+      :py:meth:`paraatm.rsm.gp.SklearnGPRegressor.__call__`.
+    """
 
     def __init__(self, X, Y):
         self.X = X
