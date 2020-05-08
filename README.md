@@ -138,7 +138,7 @@ If para-atm was installed within a virtual environment, make sure that environme
 ## Documentation
 
 The latest version of the documentation is available at [https://para-atm.readthedocs.io/en/latest/index.html](https://para-atm.readthedocs.io/en/latest/index.html).  The documentation is written using [Sphinx](https://www.sphinx-doc.org).  Use the following steps to build the documentation locally:
-- Install sphinx (`sudo apt install python3-sphinx` on Ubuntu Linux)
+- Install sphinx (`pip install sphinx` from within virtual environment, or `sudo apt install python3-sphinx` on Ubuntu Linux if not using virtual environment)
 - From the `docs` directory, run `make html`
 - Open `_build/html/index.html` in a web browser
 
