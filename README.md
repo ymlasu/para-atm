@@ -96,11 +96,13 @@ There are two options.  One is to install the Microsoft Build tools as indicated
 The second option is to install the dependencies manually using Anaconda, which provides versions of the packages that have already been compiled.  This can be done by first activating the virtual environment and then running:
 
 ``` shell
-conda install -c conda-forge jpype=0.6.3 numpy pandas bokeh matplotlib pyclipper
+conda install -c conda-forge jpype=0.6.3 numpy pandas bokeh matplotlib pyclipper sklearn
 
 ```
 
 Some care is needed with this option to avoid conflicts between conda and pip.  If a failed install via `setup.py` was already attempted, it may be necessary to delete and recreate the virtual environment prior to issuing the `conda install` commands.
+
+(Todo:  Further review should be done to identify specifically which packages require compilation.  It may only be necessary to install one or two of the packages using conda.)
 
 
 ### Install GNATS (optional)
