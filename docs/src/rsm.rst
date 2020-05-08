@@ -28,12 +28,12 @@ Here is an example showing a GP fit to a 1D function, with confidence bounds:
     import numpy as np
     from paraatm.rsm.gp import SklearnGPRegressor
 
-    x = np.array([1., 3., 5., 6., 7., 8.])
-    y = x * np.sin(x)
-    X = x[:,np.newaxis] # Make input array 2d
+    X = np.array([1., 3., 5., 6., 7., 8.])
+    Y = X * np.sin(X)
+    X = X[:,np.newaxis] # Make input array 2d
 
-    # Use n_restarts_optimizer to get reproducible behavior
-    gp = SklearnGPRegressor(X, y, n_restarts_optimizer=0)
+    # Use n_restarts_optimizer=0 to get reproducible behavior
+    gp = SklearnGPRegressor(X, Y, n_restarts_optimizer=0)
 
     gp.plot()
 

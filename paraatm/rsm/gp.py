@@ -145,13 +145,13 @@ if __name__ == '__main__':
 
     # Simple demonstration of GP regression with 1 input
 
-    # x = np.linspace(0,10,8)
-    x = np.array([1., 3., 5., 6., 7., 8.])
-    y = x * np.sin(x)
-    X = x[:,np.newaxis] # Make input array 2d
+    # X = np.linspace(0,10,8)
+    X = np.array([1., 3., 5., 6., 7., 8.])
+    Y = X * np.sin(X)
+    X = X[:,np.newaxis] # Make input array 2d
 
-    # Use n_restarts_optimizer to get reproducible behavior
-    gp = SklearnGPRegressor(X, y, n_restarts_optimizer=0)
+    # Use n_restarts_optimizer=0 to get reproducible behavior
+    gp = SklearnGPRegressor(X, Y, n_restarts_optimizer=0)
 
     print('fit R-squared:', gp.fit_rsquared())
     print('cross-val R-squared:', gp.loo_rsquared())
