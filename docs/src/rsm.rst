@@ -3,6 +3,10 @@ Response surface models
 
 .. py:module:: paraatm.rsm
 
+Response surface models, also known as surrogate models or metamodels, can be used to develop a fast-running approximation to an expensive simulation.  para-atm provides the :py:class:`~paraatm.rsm.base.ResponseSurface` base class to define general functionality that can be shared across different response surface implementations.  A Gaussian process regression capability, powered by `scikit-learn <https://scikit-learn.org>`__, is provided by the :py:class:`~paraatm.rsm.gp.SklearnGPRegressor` class.  Additional response surface model types may be added in the future.
+
+To get started immediately, refer to the :ref:`gp-examples` section.
+
 Response surface base class
 ---------------------------
 
@@ -15,6 +19,8 @@ Gaussian process regression
 .. autoclass:: paraatm.rsm.gp.SklearnGPRegressor
     :members:
     :special-members:
+
+.. _gp-examples:
 
 Examples
 ^^^^^^^^
@@ -40,7 +46,7 @@ Here is an example showing a GP fit to a 1D function, with confidence bounds:
     plt.show()
 
 
-The Gaussian Process model can also accomodate noisy data, as shown in the below example:
+The Gaussian Process model can also accommodate noisy data, as shown in the below example:
 
 .. plot::
     :include-source:
