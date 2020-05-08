@@ -25,6 +25,7 @@ Here is an example showing a GP fit to a 1D function, with confidence bounds:
     :include-source:
 
     import matplotlib.pyplot as plt
+    import numpy as np
     from paraatm.rsm.gp import SklearnGPRegressor
 
     x = np.array([1., 3., 5., 6., 7., 8.])
@@ -45,6 +46,7 @@ And an example of a 2D function, using :py:meth:`~paraatm.rsm.base.ResponseSurfa
     :include-source:
 
     import matplotlib.pyplot as plt
+    import numpy as np
     from paraatm.rsm.gp import SklearnGPRegressor
 
     np.random.seed(1)
