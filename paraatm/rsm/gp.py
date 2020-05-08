@@ -4,11 +4,12 @@ from sklearn import gaussian_process
 from sklearn.gaussian_process.kernels import WhiteKernel, RBF
 from sklearn import preprocessing
 
-from .base import ResponseSurface
+from paraatm.rsm.base import ResponseSurface
 
 class SklearnGPRegressor(ResponseSurface):
+    """Gaussian Process regression using scikit-learn"""
     def __init__(self, X, Y, noise=False, n_restarts_optimizer=10, alpha=1e-10, kernel=None, optimizer='fmin_l_bfgs_b'):
-        """Fit a Gaussian Process regressor to given training data using scikit-learn
+        """Create GP regression instance and fit to training data
 
         Parameters
         ----------
@@ -56,7 +57,7 @@ class SklearnGPRegressor(ResponseSurface):
         
         if kernel is None:
             # Use a default kernel
-            kernel = 1.0 * RBF(np.repeat(1, self.num_inputs))
+            kernel = 1.0 * RBF(np.repeat(1, self.num_inputs), (1e-2, 1e2))
             if noise:
                 kernel += WhiteKernel(noise_level=0.05)
 
@@ -76,10 +77,12 @@ class SklearnGPRegressor(ResponseSurface):
         
         Returns
         -------
-        The return value is either a tuple containing the mean and
-        standard deviation (if `return_stdev==True`) or the mean value
-        only.  If `ndim(X)==2`, then the mean and standard deviations
-        are returned as arrays, otherwise they are floats.
+        tuple, float, or array
+            The return value is either a tuple containing the mean and
+            standard deviation (if `return_stdev==True`) or the mean
+            value only.  If `ndim(X)==2`, then the mean and standard
+            deviations are returned as arrays, otherwise they are
+            floats.
         """
         ndim = np.ndim(X)
         X = np.atleast_2d(X)
@@ -136,3 +139,23 @@ class SklearnGPRegressor(ResponseSurface):
 
         return self._rsquared(Ytrans, np.array(preds))
 
+
+if __name__ == '__main__':
+    import matplotlib.pyplot as plt
+
+    # Simple demonstration of GP regression with 1 input
+
+    # x = np.linspace(0,10,8)
+    x = np.array([1., 3., 5., 6., 7., 8.])
+    y = x * np.sin(x)
+    X = x[:,np.newaxis] # Make input array 2d
+
+    # Use n_restarts_optimizer to get reproducible behavior
+    gp = SklearnGPRegressor(X, y, n_restarts_optimizer=0)
+
+    print('fit R-squared:', gp.fit_rsquared())
+    print('cross-val R-squared:', gp.loo_rsquared())
+
+    gp.plot()
+
+    plt.show()

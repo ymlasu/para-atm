@@ -37,8 +37,8 @@ class ResponseSurface:
 
         Parameters
         ----------
-        ax : matplotlib.axes
-            Axis to plot on
+        ax : matplotlib.axes or None
+            Axis to plot on.  If None, create new axis.
         lb : float
             Lower bound, only supported for single-variable plot
         ub : float
@@ -145,8 +145,8 @@ class ResponseSurface:
 
         Parameters
         ----------
-        ax : matplotlib.axes
-            Axis to plot on; if None, create new axis
+        ax : matplotlib.axes or None
+            Axis to plot on.  If None, create new axis
         lb : array
             Lower bound to use for each variable
         ub : array
@@ -168,6 +168,10 @@ class ResponseSurface:
             variables.
         surf_args : dict 
             Additional keyword arguments to send to Axes3D.plot_surface
+
+        Returns
+        -------
+        matplotlib.axes
         """
 
         d = self.num_inputs
@@ -231,3 +235,5 @@ class ResponseSurface:
         # Plot training data
         if show_data:
             ax.scatter(Xvar[:,0], Xvar[:,1], Y)
+
+        return ax
