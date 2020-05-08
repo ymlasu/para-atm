@@ -40,6 +40,28 @@ Here is an example showing a GP fit to a 1D function, with confidence bounds:
     plt.show()
 
 
+The Gaussian Process model can also accomodate noisy data, as shown in the below example:
+
+.. plot::
+    :include-source:
+
+    import matplotlib.pyplot as plt
+    import numpy as np
+    from paraatm.rsm.gp import SklearnGPRegressor
+
+    ndata = 150
+    np.random.seed(1)
+    X = np.linspace(0,10,ndata)
+    Y = np.sin(X) + np.random.normal(0,.2, size=ndata)
+    X = X[:,np.newaxis]
+
+    gp = SklearnGPRegressor(X, Y, n_restarts_optimizer=0, noise=True)
+
+    gp.plot()
+
+    plt.show()
+
+
 And an example of a 2D function, using :py:meth:`~paraatm.rsm.base.ResponseSurface.surface_plot`:
 
 .. plot::
