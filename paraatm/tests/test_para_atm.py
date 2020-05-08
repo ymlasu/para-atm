@@ -8,6 +8,7 @@ from paraatm.io.gnats import read_gnats_output_file, GnatsEnvironment
 from paraatm.io.iff import read_iff_file
 from paraatm.io.utils import read_csv_file
 from paraatm.safety.ground_ssd import ground_ssd_safety_analysis
+from paraatm.rsm.gp import SklearnGPRegressor
 
 from . import nats_gate_to_gate
 from . import gnats_gate_to_gate
@@ -110,6 +111,36 @@ class TestGnatsSimulation(unittest.TestCase):
 
         # Basic consistency checks:
         self.assertEqual(len(df), 218)
+
+class TestSklearnGP(unittest.TestCase):
+    def test_1d(self):
+        x = np.array([1., 3., 5., 6., 7., 8.])
+        y = x * np.sin(x)
+        X = x[:,np.newaxis] # Make input array 2d
+
+        # Use n_restarts_optimizer to get reproducible behavior
+        gp = SklearnGPRegressor(X, y, n_restarts_optimizer=0)
+
+        # Test out various parts of the __call__ API
+
+        ym = gp([2.0])
+        # Using only a low precision here as a basic test.  Not trying
+        # to verify that we get exactly the same result every time.
+        self.assertAlmostEqual(ym, 1.435301, 1)
+
+        ym, ys = gp([2.0], return_stdev=True)
+        self.assertAlmostEqual(ym, 1.435301, 1)
+        self.assertAlmostEqual(ys, 0.805718, 1)
+
+        Ym = gp([[2.0], [2.0]])
+        self.assertAlmostEqual(Ym[0], 1.435301, 1)
+        self.assertAlmostEqual(Ym[1], 1.435301, 1)
+
+        Ym, Ys = gp([[2.0], [2.0]], return_stdev=True)
+        self.assertAlmostEqual(Ym[0], 1.435301, 1)
+        self.assertAlmostEqual(Ym[1], 1.435301, 1)
+        self.assertAlmostEqual(Ys[0], 0.805718, 1)
+        self.assertAlmostEqual(Ys[1], 0.805718, 1)
         
 if __name__ == '__main__':
     unittest.main()
