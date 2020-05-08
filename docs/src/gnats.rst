@@ -5,7 +5,7 @@ GNATS simulation
 
 .. py:module:: paraatm.io.gnats
 
-`para-atm` includes capabilities to facilitate running the `GNATS <https://github.com/OptimalSynthesisInc/GNATS>`_ simulation from within Python.  These capabilities are provided by the :py:mod:`paraatm.io.gnats` module.  The following functionality is provided:
+`para-atm` includes capabilities to facilitate running the `GNATS <https://github.com/OptimalSynthesisInc/GNATS>`__ simulation from within Python.  These capabilities are provided by the :py:mod:`paraatm.io.gnats` module.  The following functionality is provided:
 
 * Boilerplate code to automatically start and stop the Java virtual machine, and to prevent it from being started multiple times
 * Behind-the-scenes path handling, so that the GNATS simulation does not need to be run from within the GNATS installation directory
