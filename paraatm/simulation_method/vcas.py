@@ -108,19 +108,19 @@ class VCAS(NatsSimulationWrapper, object):
         """
         Extract simulation start time from input flight plan file into self variable
         """
-        f = open(self.fp_file, 'r')
-        lines = f.readlines()
-        starttime = 999999999999
-        for x in lines:
-            if 'TRACK_TIME' in x:
-                ttemp = float(x[11:])
-                starttime = min(starttime, ttemp)
+        with open(self.fp_file, 'r') as f:
+            lines = f.readlines()
+            starttime = 999999999999
+            for x in lines:
+                if 'TRACK_TIME' in x:
+                    ttemp = float(x[11:])
+                    starttime = min(starttime, ttemp)
 
         self.starttime = starttime
 
         return
 
-    def simulation(self, *input_cmd, **kwargs):
+    def simulation(self, input_cmd=None):
         """
         Main function for simulation. NATS simulation based commands
 
@@ -136,10 +136,10 @@ class VCAS(NatsSimulationWrapper, object):
         Pandas DataFrame
             contains result from simulated trajectory
         """
-        if len(input_cmd) == 0:
+        if input_cmd is None:
             cmd = self.command_from_file()
         else:
-            cmd = input_cmd[0]
+            cmd = input_cmd
 
         self.get_start_time()
         cmd_maintain = cmd.append(
@@ -235,14 +235,6 @@ class VCAS(NatsSimulationWrapper, object):
             if (server_runtime_sim_status == self.NATS_SIMULATION_STATUS_ENDED):
                 break
 
-        millis = int(round(time.time() * 1000))
-        output_filename = os.path.splitext(os.path.basename(__file__))[0] + "_" + str(millis) + ".csv"
-        self.write_output(output_filename)
-        track = read_nats_output_file(output_filename)
-        self.cleanup()
-
-        return track
-
     def write_output(self, filename):
         """
         write NATS simulation output to specified file
@@ -273,20 +265,20 @@ class VCAS(NatsSimulationWrapper, object):
             elements in list is an nparray with 2 dimensions recording timestamp, longitude latitude and altitude
         """
         cmd_maintain = self.command_from_file()
-        track = self.simulation()
+        track = self()
         traj = np.asarray([track.time.values.astype(np.float)//1e9, track['latitude'].values,
                            track['longitude'].values, track['altitude'].values])
         models = [traj.T]
         for i in range(len(cmd_maintain)):
             new_cmd = cmd_maintain[0:i]
-            track = self.simulation(new_cmd)
+            track = self(input_cmd=new_cmd)
             traj = np.asarray([track.time.values.astype(np.float) // 1e9, track['latitude'].values,
                                track['longitude'].values, track['altitude'].values])
             models.append(traj.T)
 
         return models
 
-    def model_update(self, *input_prior):
+    def model_update(self, prior=input_prior):
         """
         calculate pilot compliance for each command based on results from self.make_anti_model()
 
@@ -301,10 +293,10 @@ class VCAS(NatsSimulationWrapper, object):
         nparray
             posterior for obeying each command as time
         """
-        if len(input_prior) == 0:
+        if prior is None:
             prior = 0.5 * np.ones((len(self.command_from_file()), 2))
         else:
-            prior = input_prior[0]
+            prior = input_prior
 
         trajs = self.make_anti_model()
         ref = trajs[0]
