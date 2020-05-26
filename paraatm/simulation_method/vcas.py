@@ -278,7 +278,7 @@ class VCAS(NatsSimulationWrapper, object):
 
         return models
 
-    def model_update(self, prior=input_prior):
+    def model_update(self, input_prior=None):
         """
         calculate pilot compliance for each command based on results from self.make_anti_model()
 
@@ -293,7 +293,7 @@ class VCAS(NatsSimulationWrapper, object):
         nparray
             posterior for obeying each command as time
         """
-        if prior is None:
+        if input_prior is None:
             prior = 0.5 * np.ones((len(self.command_from_file()), 2))
         else:
             prior = input_prior
