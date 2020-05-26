@@ -9,6 +9,7 @@ from paraatm.io.utils import read_csv_file
 from paraatm.safety.ground_ssd import ground_ssd_safety_analysis
 
 from .nats_gate_to_gate import GateToGate
+from paraatm.simulation_method.vcas import VCAS
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 sample_nats_file = os.path.join(THIS_DIR, '..', 'sample_data/NATS_output_SFO_PHX.csv')
@@ -78,6 +79,21 @@ class TestNatsSimulation(unittest.TestCase):
 
         # Basic consistency checks:
         self.assertEqual(len(df), 369)
-        
+
+class TestVCASsimulation(unittest.TestCase):
+    def test_vcas(self):
+        cur_dir = os.path.dirname(os.path.abspath(__file__))
+        data_dir = os.path.join(cur_dir, '..', 'sample_data/')
+        cfg = {'fp_file': data_dir + 'vcas/ASU123at6000.trx',  # flight plan file
+               'mfl_file': data_dir + 'vcas/ASU123_mfl.trx',  # mfl file
+               'cmd_file': data_dir + 'vcas/command.csv',  # text command
+               'data_file': data_dir + 'vcas/ASU123.csv',  # actual trajectory data
+               'sim_time': 1000}  # total simulation time
+
+        sim = VCAS(cfg)
+        track = sim()
+        self.assertEqual(len(track), 1000)
+
+
 if __name__ == '__main__':
     unittest.main()

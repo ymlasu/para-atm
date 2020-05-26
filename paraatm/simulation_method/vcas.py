@@ -4,6 +4,7 @@ NASA NextGen NAS ULI Information Fusion
 @organization: Arizona State University
 @author: Yuhao Wang
 @date: 2020-04-19
+@last updated: 2020-05-25
 
 This Python script is used for VCAS (Voice Communication-Assisted Simulation)
 Currently monitors altitude related commands during descend only
@@ -37,6 +38,7 @@ class VCAS(NatsSimulationWrapper, object):
         ----------
         cfg : dictionary
             inputs to VCAS simulation
+            
             'fp_file' :  str
                 directory tp flight plan file for NATS simulation
             'mfl_file' : str
@@ -46,7 +48,7 @@ class VCAS(NatsSimulationWrapper, object):
             'data_file' : srt
                 directory to actual trajectory data as .csv file
             'sim_time' : int/float
-                total simulation time
+                total simulation duration
         """
         self.fp_file = cfg['fp_file']
         self.mfl_file = cfg['mfl_file']
@@ -138,7 +140,7 @@ class VCAS(NatsSimulationWrapper, object):
             cmd = self.command_from_file()
         else:
             cmd = input_cmd[0]
-        print(os.path.dirname(os.path.realpath(__file__)))
+
         self.get_start_time()
         cmd_maintain = cmd.append(
             pd.Series([self.sim_time + self.starttime - 10, 0, 0, 0],
@@ -241,7 +243,6 @@ class VCAS(NatsSimulationWrapper, object):
 
         return track
 
-
     def write_output(self, filename):
         """
         write NATS simulation output to specified file
@@ -278,7 +279,6 @@ class VCAS(NatsSimulationWrapper, object):
         models = [traj.T]
         for i in range(len(cmd_maintain)):
             new_cmd = cmd_maintain[0:i]
-            print(new_cmd)
             track = self.simulation(new_cmd)
             traj = np.asarray([track.time.values.astype(np.float) // 1e9, track['latitude'].values,
                                track['longitude'].values, track['altitude'].values])
@@ -334,47 +334,4 @@ class VCAS(NatsSimulationWrapper, object):
 
         return compliance
 
-if __name__ == '__main__':
-    os.environ["NATS_HOME"] = "/home/ywang542/NATS/NATS_1.7"
-    cfg = {'client_dir': '/home/ywang542/NATS/NATS_Client/',  # NATS client dir
-           'fp_file': '/home/ywang542/NATS/NATS_Server/share/tg/trx/DAL1725at6000.trx',  # flight plan file
-           'mfl_file': '/home/ywang542/NATS/NATS_Server/share/tg/trx/DAL1725_mfl.trx',  # mfl file
-           'cmd_file': '/home/ywang542/Dropbox (ASU)/Code/ywang_example/VCASmodule1.7/command.csv',  # text command
-           'data_file': '/home/ywang542/Dropbox (ASU)/Code/ywang_example/VCASmodule1.7/DAL1725.csv',  # actual trajectory data
-           'sim_time': 1000}  # total simulation time
-
-    sim = VCAS(cfg)
-
-    track = sim()
-
-    track = sim.simulation()
-    real = sim.real
-    com = sim.command_from_file()
-
-    tim = track.time.values.astype(np.float) // 1e9
-    lat = track['latitude']
-    lon = track['longitude']
-    alt = track['altitude']
-    fig, ax = plt.subplots(1, 2)
-    ax[0].plot(tim, alt)
-    ax[0].plot(real['timestamp'].values, 100 * real['altitude'].values)
-    ax[0].plot(com['Timestamp'].values, com['altitude'].values, 'o')
-    ax[0].set_ylim(0, 6000)
-    ax[0].set_xlim(1544811400, 1544812400)
-
-    ax[1].plot(lon, lat)
-    ax[1].plot(real['longitude'].values, real['latitude'].values)
-    ax[1].plot(sim.fp_lon, sim.fp_lat, 'o')
-    ax[1].set_xlim(-85.0, -84.4)
-    ax[1].set_ylim(33.3, 33.7)
-
-    plt.show()
-
-    post = sim.model_update()
-    fig2 = plt.figure()
-    ax2 = fig2.add_subplot(1, 1, 1)
-    for p in post:
-        ax2.plot(p[:, 0], p[:, 1])
-    # ax2.set_ylim(0, 1)
-    plt.show()
 

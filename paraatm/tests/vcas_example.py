@@ -7,21 +7,19 @@ import matplotlib.pyplot as plt
 
 cur_dir = os.path.dirname(os.path.abspath(__file__))
 data_dir = os.path.join(cur_dir, '..', 'sample_data/')
-# set environmental variable NATS_HOME
-os.environ["NATS_HOME"] = "/home/ywang542/NATS/NATS_1.7"
+# user need to set environmental variable NATS_HOME
 # input for VCAS
-cfg = {'fp_file': data_dir + 'ASU123at6000.trx',  # flight plan file
-       'mfl_file': data_dir + 'ASU123_mfl.trx',  # mfl file
-       'cmd_file': data_dir + 'command.csv',  # text command
-       'data_file': data_dir + 'ASU123.csv',  # actual trajectory data
+cfg = {'fp_file': data_dir + 'vcas/ASU123at6000.trx',  # flight plan file
+       'mfl_file': data_dir + 'vcas/ASU123_mfl.trx',  # mfl file
+       'cmd_file': data_dir + 'vcas/command.csv',  # text command
+       'data_file': data_dir + 'vcas/ASU123.csv',  # actual trajectory data
        'sim_time': 1000}  # total simulation time
 
 # call
 sim = VCAS(cfg)
 
-# track = sim()  # call simulation function using NatsSimulationWrapper
+track = sim()  # call simulation function using NatsSimulationWrapper
 
-track = sim.simulation()  # direct call VCAS.simulation()
 # plot_trajectory(track)  # plot using bokeh method
 
 real = sim.real
