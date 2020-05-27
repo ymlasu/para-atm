@@ -13,13 +13,9 @@ Simulation based on NATS beta1.7 standalone version
 The script can also check compliance for each command
 """
 
-import time
 import os
-import io
-from shutil import copyfile
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
 import scipy.stats as sts
 
 from paraatm.io.nats import NatsSimulationWrapper, NatsEnvironment, read_nats_output_file
