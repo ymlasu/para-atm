@@ -9,6 +9,7 @@ from paraatm.io.iff import read_iff_file
 from paraatm.io.utils import read_csv_file
 from paraatm.safety.ground_ssd import ground_ssd_safety_analysis
 from paraatm.rsm.gp import SklearnGPRegressor
+from paraatm.simulation_method.vcas import VCAS
 
 from . import nats_gate_to_gate
 from . import gnats_gate_to_gate
@@ -92,6 +93,25 @@ class TestNatsSimulation(unittest.TestCase):
 
         # Basic consistency checks:
         self.assertEqual(len(df), 369)
+
+    # Note from McFarland: testing on Ubuntu using NATS 1.8, this test
+    # often hangs after the message "Flight propagation completed",
+    # with CPU still being utilized but no further progress.  The hang
+    # occurs sometimes but other times the test completes.  This
+    # should be investigated further.  Perhaps it will be resolved by
+    # moving to GNATS.
+    def test_vcas(self):
+        cur_dir = os.path.dirname(os.path.abspath(__file__))
+        data_dir = os.path.join(cur_dir, '..', 'sample_data/')
+        cfg = {'fp_file': data_dir + 'vcas/ASU123at6000.trx',  # flight plan file
+               'mfl_file': data_dir + 'vcas/ASU123_mfl.trx',  # mfl file
+               'cmd_file': data_dir + 'vcas/command.csv',  # text command
+               'data_file': data_dir + 'vcas/ASU123.csv',  # actual trajectory data
+               'sim_time': 1000}  # total simulation time
+
+        sim = VCAS(cfg)
+        track = sim()
+        self.assertEqual(len(track), 1000)
 
 @unittest.skipIf(not USE_GNATS, "use NATS instead of GNATS")
 class TestGnatsSimulation(unittest.TestCase):

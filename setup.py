@@ -13,6 +13,7 @@ setup(
             # matplotlib is used by some GNATS examples
             'matplotlib',
             'jpype1==0.6.3',
+            'scipy',
             'sklearn'],
         entry_points={
             'console_scripts': [
