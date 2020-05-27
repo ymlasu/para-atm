@@ -4,15 +4,22 @@ import numpy as np
 import os
 
 from paraatm.io.nats import read_nats_output_file, NatsEnvironment
+from paraatm.io.gnats import read_gnats_output_file, GnatsEnvironment
 from paraatm.io.iff import read_iff_file
 from paraatm.io.utils import read_csv_file
 from paraatm.safety.ground_ssd import ground_ssd_safety_analysis
-
-from .nats_gate_to_gate import GateToGate
+from paraatm.rsm.gp import SklearnGPRegressor
 from paraatm.simulation_method.vcas import VCAS
+
+from . import nats_gate_to_gate
+from . import gnats_gate_to_gate
+
+# Change this to False to test NATS instead of GNATS
+USE_GNATS = True
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 sample_nats_file = os.path.join(THIS_DIR, '..', 'sample_data/NATS_output_SFO_PHX.csv')
+sample_gnats_file = os.path.join(THIS_DIR, '..', 'sample_data/GNATS_output_SFO_PHX.csv')
 
 class TestNATSFiles(unittest.TestCase):
     def test_read_nats_output(self):
@@ -27,6 +34,12 @@ class TestNATSFiles(unittest.TestCase):
         self.assertEqual(len(df), 510)
         self.assertEqual(len(df['callsign'].unique()), 5)
         self.assertEqual(df.isnull().sum().sum(), 0)
+
+class TestGNATSFiles(unittest.TestCase):
+    def test_read_gnats_output(self):
+        df = read_gnats_output_file(sample_gnats_file)
+        # Simple check:
+        self.assertEqual(len(df), 218)
         
 class TestIFFFiles(unittest.TestCase):
     def test_read_iff(self):
@@ -62,6 +75,7 @@ class TestGroundSSD(unittest.TestCase):
         self.assertTrue(all(safety['fpf'] >= 0.0))
         self.assertEqual(sum(safety['fpf'].isnull()), 0)
 
+@unittest.skipIf(USE_GNATS, "use GNATS instead of NATS")
 class TestNatsSimulation(unittest.TestCase):
     # Note that for this test to run, NATS must be installed and the
     # NATS_HOME environment variable must be set appropriately
@@ -74,13 +88,12 @@ class TestNatsSimulation(unittest.TestCase):
         NatsEnvironment.stop_jvm()
     
     def test_gate_to_gate(self):
-        simulation = GateToGate()
+        simulation = nats_gate_to_gate.GateToGate()
         df = simulation()
 
         # Basic consistency checks:
         self.assertEqual(len(df), 369)
 
-class TestVCASsimulation(unittest.TestCase):
     def test_vcas(self):
         cur_dir = os.path.dirname(os.path.abspath(__file__))
         data_dir = os.path.join(cur_dir, '..', 'sample_data/')
@@ -94,6 +107,54 @@ class TestVCASsimulation(unittest.TestCase):
         track = sim()
         self.assertEqual(len(track), 1000)
 
+@unittest.skipIf(not USE_GNATS, "use NATS instead of GNATS")
+class TestGnatsSimulation(unittest.TestCase):
+    # Note that for this test to run, GNATS must be installed and the
+    # GNATS_HOME environment variable must be set appropriately
 
+    # Although the JVM will be shutdown automatically at program exit,
+    # we do it manually here to restore the current working directory,
+    # in case subsequent tests depend on it.
+    @classmethod
+    def tearDownClass(cls):
+       GnatsEnvironment.stop_jvm()
+
+    def test_gate_to_gate(self):
+        simulation = gnats_gate_to_gate.GateToGate()
+        df = simulation()
+
+        # Basic consistency checks:
+        self.assertEqual(len(df), 218)
+
+class TestSklearnGP(unittest.TestCase):
+    def test_1d(self):
+        x = np.array([1., 3., 5., 6., 7., 8.])
+        y = x * np.sin(x)
+        X = x[:,np.newaxis] # Make input array 2d
+
+        # Use n_restarts_optimizer to get reproducible behavior
+        gp = SklearnGPRegressor(X, y, n_restarts_optimizer=0)
+
+        # Test out various parts of the __call__ API
+
+        ym = gp([2.0])
+        # Using only a low precision here as a basic test.  Not trying
+        # to verify that we get exactly the same result every time.
+        self.assertAlmostEqual(ym, 1.435301, 1)
+
+        ym, ys = gp([2.0], return_stdev=True)
+        self.assertAlmostEqual(ym, 1.435301, 1)
+        self.assertAlmostEqual(ys, 0.805718, 1)
+
+        Ym = gp([[2.0], [2.0]])
+        self.assertAlmostEqual(Ym[0], 1.435301, 1)
+        self.assertAlmostEqual(Ym[1], 1.435301, 1)
+
+        Ym, Ys = gp([[2.0], [2.0]], return_stdev=True)
+        self.assertAlmostEqual(Ym[0], 1.435301, 1)
+        self.assertAlmostEqual(Ym[1], 1.435301, 1)
+        self.assertAlmostEqual(Ys[0], 0.805718, 1)
+        self.assertAlmostEqual(Ys[1], 0.805718, 1)
+        
 if __name__ == '__main__':
     unittest.main()

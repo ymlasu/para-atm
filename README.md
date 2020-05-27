@@ -8,13 +8,14 @@ para-atm is a Python package that provides tools for analysis of the national ai
 
 In short, the steps are:
 - Install Python 3
-- From the `src` directory, run: `python setup.py develop`
+- Clone or download `para-atm`
+- From the base directory, run: `python setup.py develop`
 
-The following sections provide further details.
+Additional steps may be required on Windows.  The following sections provide further details.
 
 ### Install Python
 
-The first step is to install Python 3 on the system.
+The first step is to install Python 3 on the system.  para-atm requires Python >= 3.6 and has been tested with Python 3.6 and 3.7.
 
 #### Ubuntu Linux
 
@@ -65,7 +66,7 @@ See https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-envir
 
 ### Install para-atm Python package
 
-Installation is handled via the `setup.py` script in the `src` directory.  If using a virtual environment, activate the appropriate virtual environment as described above.  Then navigate to the `src` directory and run the following command:
+Installation is handled via the `setup.py` script in the base directory.  If using a virtual environment, activate the appropriate virtual environment as described above.  Then navigate to the base directory of the code and run the following command:
 
 ```
 python setup.py develop
@@ -82,12 +83,33 @@ The `--user` flag ensures that the dependencies installed by para-atm do not int
 
 On Ubuntu 18, if the installation is not performed within a virtual environment, it will be necessary to replace the `python` command with `python3`.  This is because by default, `python` refers to `python2` on this system.
 
+#### Package dependencies on Windows
 
-### Install NATS (optional)
+Some additional steps may be required if using Windows.  This is because some of the Python packages that para-atm depends on require compilation.  Running `setup.py` will try to install these dependencies automatically using `pip`, if they are not already installed.  This may produce the following error:
 
-Installation of the NATS (National Airspace Trajectory-Prediction System) software is optional.  Refer to the NATS documentation for installation information.
+``` shell
+error: Setup script exited with error: Microsoft Visual C++ 14.0 is required. Get it with "Microsoft Visual C++ Build Tools": https://visualstudio.microsoft.com/downloads/
+```
 
-On Ubuntu Linux, the following commands install dependencies needed by NATS 1.7:
+There are two options.  One is to install the Microsoft Build tools as indicated by the error message.  Once installed, it should be possible for `setup.py` to install the dependencies.
+
+The second option is to install the dependencies manually using Anaconda, which provides versions of the packages that have already been compiled.  This can be done by first activating the virtual environment and then running:
+
+``` shell
+conda install -c conda-forge jpype=0.6.3 numpy pandas bokeh matplotlib pyclipper sklearn
+
+```
+
+Some care is needed with this option to avoid conflicts between conda and pip.  If a failed install via `setup.py` was already attempted, it may be necessary to delete and recreate the virtual environment prior to issuing the `conda install` commands.
+
+(Todo:  Further review should be done to identify specifically which packages require compilation.  It may only be necessary to install one or two of the packages using conda.)
+
+
+### Install GNATS (optional)
+
+Installation of the GNATS (Generalized National Airspace Trajectory-Prediction System) software is optional.  Refer to the [GNATS](https://github.com/OptimalSynthesisInc/GNATS) documentation for installation information.
+
+On Ubuntu Linux, the following commands install dependencies that may be needed by GNATS:
 
 ``` shell
 sudo apt install default-jdk
@@ -103,6 +125,8 @@ To test the para-atm installation, run the following command from the base direc
 python -m unittest
 ```
 
+The test suite includes testing with GNATS.  To test NATS instead, set `USE_GNATS = False` in [test_para_atm.py](paraatm/tests/test_para_atm.py).
+
 ## Usage
 
 The para-atm package may be used from within Python via `import paraatm`, or through the command-line interface provided by the `para-atm` command.  For help with the command-line interface, run:
@@ -115,8 +139,8 @@ If para-atm was installed within a virtual environment, make sure that environme
 
 ## Documentation
 
-The documentation is written using [Sphinx](https://www.sphinx-doc.org).  It is not yet hosted online.  In the meantime, the HTML documentation can be created locally using these steps:
-- Install sphinx (`sudo apt install python3-sphinx` on Ubuntu Linux)
+The latest version of the documentation is available at [https://para-atm.readthedocs.io/en/latest/index.html](https://para-atm.readthedocs.io/en/latest/index.html).  The documentation is written using [Sphinx](https://www.sphinx-doc.org).  Use the following steps to build the documentation locally:
+- Install sphinx (`pip install sphinx` from within virtual environment, or `sudo apt install python3-sphinx` on Ubuntu Linux if not using virtual environment)
 - From the `docs` directory, run `make html`
 - Open `_build/html/index.html` in a web browser
 

@@ -20,7 +20,7 @@ where :code:`<sub-command>` is a sub-command, such as :code:`plot`.
 Plotting
 --------
 
-The :code:`plot` sub-command is used to create a trajectory plot from an existing data file, which may be an IFF file, a NATS output file, or a CSV file created by para-atm:
+The :code:`plot` sub-command is used to create a trajectory plot from an existing data file, which may be an IFF file, a GNATS output file, or a CSV file created by para-atm:
 
 .. code:: shell
 
@@ -28,19 +28,19 @@ The :code:`plot` sub-command is used to create a trajectory plot from an existin
 
 Try testing :code:`para-atm plot` on the sample data files in the `sample_data` directory.
 
-NATS simulation
----------------
+GNATS simulation
+----------------
 
-The :code:`nats` sub-command is used to run a NATS simulation that has been specified in a Python module using the para-atm interface.  Refer to :ref:`nats` for the details on specifying a NATS simulation in para-atm.  The user-defined simulation can then be executed using:
-
-.. code:: shell
-
-   para-atm nats <simulation_file> --output <output_file>
-
-where :code:`<simulation_file>` names the Python file in which the NATS simulation class is stored, and :code:`<output_file>` specifies the file to store the NATS results.  In addition, the :code:`--plot` option can also be given, in which case a trajectory plot is created from the simulation results.
-
-Note that the message for the :code:`nats` sub-command can be obtained using:
+The :code:`gnats` and :code:`nats` sub-commands are used to run a GNATS or NATS simulation that has been specified in a Python module using the para-atm interface.  Refer to :ref:`gnats` and :ref:`nats` for the details on specifying a GNATS or NATS simulation in para-atm.  The user-defined simulation can then be executed using:
 
 .. code:: shell
 
-   para-atm nats -h
+   para-atm gnats <simulation_file> --output <output_file>
+
+where :code:`<simulation_file>` names the Python file in which the GNATS simulation class is stored, and :code:`<output_file>` specifies the file to store the GNATS results.  In addition, the :code:`--plot` option can also be given, in which case a trajectory plot is created from the simulation results.
+
+Note that the help message for the :code:`gnats` sub-command can be obtained using:
+
+.. code:: shell
+
+   para-atm gnats -h
