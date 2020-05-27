@@ -234,6 +234,7 @@ class VCAS(NatsSimulationWrapper, object):
     def write_output(self, filename):
         """
         write NATS simulation output to specified file
+
         Parameters
         ----------
         filename : str
@@ -285,7 +286,7 @@ class VCAS(NatsSimulationWrapper, object):
             as prior
 
         Returns
-        ----------
+        -------
         nparray
             posterior for obeying each command as time
         """
