@@ -7,7 +7,7 @@ import os
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 
-class TestBDN(unittest.TestCase):
+class TestSVM(unittest.TestCase):
     
     def test_SVM_input(self):
         x_train_path = os.path.join(THIS_DIR, '..', 'sample_data/SVM_classifier/x_train.csv')
