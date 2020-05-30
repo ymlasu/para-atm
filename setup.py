@@ -14,6 +14,9 @@ setup(
             'matplotlib',
             'jpype1==0.6.3',
             'scipy',
+            'pytorch==1.4.0',
+            'catboost==0.23',
+            'xgboost==1.0.2'
             'sklearn'],
         entry_points={
             'console_scripts': [

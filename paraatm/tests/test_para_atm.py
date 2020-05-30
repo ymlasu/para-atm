@@ -2,7 +2,7 @@ import unittest
 import pandas as pd
 import numpy as np
 import os
-
+import torch
 from paraatm.io.nats import read_nats_output_file, NatsEnvironment
 from paraatm.io.gnats import read_gnats_output_file, GnatsEnvironment
 from paraatm.io.iff import read_iff_file
@@ -10,12 +10,13 @@ from paraatm.io.utils import read_csv_file
 from paraatm.safety.ground_ssd import ground_ssd_safety_analysis
 from paraatm.rsm.gp import SklearnGPRegressor
 from paraatm.simulation_method.vcas import VCAS
+from paraatm.simulation_method.aviationr import AviationRisk
 
 from . import nats_gate_to_gate
 from . import gnats_gate_to_gate
 
 # Change this to False to test NATS instead of GNATS
-USE_GNATS = True
+USE_GNATS = False
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 sample_nats_file = os.path.join(THIS_DIR, '..', 'sample_data/NATS_output_SFO_PHX.csv')
@@ -112,6 +113,22 @@ class TestNatsSimulation(unittest.TestCase):
         sim = VCAS(cfg)
         track = sim()
         self.assertEqual(len(track), 1000)
+    def test_aviationr(self):
+        cur_dir = os.path.dirname(os.path.abspath(__file__))
+        data_dir = os.path.join(cur_dir, '..', 'sample_data/')
+
+        cfg = {'fp_file': data_dir + 'aviationR/data/TRX_DEMO_SFO_PHX_GateToGate.trx',  # flight plan file
+               'mfl_file': data_dir + 'aviationR/data/TRX_DEMO_SFO_PHX_mfl.trx',  # mfl file
+               'data_file': data_dir + 'aviationR/data/',
+               'model_file': data_dir + 'aviationR/model/',
+               'sim_time': 1000}  # total simulation time
+
+        # call
+        sim = AviationRisk(cfg)
+        device = torch.device('cpu')
+        if torch.cuda.is_available():
+            device = torch.device('cuda')
+        _ = sim.simulation(device)  # call simulation function using NatsSimulationWrapper
 
 @unittest.skipIf(not USE_GNATS, "use NATS instead of GNATS")
 class TestGnatsSimulation(unittest.TestCase):
