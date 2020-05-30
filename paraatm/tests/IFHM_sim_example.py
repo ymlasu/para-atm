@@ -25,7 +25,7 @@ from mpl_toolkits.mplot3d import Axes3D
 
 # Set GNATS_Home and data directories
 os.environ["GNATS_Home"] = "/home/hector/Documents/GNATS"
-dir_data = "/home/hector/Documents/para-atm-master/paraatm/sample_data/"
+dir_data = "/home/hector/Documents/para-atm-master/paraatm/sample_data/ifhm"
 os.environ["dir_data"] = dir_data
 os.environ["out_path"] = dir_data
 
