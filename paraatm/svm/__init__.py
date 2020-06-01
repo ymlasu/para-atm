@@ -1,1 +1,1 @@
-from ._svm_text_classifier import SVM_ASRS_risk_category
+from ._svm_text_classifier import SVM_text_class
