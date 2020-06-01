@@ -7,6 +7,10 @@ tensorflow (as a banckend of keras)
 numpy
 
 """
+import warnings
+# Ignore warnings during import with keras 2.3.1 and numpy 1.18.1
+warnings.simplefilter(action="ignore", category=FutureWarning)
+
 import keras.backend as K
 from keras.models import Model
 from keras.layers import Input, Dense, Dropout,LSTM,Activation

@@ -1,8 +1,8 @@
-import paraatm
-from paraatm.bdn import Bdn
 import unittest
 import numpy as np
 import os
+
+from paraatm.bdn import Bdn
 
 RNN_x_train = RNN_x_test = np.random.rand(10,2,2)
 RNN_y_train = RNN_y_test = np.random.rand(10,)
