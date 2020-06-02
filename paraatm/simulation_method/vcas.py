@@ -53,7 +53,7 @@ class VCAS(NatsSimulationWrapper, object):
         self.track_file = cfg['data_file']
         self.real = pd.read_csv(cfg['data_file'])
 
-        NatsEnvironment.start_jvm(nats_home=None)
+        NatsEnvironment.start_jvm(nats_home='/home/ypang6/Desktop/NATS/')
         self.NATS_SIMULATION_STATUS_PAUSE = NatsEnvironment.get_nats_constant('NATS_SIMULATION_STATUS_PAUSE')
         self.NATS_SIMULATION_STATUS_ENDED = NatsEnvironment.get_nats_constant('NATS_SIMULATION_STATUS_ENDED')
 
