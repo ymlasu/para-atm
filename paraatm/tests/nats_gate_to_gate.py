@@ -79,5 +79,4 @@ class GateToGate(NatsSimulationWrapper):
         self.aircraftInterface.release_aircraft()
         self.environmentInterface.release_rap()        
 
-if __name__ == '__main__':
-    GateToGate()()
+
