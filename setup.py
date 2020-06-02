@@ -14,7 +14,11 @@ setup(
             'matplotlib',
             'jpype1==0.6.3',
             'scipy',
-            'sklearn'],
+            'sklearn',
+            'netCDF4',
+            'time',
+            'datetime',
+            'math'],
         entry_points={
             'console_scripts': [
                 'para-atm=paraatm.paraatm:main',
