@@ -10,7 +10,6 @@ numpy
 import warnings
 # Ignore warnings during import with keras 2.3.1 and numpy 1.18.1
 warnings.simplefilter(action="ignore", category=FutureWarning)
-
 import keras.backend as K
 from keras.models import Model
 from keras.layers import Input, Dense, Dropout,LSTM,Activation
@@ -28,14 +27,15 @@ class Bdn(object):
     
     Methods:
     -------
-    get_rnn_model (internal method)
-    get_dnn_model (internal method)
+    _get_rnn_model (internal method)
+    _get_dnn_model (internal method)
     pred 
     """
     def __init__(self,x_train,y_train,x_test,y_test,idrop=0.,
                  odrop=0.25,rdrop=0.25,
                  weight_decay=1e-4,lr=1e-3,num_unit=100,
-                 batch_size=30,epochs=200,iter_=5):
+                 batch_size=30,epochs=200,iter_=1,pred_type = True,model_type = 'rnn', custom_model = None):
+        
         """
         Parameters
         ----------
@@ -66,6 +66,21 @@ class Bdn(object):
             number of epochs
         iter_: int
             number of predictions for each sample
+            This is only used when pred_type == True
+        pred_type: Boolen
+            Set the prediction type, whether it's deterministic or with uncertainty
+            By default: it's set as 'True'
+            pred_type == True: prediction with uncertainty
+            pred_type == False: deterministic result
+            To make predictions with uncertainty, during testing phase, different weight dropout masks are applied to the weight matrix at each iteration by setting the testing phase as learning phase. There is no dropout during testing phase if not specified as learning phase.
+        model_type: str
+            Specify the neural network type
+            By default, it's set as 'rnn'
+            model_type == 'rnn': generate results for the embedded rnn model
+            model_type == 'dnn': generate results for the embedded dnn model
+            model_type == 'custom': generate results for the customized model
+            When model_type == 'custom', a customized model must be provided
+        custom_model: None is set by default, otherwise is a  customized sequential model
         """
         self.x_train = x_train
         self.y_train = y_train
@@ -80,12 +95,16 @@ class Bdn(object):
         self.batch_size = batch_size
         self.epochs = epochs
         self.iter_ = iter_
+        self.pred_type = pred_type
+        self.model_type = model_type
+        self.custom_model = custom_model
+        
         if not isinstance(self.x_train,np.ndarray):
             raise Exception('Wrong type: expect an array!') 
 
     def _get_rnn_model(self):
         """
-        Construct a recursive neural network (rnn) model which is then passed to 'pred'method if flag_2 =='rnn'.
+        Construct a recursive neural network (rnn) model which is then passed to 'pred'method if model_type =='rnn'.
         A rnn model is used to make predictions for temporal sequential data.
         
         For more information about rnn model, please refer to:
@@ -123,7 +142,7 @@ class Bdn(object):
         return model
     def _get_dnn_model(self):
         """
-        Construct a deep neural network (dnn) model which is then passed to 'pred' method if flag_2 =='dnn'.
+        Construct a deep neural network (dnn) model which is then passed to 'pred' method if model_type =='dnn'.
         A dnn model is used to make predictions for input data which has linear or non-linear relationships with the output data, or target.
         
         
@@ -161,25 +180,9 @@ class Bdn(object):
         return model        
         
 
-    def pred(self,flag_1 = True,flag_2 = 'rnn',custom_model = None):
+    def pred(self):
         """
         pred is used to generate results for the deep learning model
-        
-        Parameters
-        ----------
-        flag_1: Boolen
-            By default: it's set as 'True'
-            flag_1 == True: prediction with uncertainty
-            flag_1 == False: deterministic result
-        
-        flag_2: str
-            By default, it's set as 'rnn'
-            flag_2 == 'rnn': generate results for the embedded rnn model
-            flag_2 == 'dnn': generate results for the embedded dnn model
-            flag_2 == 'custom': generate results for the customized model
-            When flag_2 == 'custom', a customized model must be provided
-        
-        custom_model: None is set by default, otherwise is a  customized sequential model
         
         Returns
         -------
@@ -188,22 +191,22 @@ class Bdn(object):
         num_test_data:  Number of test data
         num_iter: number of iterations
         """
-        if flag_2 =='rnn':
+        if self.model_type =='rnn':
             model = self._get_rnn_model()
-        if flag_2 =='dnn':
+        if self.model_type =='dnn':
             model = self._get_dnn_model()
-        if flag_2 =='custom':
+        if self.model_type =='custom':
             model = custom_model
         #print(model.summary())
         model.fit(self.x_train,self.y_train,self.batch_size,
                       self.epochs,verbose = False)
-        if flag_1==True:
+        if self.pred_type==True:
             f = K.function([model.layers[0].input,
                                 K.learning_phase()],[model.layers[-1].output])
             results = []
             for i in range(self.iter_):
                 results.append(np.squeeze(f([self.x_test,1])))
             results = np.array(results)
-        if flag_1 == False:
+        if self.pred_type == False:
             results = model.predict(self.x_test)
         return results
