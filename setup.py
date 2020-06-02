@@ -16,9 +16,7 @@ setup(
             'scipy',
             'sklearn',
             'netCDF4',
-            'time',
-            'datetime',
-            'math'],
+            'datetime'],
         entry_points={
             'console_scripts': [
                 'para-atm=paraatm.paraatm:main',
