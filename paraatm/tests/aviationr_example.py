@@ -5,7 +5,7 @@ from paraatm.simulation_method.aviationr import AviationRisk
 import matplotlib.pyplot as plt
 cur_dir = os.path.dirname(os.path.abspath(__file__))
 data_dir = os.path.join(cur_dir, '..', 'sample_data/')
-os.environ["NATS_HOME"] = '/home/xinyu/Project/NATS'
+
 cfg = {'fp_file': data_dir + 'aviationR/data/TRX_DEMO_SFO_PHX_GateToGate.trx',  # flight plan file
        'mfl_file': data_dir + 'aviationR/data/TRX_DEMO_SFO_PHX_mfl.trx',  # mfl file
        'data_file': data_dir + 'aviationR/data/', # required data for accident simulation and risk estimation
