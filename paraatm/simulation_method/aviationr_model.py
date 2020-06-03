@@ -55,7 +55,11 @@ class RiskEstimator:
         occurrence_size = len(occurrence_code_corpus)
 
         batch_size = 1
-
+        try:
+            import torch
+        except ImportError:
+            print('aviation risk module requires installation of torch')
+            raise
         if self.isRNN:
             embedding_dim = 30  # Embedding of each word
             hidden_dim = 50  # Final hidden dimension that is used for prediction
@@ -78,6 +82,16 @@ class RiskEstimator:
                                                        subj_to_occurrence_dict, self.device).to(self.device)
             hierarchical_softmax.load_state_dict(torch.load(self.model + "hierarchical_softmax_sequential.sav"))
             model.load_state_dict(torch.load(self.model + "model_sequential.sav"))
+        try:
+            import catboost
+        except ImportError:
+            print('aviation risk module requires installation of catboost')
+            raise
+        try:
+            import xgboost
+        except ImportError:
+            print('aviation risk module requires installation of xgboost')
+            raise
         risk_model = pd.read_pickle(self.model + 'risk_model.sav')
         return model, hierarchical_softmax, risk_model
 
