@@ -97,9 +97,9 @@ class TestNatsSimulation(unittest.TestCase):
     # Note from McFarland: testing on Ubuntu using NATS 1.8, this test
     # often hangs after the message "Flight propagation completed",
     # with CPU still being utilized but no further progress.  The hang
-    # occurs sometimes but other times the test completes.  This
-    # should be investigated further.  Perhaps it will be resolved by
-    # moving to GNATS.
+    # occurs sometimes but other times the test completes.  More
+    # detail in GitHub Issue #5.
+    @unittest.skip("unresolved simulation hang, see GitHub Issue #5")
     def test_vcas(self):
         cur_dir = os.path.dirname(os.path.abspath(__file__))
         data_dir = os.path.join(cur_dir, '..', 'sample_data/')
