@@ -3,7 +3,6 @@ import numpy as np
 import pandas as pd
 from paraatm.simulation_method.aviationr import AviationRisk
 import matplotlib.pyplot as plt
-import torch
 cur_dir = os.path.dirname(os.path.abspath(__file__))
 data_dir = os.path.join(cur_dir, '..', 'sample_data/')
 
@@ -11,17 +10,12 @@ cfg = {'fp_file': data_dir + 'aviationR/data/TRX_DEMO_SFO_PHX_GateToGate.trx',  
        'mfl_file': data_dir + 'aviationR/data/TRX_DEMO_SFO_PHX_mfl.trx',  # mfl file
        'data_file': data_dir + 'aviationR/data/', # required data for accident simulation and risk estimation
        'model_file': data_dir + 'aviationR/model/', # Pre-trained model
-       'sim_time': 12000}  # total simulation time
+       'sim_time': 4500}  # total simulation time
 
 # call
 sim = AviationRisk(cfg)
 
-
-device = torch.device('cpu')
-if torch.cuda.is_available():
-    device = torch.device('cuda')
-
-result  = sim.simulation(device)  # call simulation function using NatsSimulationWrapper
+result  = sim.simulation()  # call simulation function using NatsSimulationWrapper
 if result is not None:
     track = pd.read_table(data_dir + 'aviationR/data/trajectory.csv', sep=',', skiprows=[0,1,2,3,4,6,7,8,9], index_col=0)
 

@@ -129,7 +129,7 @@ class RiskEstimator:
         a = np.concatenate((subject_buffer, occurrence_buffer, phase_buffer), axis=0)
         return a
 
-    def risk_estimation(self, case_code, i, device, model, hierarchical_softmax, risk_model, datadict, isRNN, nsample=100):
+    def risk_estimation(self, case_code, i, model, hierarchical_softmax, risk_model, datadict, isRNN, nsample=100):
         """
             Estimating the risk of the event in aviation accident
 
@@ -153,9 +153,9 @@ class RiskEstimator:
             isRNN : boolean
                 check weather using RNN or not
         """
-        x_subject_input = torch.LongTensor(case_code['Subj_Code'][0][:i + 1]).to(device)
-        x_occurrence_input = torch.LongTensor(case_code['Occurrence_Code'][0][:i + 1]).to(device)
-        x_phase_input = torch.LongTensor(case_code['Phase_of_Flight'][0][:i + 1]).to(device)
+        x_subject_input = torch.LongTensor(case_code['Subj_Code'][0][:i + 1]).to(self.device)
+        x_occurrence_input = torch.LongTensor(case_code['Occurrence_Code'][0][:i + 1]).to(self.device)
+        x_phase_input = torch.LongTensor(case_code['Phase_of_Flight'][0][:i + 1]).to(self.device)
         refer = pd.read_pickle(self.data + 'refer.pickle')
         occurrence_code_corpus = refer['occurrence_code_corpus']
         subject_code_corpus = refer['subject_code_corpus']

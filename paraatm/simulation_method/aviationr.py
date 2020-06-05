@@ -141,7 +141,7 @@ class AviationRisk(NatsSimulationWrapper, object):
 
             # recording the risk and predicting events
             risk_list[i - 1], phase_list[i - 1], occurrence_list[i - 1], subject_list[i - 1] = risk_estimator.risk_estimation(
-                case_code, i, device, model, hierarchical_softmax, risk_model, datadict, isRNN)
+                case_code, i, model, hierarchical_softmax, risk_model, datadict, isRNN)
 
             time_list[i-1] = self.simulationInterface.get_curr_sim_time()
 
