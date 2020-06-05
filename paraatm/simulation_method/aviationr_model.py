@@ -30,13 +30,17 @@ class RiskEstimator:
             directory to required reference from NTSB
         model : str
             directory to pre-trained model
-        device : str
+        device : torch.device
             'CUDA'/ 'CPU'-- Running the model along GPU or CPU
     """
     def __init__(self, model, isRNN, data, device):
         self.model = model
         self.isRNN = isRNN
         self.data = data
+        if device is None:
+            device = torch.device('cpu')
+            if torch.cuda.is_available():
+                device = torch.device('cuda')
         self.device = device
 
     def load_model(self):
@@ -136,7 +140,7 @@ class RiskEstimator:
                 Accident recording from NTSB
             i : int
                 The time index of sequential events in an accident
-            device : str
+            device : torch.device
                 'CUDA'/ 'CPU'-- Running the model along GPU or CPU
             model : Pytorch model
                 Model for hierarchical sequential modeling for aviation accident

@@ -71,13 +71,13 @@ class AviationRisk(NatsSimulationWrapper, object):
 
         self.simulationInterface.clear_trajectory()
 
-    def simulation(self, device, delay=1000, isRNN=True):
+    def simulation(self, device=None, delay=100, isRNN=True):
         """
         Main function for simulation. NATS simulation based commands
 
         Parameters
         ----------
-        device : str
+        device : torch.device
            'CUDA'/ 'CPU'-- Running the model along GPU or CPU
         delay : int
             When we start the accident simulation after the required condition meet
@@ -120,12 +120,14 @@ class AviationRisk(NatsSimulationWrapper, object):
                 runtime_sim_status = self.simulationInterface.get_runtime_sim_status()
                 if (runtime_sim_status == self.NATS_SIMULATION_STATUS_PAUSE):
                     break
+                if (runtime_sim_status == self.NATS_SIMULATION_STATUS_ENDED):
+                    print('Accident condition is not met!')
+                    return None
             aclist = self.aircraftInterface.getAllAircraftId()
             ac = self.aircraftInterface.select_aircraft(aclist[0])
             phase = ac.getFlight_phase()
             if accident_phase in list(ntsb2nats.loc[ntsb2nats['NATS_CODE'] == phase]['NTSB_CODE']): # test if the phase of flight from  NASTS simulation is same as NTSB
                 accident = True
-
         # Start accident simulation and risk analysis
         risk_list = [None] * len(case)
         subject_list = [None] * len(case)
@@ -133,6 +135,7 @@ class AviationRisk(NatsSimulationWrapper, object):
         occurrence_list = [None] * len(case)
         time_list = [None] * len(case)
         risk_estimator = RiskEstimator(self.model, isRNN, self.data, device)
+        
         model, hierarchical_softmax, risk_model = risk_estimator.load_model()
         for i in range(1, len(case_code['Occurrence_Code'][0]) - 1):
 
@@ -150,12 +153,20 @@ class AviationRisk(NatsSimulationWrapper, object):
                 runtime_sim_status = self.simulationInterface.get_runtime_sim_status()
                 if (runtime_sim_status == self.NATS_SIMULATION_STATUS_PAUSE):
                     break
-
+                if (runtime_sim_status == self.NATS_SIMULATION_STATUS_ENDED):
+                    print('Simulation time not enough!')
+                    return None
         self.simulationInterface.resume()
+        while True:
+            server_runtime_sim_status = self.simulationInterface.get_runtime_sim_status()
+            if (server_runtime_sim_status == self.NATS_SIMULATION_STATUS_ENDED):
+                break
         event_list = []
         for i in range(len(subject_list)):
             event_list.append(phase_list[i] + '\n' + occurrence_list[i] + '\n' + subject_list[i])
+        print('Aviation accident simulation finished!')
         self.simulationInterface.write_trajectories(self.data + 'trajectory.csv')
+
         return {'risk':risk_list, 'event':event_list, 'time':time_list}
 
     def write_output(self, filename):
@@ -165,8 +176,6 @@ class AviationRisk(NatsSimulationWrapper, object):
         Parameters
         ----------
         filename : str
-             directory to output file. Default in simulation function is out put in NATS_HOME with name
-             vcasmodule_xxxxxxxxxxxx.csv (xxxxxxxxxxxx is timestamp * 1000)
         """
         self.simulationInterface.write_trajectories(filename)
 
