@@ -74,11 +74,9 @@ class RiskEstimator:
                              batch_size, hidden_dim, self.device).to(self.device)
             hierarchical_softmax = _HierarchicalSoftmax(hidden_dim, phase_to_occurrence_dict, occurrence_to_subj_dict,
                                                        subj_to_occurrence_dict, self.device).to(self.device)
-            if self.device == torch.device('cuda'):
-                hierarchical_softmax.load_state_dict(torch.load(self.model + "hierarchical_softmax_rnn.sav"))
-            else:
-                hierarchical_softmax.load_state_dict(torch.load(self.model + "hierarchical_softmax_rnn.sav", map_location=self.device))
-            model.load_state_dict(torch.load(self.model + "model_rnn.sav"))
+
+            hierarchical_softmax.load_state_dict(torch.load(self.model + "hierarchical_softmax_rnn.sav", map_location=self.device))
+            model.load_state_dict(torch.load(self.model + "model_rnn.sav", map_location=self.device))
         else:
             embedding_dim = 100  # Embedding of each word
             hidden_dim = 50  # Final hidden dimension that is used for prediction
@@ -87,12 +85,9 @@ class RiskEstimator:
                                          hidden_dim, self.device)
             hierarchical_softmax = _HierarchicalSoftmax(hidden_dim, phase_to_occurrence_dict, occurrence_to_subj_dict,
                                                        subj_to_occurrence_dict, self.device).to(self.device)
-            if self.device == torch.device('cuda'):
-                hierarchical_softmax.load_state_dict(torch.load(self.model + "hierarchical_softmax_rnn.sav"))
-            else:
-                hierarchical_softmax.load_state_dict(
-                    torch.load(self.model + "hierarchical_softmax_rnn.sav", map_location=self.device))
-            model.load_state_dict(torch.load(self.model + "model_sequential.sav"))
+
+            hierarchical_softmax.load_state_dict(torch.load(self.model + "hierarchical_softmax_rnn.sav", map_location=self.device))
+            model.load_state_dict(torch.load(self.model + "model_sequential.sav", map_location=self.device))
         try:
             import catboost
         except ImportError:
