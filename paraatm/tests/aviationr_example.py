@@ -10,7 +10,7 @@ cfg = {'fp_file': data_dir + 'aviationR/data/TRX_DEMO_SFO_PHX_GateToGate.trx',  
        'mfl_file': data_dir + 'aviationR/data/TRX_DEMO_SFO_PHX_mfl.trx',  # mfl file
        'data_file': data_dir + 'aviationR/data/', # required data for accident simulation and risk estimation
        'model_file': data_dir + 'aviationR/model/', # Pre-trained model
-       'sim_time': 4500}  # total simulation time
+       'sim_time': 8000}  # total simulation time
 
 # call
 sim = AviationRisk(cfg)

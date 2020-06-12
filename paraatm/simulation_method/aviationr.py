@@ -11,6 +11,7 @@ Simulation based on NATS beta1.7 standalone version
 """
 
 import os
+import time
 import pandas as pd
 from paraatm.simulation_method.aviationr_model import RiskEstimator
 
@@ -106,15 +107,12 @@ class AviationRisk(NatsSimulationWrapper, object):
         self.simulationInterface.setupSimulation(self.sim_time, 30)  # SFO - PHX
 
         self.simulationInterface.start(1)
-        while True:
-            runtime_sim_status = self.simulationInterface.get_runtime_sim_status()
-            if (runtime_sim_status == self.NATS_SIMULATION_STATUS_PAUSE):
-                break
 
         # Running the simulation until the phase of aircraft first meet the actual accident phase in NTSB
         accident = False
         accident_phase = case.loc[0, 'Phase_of_Flight'] # the initial phase of accident
         while not accident:
+            time.sleep(0.1)
             self.simulationInterface.resume(delay)
             while True:
                 runtime_sim_status = self.simulationInterface.get_runtime_sim_status()

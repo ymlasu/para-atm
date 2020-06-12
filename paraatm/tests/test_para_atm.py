@@ -121,14 +121,11 @@ class TestNatsSimulation(unittest.TestCase):
                'mfl_file': data_dir + 'aviationR/data/TRX_DEMO_SFO_PHX_mfl.trx',  # mfl file
                'data_file': data_dir + 'aviationR/data/',
                'model_file': data_dir + 'aviationR/model/',
-               'sim_time': 1000}  # total simulation time
+               'sim_time': 12000}  # total simulation time
 
         # call
         sim = AviationRisk(cfg)
-        device = torch.device('cpu')
-        if torch.cuda.is_available():
-            device = torch.device('cuda')
-        _ = sim.simulation(device)  # call simulation function using NatsSimulationWrapper
+        _ = sim.simulation()  # call simulation function using NatsSimulationWrapper
 
 @unittest.skipIf(not USE_GNATS, "use NATS instead of GNATS")
 class TestGnatsSimulation(unittest.TestCase):

@@ -74,7 +74,10 @@ class RiskEstimator:
                              batch_size, hidden_dim, self.device).to(self.device)
             hierarchical_softmax = _HierarchicalSoftmax(hidden_dim, phase_to_occurrence_dict, occurrence_to_subj_dict,
                                                        subj_to_occurrence_dict, self.device).to(self.device)
-            hierarchical_softmax.load_state_dict(torch.load(self.model + "hierarchical_softmax_rnn.sav"))
+            if self.device == torch.device('cuda'):
+                hierarchical_softmax.load_state_dict(torch.load(self.model + "hierarchical_softmax_rnn.sav"))
+            else:
+                hierarchical_softmax.load_state_dict(torch.load(self.model + "hierarchical_softmax_rnn.sav", map_location=self.device))
             model.load_state_dict(torch.load(self.model + "model_rnn.sav"))
         else:
             embedding_dim = 100  # Embedding of each word
@@ -84,7 +87,11 @@ class RiskEstimator:
                                          hidden_dim, self.device)
             hierarchical_softmax = _HierarchicalSoftmax(hidden_dim, phase_to_occurrence_dict, occurrence_to_subj_dict,
                                                        subj_to_occurrence_dict, self.device).to(self.device)
-            hierarchical_softmax.load_state_dict(torch.load(self.model + "hierarchical_softmax_sequential.sav"))
+            if self.device == torch.device('cuda'):
+                hierarchical_softmax.load_state_dict(torch.load(self.model + "hierarchical_softmax_rnn.sav"))
+            else:
+                hierarchical_softmax.load_state_dict(
+                    torch.load(self.model + "hierarchical_softmax_rnn.sav", map_location=self.device))
             model.load_state_dict(torch.load(self.model + "model_sequential.sav"))
         try:
             import catboost
@@ -236,7 +243,7 @@ class _RNNModel(nn.Module):
             padding_idx=self.subject_size - 1,
         ).to(self.device)
 
-        self.output = nn.Linear(latent_dim, hidden_dim).to(device)
+        self.output = nn.Linear(latent_dim, hidden_dim).to(self.device)
 
         self.rnn = nn.LSTM(
             input_size=3 * self.embedding_dim,
@@ -291,7 +298,7 @@ class _SequentialPrediction(nn.Module):
             embedding_dim=self.embedding_dim,
             padding_idx=self.subject_size - 1,
         ).to(self.device)
-        self.output = nn.Linear(3 * embedding_dim, hidden_dim).to(device)
+        self.output = nn.Linear(3 * embedding_dim, hidden_dim).to(self.device)
 
     def forward(self, X_phase, X_occurrence, X_subject, X_lengths):
         h_phase = self.word_embedding_phase(X_phase)
