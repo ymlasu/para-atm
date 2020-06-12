@@ -19,13 +19,13 @@ result  = sim.simulation()  # call simulation function using NatsSimulationWrapp
 if result is not None:
     track = pd.read_table(data_dir + 'aviationR/data/trajectory.csv', sep=',', skiprows=[0,1,2,3,4,6,7,8,9], index_col=0)
 
-    fig, ax = plt.subplots(3, 1,figsize=(15,30))
+    fig, ax = plt.subplots(1, 3,figsize=(12,4))
     x = result['event']
     y = np.mean(result['risk'],1)
     e = np.var(result['risk'],1)
     (_, caps, _) = ax[0].errorbar(
         x, y, e, fmt='--o', ecolor='g', capsize=5, elinewidth=1)
-    ax[0].set_xticklabels(x, rotation=70)
+    ax[0].set_xticklabels(x, rotation=20)
 
     for cap in caps:
         cap.set_markeredgewidth(1)

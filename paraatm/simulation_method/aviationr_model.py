@@ -163,10 +163,10 @@ class RiskEstimator:
         subject_code_corpus = refer['subject_code_corpus']
         phase_code_corpus = refer['phase_code_corpus']
 
-        subject = list(datadict[datadict['code_iaids'] == subject_code_corpus[x_subject_input[-1]]]['meaning'])[0]
-        phase = list(datadict[datadict['code_iaids'] == phase_code_corpus[x_phase_input[-1]]]['meaning'])[0]
+        subject = list(datadict[datadict['code_iaids'] == subject_code_corpus[x_subject_input[-1]]]['code_iaids'])[0]
+        phase = list(datadict[datadict['code_iaids'] == phase_code_corpus[x_phase_input[-1]]]['code_iaids'])[0]
         occurrence = \
-        list(datadict[datadict['code_iaids'] == occurrence_code_corpus[x_occurrence_input[-1]]]['meaning'])[0]
+        list(datadict[datadict['code_iaids'] == occurrence_code_corpus[x_occurrence_input[-1]]]['code_iaids'])[0]
 
         # Predicting the possible future path
         if isRNN:

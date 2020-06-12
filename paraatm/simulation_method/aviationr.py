@@ -206,7 +206,7 @@ class AviationRisk(NatsSimulationWrapper, object):
          """
         aclist = aircraftInterface.getAllAircraftId()
         ac = aircraftInterface.select_aircraft(aclist[0])
-        phase = int(list(datadict[datadict['meaning'] == phase]['code_iaids'])[0])
+        phase = int(list(datadict[datadict['code_iaids'] == phase]['code_iaids'])[0])
         nats_phase = int(ntsb2nats.loc[ntsb2nats['NTSB_CODE'] == phase]['NATS_CODE'])
         # Modify the flight phase according to NTSB recording
         ac.setFlight_phase(nats_phase)
