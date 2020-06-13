@@ -15,8 +15,7 @@ setup(
             'jpype1==0.6.3',
             'scipy',
             'sklearn',
-            'netCDF4',
-            'datetime'],
+            'netCDF4'],
         entry_points={
             'console_scripts': [
                 'para-atm=paraatm.paraatm:main',
