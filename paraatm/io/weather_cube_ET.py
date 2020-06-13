@@ -6,7 +6,7 @@ NASA NextGen NAS ULI Information Fusion
 @organization: Arizona State University
 @author: Yutian Pang
 @date: 2019-02-19
-@last updated: 2020-06-01
+@last updated: 2020-06-12
 
 This script is used to read and process the EchoTop (ET) convective weather products from
 the Corridor Integrated Weather System (CIWS). The data can be downloaded from NASA
@@ -16,6 +16,7 @@ The script takes raw ET convective weather files and the trajectory file as inpu
 the processed weather feature cube around each of the coordinates in trajectory file, as well as the
 value of the ET right at each coordinate.
 
+Minimal changes required to process VIL convective weather feature in a similar way.
 """
 
 import os
@@ -27,7 +28,7 @@ import pandas as pd
 from netCDF4 import Dataset
 
 
-class weather_cube_generator(object):
+class WeatherCubeGenerator(object):
     """
         Read CIWS EchoTop file and return weather values at and around the coordinates based on the trajectory file
         The input to this class should be a dictionary.
@@ -77,17 +78,17 @@ class weather_cube_generator(object):
         Parameters
         ----------
         x: int
-        The longitude index of the current location in the grid map. after resize.
+            The longitude index of the current location in the grid map. after resize.
         y: int
-        The latitude index of the current locatuon in the grid map, after resize.
+            The latitude index of the current locatuon in the grid map, after resize.
         values: float
-        The weather grid array after resize.
+            The weather grid array after resize.
 
 
         Returns
         -------
         point_t_values: float
-        The averaged mean value of EchoTop around the current location.
+            The averaged mean value of EchoTop around the current location.
         """
 
         # find mean
@@ -109,9 +110,9 @@ class weather_cube_generator(object):
         Arguments
         ---------
         save_area: Boolean
-        If set to True, save the weather_area tensor into a .npy file. Default is False.
+            If set to True, save the weather_area tensor into a .npy file. Default is False.
         save_point: Boolean
-        If set to True, save the weather_point tensor into a .npy file. Default is False.
+            If set to True, save the weather_point tensor into a .npy file. Default is False.
         """
 
         y_max, y_min, x_max, x_min = lat2y(53.8742945085336), lat2y(19.35598953632181), lot2x(-61.65138656927017), lot2x(-134.3486134307298)
@@ -153,11 +154,11 @@ class weather_cube_generator(object):
             dy_ = y[i] - y[i-1] + 1e-8
             dire_y = dy_ / np.abs(dy_)
 
-            # Line 1  Along the Traj
+            # Line 1: Along the Traj
             slope_m = (lat2y(y[i]) - lat2y(y[i-1]) + 1e-8) / (lot2x(x[i]) - lot2x(x[i-1]) + 1e-8)
             angle_m = math.atan(slope_m)
 
-            # Line 2 Bottom Boundary
+            # Line 2: Bottom Boundary
             slope_b = -(lot2x(x[i]) - lot2x(x[i-1]) + 1e-8) / (lat2y(y[i]) - lat2y(y[i-1]) + 1e-8)
             angle_b = math.atan(slope_b)
 
@@ -265,12 +266,12 @@ def find_nearest_value(array, num):
     Parameters
     ----------
     array: float, int
-    The reference array.
+        The reference array.
 
     Returns
     -------
     num: float
-    The number we are interested.
+        The number we are interested.
     """
     nearest_val = array[abs(array - num) == abs(array - num).min()]
     return nearest_val
@@ -283,14 +284,14 @@ def check_convective_weather_files(weather_path, unix_time):
     Parameters
     ----------
     weather_path: str
-    The path to the weather data.
+        The path to the weather data.
     unix_time: int
-    The unix time of the current location
+        The unix time of the current location
 
     Returns
     -------
     file_path: str
-    The path to the closest ET weather file at the current location and the current time
+        The path to the closest ET weather file at the current location and the current time
     """
     pin = datetime.datetime.utcfromtimestamp(int(float(unix_time))).strftime('%Y%m%d %H%M%S')  # time handle to check CIWS database
     array = np.asarray([0, 230, 500, 730,
@@ -315,22 +316,24 @@ def eliminate_zeros(num):
 
     Parameters
     ----------
-    num: float
-    A four digit number represents the minute and second time.
+    num: str
+        A string contains four digit number represents the minute and second time.
 
     Returns
     -------
-    num: float
-    The cleared last four digits time
+    num: str
+        The cleared last four digits time string
     """
-    if num[0] == '0' and num[1] == '0' and num[2] == '0':
-        return num[3]
-    if num[0] == '0' and num[1] == '0' and num[2] != '0':
-        return num[2:]
-    if num[0] == '0' and num[1] != '0':
-        return num[1:]
-    if num[0] != '0':
-        return num
+    # changed according to suggestion from John Mcfarland
+    # if num[0] == '0' and num[1] == '0' and num[2] == '0':
+    #     return num[3]
+    # if num[0] == '0' and num[1] == '0' and num[2] != '0':
+    #     return num[2:]
+    # if num[0] == '0' and num[1] != '0':
+    #     return num[1:]
+    # if num[0] != '0':
+    #     return num
+    return num.lstrip('0')
 
 
 def make_up_zeros(str):
@@ -340,21 +343,23 @@ def make_up_zeros(str):
     Parameters
     ----------
     str: str
-    The objective string of numbers to makeup
+        The objective string of numbers to makeup
 
     Returns
     -------
     str: str
-    The string with four numbers
+        The string with four numbers
     """
-    if len(str) == 4:
-        return str
-    if len(str) == 3:
-        return "0" + str
-    if len(str) == 2:
-        return "00" + str
-    if len(str) == 1:
-        return "000" + str
+    # changed according to suggestion from John Mcfarland
+    # if len(str) == 4:
+    #     return str
+    # if len(str) == 3:
+    #     return "0" + str
+    # if len(str) == 2:
+    #     return "00" + str
+    # if len(str) == 1:
+    #     return "000" + str
+    return '{:0>4}'.format(str)
 
 
 
