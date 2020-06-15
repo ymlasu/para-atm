@@ -178,7 +178,7 @@ class Bdn(object):
         return model        
         
 
-    def pred(self, x_test, y_test, get_var = True,iter_=5):
+    def pred(self, x_test, get_var = True,iter_=5):
         """
         pred is used to generate results for the deep learning model. To get uncertainty of the model, get_var should be set as 'True'. By doing this, multiple realizations are done for one test data. The output of the pred method is the raw prediction results. Below is a simple example of how to build a bayesian RNN model.
         
@@ -194,9 +194,7 @@ class Bdn(object):
         Parameters
         ----------
         x_test: array
-            test data   
-        y_test: array
-            test target   
+            test data     
         get_var: Boolen
             Whether the prediction result is deterministic or with uncertainty
             By default: it's set as 'True'
