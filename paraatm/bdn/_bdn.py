@@ -185,7 +185,7 @@ class Bdn(object):
         from paraatm.bdn import Bdn
         import numpy as np
         rnn_model = Bdn(RNN_x_train,RNN_y_train)
-        rnn_y_test_pred = rnn_model.pred(RNN_x_test, RNN_y_test)
+        rnn_y_test_pred = rnn_model.pred(RNN_x_test)
         ### to obtain the mean and variance of the prediction:
         mean_pred = np.mean(rnn_y_test_pred,axis=0)
         var_pred = np.var(rnn_y_test_pred,axis=0)
