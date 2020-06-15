@@ -55,11 +55,11 @@ class TestBDN(unittest.TestCase):
         self.assertEqual(len(RNN_y_test.shape), 1)         
                 
     def test_RNN(self):
-        rnn_model = Bdn(RNN_x_train,RNN_y_train,RNN_x_test, RNN_y_test)
-        rnn_y_test_pred = rnn_model.pred()
-        self.assertEqual(rnn_y_test_pred.shape[0],1)
+        rnn_model = Bdn(RNN_x_train,RNN_y_train)
+        rnn_y_test_pred = rnn_model.pred(RNN_x_test, RNN_y_test)
+        self.assertEqual(rnn_y_test_pred.shape[0],5)
     ### test the DNN network
     def test_DNN(self):
-        dnn_model = Bdn(DNN_x_train,DNN_y_train,DNN_x_test, DNN_y_test,model_type = 'dnn' )
-        dnn_y_test_pred = dnn_model.pred()
-        self.assertEqual(dnn_y_test_pred.shape[0],1)
+        dnn_model = Bdn(DNN_x_train,DNN_y_train,model_type = 'dnn' )
+        dnn_y_test_pred = dnn_model.pred(DNN_x_test, DNN_y_test)
+        self.assertEqual(dnn_y_test_pred.shape[0],5)
