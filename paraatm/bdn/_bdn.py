@@ -1,3 +1,4 @@
+
 """
 Bayesian deep neural network (BDN) class
 ---
@@ -5,7 +6,6 @@ Required packages:
 keras
 tensorflow (as a banckend of keras)
 numpy
-
 """
 import warnings
 # Ignore warnings during import with keras 2.3.1 and numpy 1.18.1
@@ -31,10 +31,10 @@ class Bdn(object):
     _get_dnn_model (internal method)
     pred 
     """
-    def __init__(self,x_train,y_train,x_test,y_test,idrop=0.,
+    def __init__(self,x_train,y_train,idrop=0.25,
                  odrop=0.25,rdrop=0.25,
                  weight_decay=1e-4,lr=1e-3,num_unit=100,
-                 batch_size=30,epochs=200,iter_=1,pred_type = True,model_type = 'rnn', custom_model = None):
+                 batch_size=30,epochs=200,model_type = 'rnn', custom_model = None):
         
         """
         Parameters
@@ -43,10 +43,6 @@ class Bdn(object):
             training data
         y_train: array
             training target
-        x_test: array
-            test data
-        y_test: array
-            test target
         idrop: float
             dropout rate for input layer
         odrop: float
@@ -64,15 +60,6 @@ class Bdn(object):
             mini batch size
         epochs: int
             number of epochs
-        iter_: int
-            number of predictions for each sample
-            This is only used when pred_type == True
-        pred_type: Boolen
-            Set the prediction type, whether it's deterministic or with uncertainty
-            By default: it's set as 'True'
-            pred_type == True: prediction with uncertainty
-            pred_type == False: deterministic result
-            To make predictions with uncertainty, during testing phase, different weight dropout masks are applied to the weight matrix at each iteration by setting the testing phase as learning phase. There is no dropout during testing phase if not specified as learning phase.
         model_type: str
             Specify the neural network type
             By default, it's set as 'rnn'
@@ -84,8 +71,6 @@ class Bdn(object):
         """
         self.x_train = x_train
         self.y_train = y_train
-        self.x_test = x_test
-        self.y_test = y_test
         self.idrop = idrop
         self.odrop = odrop
         self.rdrop = rdrop
@@ -94,14 +79,27 @@ class Bdn(object):
         self.num_unit=num_unit
         self.batch_size = batch_size
         self.epochs = epochs
-        self.iter_ = iter_
-        self.pred_type = pred_type
         self.model_type = model_type
         self.custom_model = custom_model
         
         if not isinstance(self.x_train,np.ndarray):
             raise Exception('Wrong type: expect an array!') 
-
+         
+        if self.model_type == 'rnn':
+            self.model = self._get_rnn_model()  
+            
+        if self.model_type == 'dnn':
+            self.model = self._get_dnn_model() 
+       
+        if self.model_type == 'custom':
+            if self.custom_model is None:
+                raise Exception('Expect a customized model!')
+            else:
+                self.model = self.custom_model
+        ### fit the model with training data    
+        self.model.fit(self.x_train,self.y_train,self.batch_size,
+                      self.epochs,verbose = False)
+            
     def _get_rnn_model(self):
         """
         Construct a recursive neural network (rnn) model which is then passed to 'pred'method if model_type =='rnn'.
@@ -180,33 +178,51 @@ class Bdn(object):
         return model        
         
 
-    def pred(self):
+    def pred(self, x_test, y_test, get_var = True,iter_=5):
         """
-        pred is used to generate results for the deep learning model
+        pred is used to generate results for the deep learning model. To get uncertainty of the model, get_var should be set as 'True'. By doing this, multiple realizations are done for one test data. The output of the pred method is the raw prediction results. Below is a simple example of how to build a bayesian RNN model.
+        
+        from paraatm.bdn import Bdn
+        import numpy as np
+        rnn_model = Bdn(RNN_x_train,RNN_y_train)
+        rnn_y_test_pred = rnn_model.pred(RNN_x_test, RNN_y_test)
+        ### to obtain the mean and variance of the prediction:
+        mean_pred = np.mean(rnn_y_test_pred,axis=0)
+        var_pred = np.var(rnn_y_test_pred,axis=0)
+        
+        
+        Parameters
+        ----------
+        x_test: array
+            test data   
+        y_test: array
+            test target   
+        get_var: Boolen
+            Whether the prediction result is deterministic or with uncertainty
+            By default: it's set as 'True'
+            get_var == True: prediction with uncertainty
+            get_var == False: deterministic result  
+        iter_: int
+            Number of realizations for each sample
+            By default, it's set as 5
+            This is only used when get_var == True
         
         Returns
         -------
-        An array which is predictions for the test data
-        The array has a shape as num_test_data by num_iter
-        num_test_data:  Number of test data
+        An array which is prediction for the test data
+        The array has a shape as num_iter by num_test_data
+        num_test_data: number of test data
         num_iter: number of iterations
+
         """
-        if self.model_type =='rnn':
-            model = self._get_rnn_model()
-        if self.model_type =='dnn':
-            model = self._get_dnn_model()
-        if self.model_type =='custom':
-            model = custom_model
-        #print(model.summary())
-        model.fit(self.x_train,self.y_train,self.batch_size,
-                      self.epochs,verbose = False)
-        if self.pred_type==True:
+        model = self.model
+        if get_var==True:
             f = K.function([model.layers[0].input,
                                 K.learning_phase()],[model.layers[-1].output])
             results = []
-            for i in range(self.iter_):
-                results.append(np.squeeze(f([self.x_test,1])))
+            for i in range(iter_):
+                results.append(np.squeeze(f([x_test,1])))
             results = np.array(results)
-        if self.pred_type == False:
-            results = model.predict(self.x_test)
+        if get_var == False:
+            results = model.predict(x_test)
         return results
