@@ -121,7 +121,7 @@ class TestGnatsSimulation(unittest.TestCase):
 
     def test_gate_to_gate(self):
         simulation = gnats_gate_to_gate.GateToGate()
-        df = simulation()
+        df = simulation()['trajectory']
 
         # Basic consistency checks:
         self.assertEqual(len(df), 218)

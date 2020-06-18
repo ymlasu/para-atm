@@ -272,15 +272,20 @@ class GnatsSimulationWrapper:
 
         Returns
         -------
-        DataFrame
-            If return_df is True, read the output into a DataFrame and
-            return that
+        dict
+            A dictionary with the following keys:
+                'trajectory' (if return_df==True)
+                    DataFrame with trajectory results
+                'sim_results'
+                    Return value from child simulation method
         """
         # Make sure that the JVM has been started.  This is safe to
         # call even if it has already been started.
         GnatsEnvironment.start_jvm()
+
+        results = dict()
         
-        self.simulation(**kwargs)
+        results['sim_results'] = self.simulation(**kwargs)
 
         if output_file is None:
             # Create a temporary directory to store the output, so it
@@ -307,7 +312,9 @@ class GnatsSimulationWrapper:
             self.cleanup()
 
         if return_df:
-            return df
+            results['trajectory'] = df
+
+        return results
 
 
     def get_path(self, filename):
