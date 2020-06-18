@@ -3,7 +3,7 @@ import time
 from paraatm.io.nats import NatsSimulationWrapper, NatsEnvironment
 
 class GateToGate(NatsSimulationWrapper):
-    def simulation(self, *args, **kwargs):
+    def simulation(self):
 
         NATS_SIMULATION_STATUS_PAUSE = NatsEnvironment.get_nats_constant('NATS_SIMULATION_STATUS_PAUSE')
         NATS_SIMULATION_STATUS_ENDED = NatsEnvironment.get_nats_constant('NATS_SIMULATION_STATUS_ENDED')

@@ -25,7 +25,7 @@ Creation of a GNATS simulation in `para-atm` is done by writing a class that der
     from paraatm.io.gnats import GnatsSimulationWrapper, GnatsEnvironment
 
     class GateToGate(GnatsSimulationWrapper):
-        def simulation(self, *args, **kwargs):
+        def simulation(self):
 
             GNATS_SIMULATION_STATUS_PAUSE = GnatsEnvironment.get_gnats_constant('GNATS_SIMULATION_STATUS_PAUSE')
             GNATS_SIMULATION_STATUS_ENDED = GnatsEnvironment.get_gnats_constant('GNATS_SIMULATION_STATUS_ENDED')
@@ -63,7 +63,7 @@ For example, the :py:class:`GateToGate` simulation class defined above could be 
 
 Here, line 1 creates an instance of the :py:class:`GateToGate` class.  Line 2 executes the simulation, passing no arguments (note that the :code:`()` operator invokes the :code:`__call__` method).  The return value is stored in :code:`df`, which will contain the resulting trajectory data as a DataFrame.
 
-The values of the :code:`*args` and :code:`**kwargs` arguments provided to :py:meth:`~paraatm.io.gnats.GnatsSimulationWrapper.__call__` are passed on to :py:meth:`~paraatm.io.gnats.GnatsSimulationWrapper.simulation`.  This makes it possible to create a simulation instance that accepts parameter values.  For example:
+Additional keyword arguments provided to :py:meth:`~paraatm.io.gnats.GnatsSimulationWrapper.__call__` are passed on to :py:meth:`~paraatm.io.gnats.GnatsSimulationWrapper.simulation`.  This makes it possible to create a simulation instance that accepts parameter values.  For example:
 
 .. code-block:: python
    :linenos:
@@ -73,10 +73,10 @@ The values of the :code:`*args` and :code:`**kwargs` arguments provided to :py:m
            # .. Perform simulation using the value of my_parameter
 
    my_sim = MySim()
-   df1 = my_sim(1)
-   df2 = my_sim(2)
+   df1 = my_sim(my_parameter=1)
+   df2 = my_sim(my_parameter=2)
 
-Here, the user-defined :py:meth:`simulation` method on line 2 is defined to accept an argument, :code:`my_parameter`.  Once the simulation class is instantiated, repeated calls can be made using different parameter values, as shown on lines 6 and 7.  The same approach can also be used with keyword arguments.
+Here, the user-defined :py:meth:`simulation` method on line 2 is defined to accept an argument, :code:`my_parameter`.  Once the simulation class is instantiated, repeated calls can be made using different parameter values, as shown on lines 6 and 7.
 
 
 The API

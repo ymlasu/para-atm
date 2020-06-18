@@ -206,11 +206,15 @@ class NatsSimulationWrapper:
 
     """
 
-    def simulation(self, *args, **kwargs):
+    def simulation(self):
         """Users must implement this method in the derived class
 
         Assume that the jvm is already started and that it will be
         shutdown by the parent class.
+
+        The function may accept parameter values, which must be
+        provided as keyword arguments when invoking
+        :py:meth:`__call__`.
         """
         raise NotImplementedError("derived class must implement 'simulation' method")
 
@@ -223,7 +227,7 @@ class NatsSimulationWrapper:
         """
         raise NotImplementedError("derived class must implement 'write_output' method")
 
-    def __call__(self, output_file=None, return_df=True, *args, **kwargs):
+    def __call__(self, output_file=None, return_df=True, **kwargs):
 
         """Execute NATS simulation and write output to specified file
 
@@ -233,6 +237,8 @@ class NatsSimulationWrapper:
             Output file to write to.  If not provided, a temporary file is used
         return_df : bool
             Whether to read the output into a DataFrame and return it
+        **kwargs
+            Extra keyword arguments to pass to simulation call
 
         Returns
         -------
@@ -244,7 +250,7 @@ class NatsSimulationWrapper:
         # call even if it has already been started.
         NatsEnvironment.start_jvm()
         
-        self.simulation(*args, **kwargs)
+        self.simulation(**kwargs)
 
         if output_file is None:
             # Create a temporary directory to store the output, so it

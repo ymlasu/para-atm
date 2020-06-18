@@ -3,7 +3,7 @@ import time
 from paraatm.io.gnats import GnatsSimulationWrapper, GnatsEnvironment
 
 class GateToGate(GnatsSimulationWrapper):
-    def simulation(self, *args, **kwargs):
+    def simulation(self):
 
         GNATS_SIMULATION_STATUS_PAUSE = GnatsEnvironment.get_gnats_constant('GNATS_SIMULATION_STATUS_PAUSE')
         GNATS_SIMULATION_STATUS_ENDED = GnatsEnvironment.get_gnats_constant('GNATS_SIMULATION_STATUS_ENDED')
