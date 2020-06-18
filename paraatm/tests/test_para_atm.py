@@ -89,7 +89,7 @@ class TestNatsSimulation(unittest.TestCase):
     
     def test_gate_to_gate(self):
         simulation = nats_gate_to_gate.GateToGate()
-        df = simulation()
+        df = simulation()['trajectory']
 
         # Basic consistency checks:
         self.assertEqual(len(df), 369)
@@ -104,7 +104,7 @@ class TestNatsSimulation(unittest.TestCase):
                'sim_time': 1000}  # total simulation time
 
         sim = VCAS(cfg)
-        track = sim()
+        track = sim()['trajectory']
         self.assertEqual(len(track), 1000)
 
 @unittest.skipIf(not USE_GNATS, "use NATS instead of GNATS")
