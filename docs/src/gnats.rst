@@ -51,7 +51,7 @@ As compared to the GNATS sample file, some key differences in this implementatio
 Running the GNATS simulation
 ----------------------------
 
-Once the user-defined class deriving from :py:class:`~paraatm.io.gnats.GnatsSimulationWrapper` has been created, the simulation is executed by creating an instance of the class and calling its :py:meth:`~paraatm.io.gnats.GnatsSimulationWrapper.__call__` method.  This method will handle various setup behind the scenes, such as starting the JVM, creating the :code:`GNATSStandalone` instance, and preparing the current working directory.  Once the simulation is prepared, the user's :py:meth:`~paraatm.io.gnats.GnatsSimulationWrapper.simulation` method is called automatically.  The output file is automatically created by communicating with the user-defined :py:meth:`~paraatm.io.gnats.GnatsSimulationWrapper.write_output` method, and the trajectory results are stored as a DataFrame in the `'trajectory'` key of the returned dictionary.
+Once the user-defined class deriving from :py:class:`~paraatm.io.gnats.GnatsSimulationWrapper` has been created, the simulation is executed by creating an instance of the class and calling its :py:meth:`~paraatm.io.gnats.GnatsSimulationWrapper.__call__` method.  This method will handle various setup behind the scenes, such as starting the JVM, creating the :code:`GNATSStandalone` instance, and preparing the current working directory.  Once the simulation is prepared, the user's :py:meth:`~paraatm.io.gnats.GnatsSimulationWrapper.simulation` method is called automatically.  The output file is automatically created by communicating with the user-defined :py:meth:`~paraatm.io.gnats.GnatsSimulationWrapper.write_output` method, and the trajectory results are stored as a DataFrame in the :code:`'trajectory'` key of the returned dictionary.
 
 For example, the :py:class:`GateToGate` simulation class defined above could be invoked as:
 
@@ -61,7 +61,7 @@ For example, the :py:class:`GateToGate` simulation class defined above could be 
    g2g_sim = GateToGate()
    df = g2g_sim()['trajectory']
 
-Here, line 1 creates an instance of the :py:class:`GateToGate` class.  Line 2 executes the simulation, passing no arguments (note that the :code:`()` operator invokes the :code:`__call__` method).  The return value of `g2g_sim` is a dictionary, and we retrieve the value of the `'trajectory'` key, which is a DataFrame that stores the resulting trajectory data.  Note that line 2 is just shorthand for:
+Here, line 1 creates an instance of the :py:class:`GateToGate` class.  Line 2 executes the simulation, passing no arguments (note that the :code:`()` operator invokes the :code:`__call__` method).  The return value of :code:`g2g_sim()` is a dictionary, and we retrieve the value of the :code:`'trajectory'` key, which is a DataFrame that stores the resulting trajectory data.  Note that line 2 is just shorthand for:
 
 
 .. code-block:: python
@@ -84,7 +84,7 @@ Additional keyword arguments provided to :py:meth:`~paraatm.io.gnats.GnatsSimula
 
 Here, the user-defined :py:meth:`simulation` method on line 2 is defined to accept an argument, :code:`my_parameter`.  Once the simulation class is instantiated, repeated calls can be made using different parameter values, as shown on lines 6 and 7.
 
-If the simulation method itself returns values, :py:meth:`~paraatm.io.gnats.GnatsSimulationWrapper.__call__` stores these in the `'sim_results'` key of the dictionary that it returns.  For example:
+If the simulation method itself returns values, :py:meth:`~paraatm.io.gnats.GnatsSimulationWrapper.__call__` stores these in the :code:`'sim_results'` key of the dictionary that it returns.  For example:
 
 .. code-block:: python
     :linenos:
@@ -97,7 +97,7 @@ If the simulation method itself returns values, :py:meth:`~paraatm.io.gnats.Gnat
     my_sim = MySimWithReturnVals()
     some_data = my_sim(return_df=False)['sim_results']
 
-In this example, the call to `my_sim` on line 7 uses the `return_df=False` option to suppress storing the trajectory results.  However, this is not required, and both trajectory results and custom return values can be returned if needed.
+In this example, the call to :code:`my_sim()` on line 7 uses the :code:`return_df=False` option to suppress storing the trajectory results.  However, this is not required, and both trajectory results and custom return values can be returned if needed.
 
 
 The API
