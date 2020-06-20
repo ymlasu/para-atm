@@ -15,9 +15,10 @@ cfg = {'fp_file': data_dir + 'aviationR/data/TRX_DEMO_SFO_PHX_GateToGate.trx',  
 # call
 sim = AviationRisk(cfg)
 
-result  = sim.simulation()  # call simulation function using NatsSimulationWrapper
+nats_sim = sim()
+result = nats_sim['sim_results']
+track = nats_sim['trajectory']
 if result is not None:
-    track = pd.read_table(data_dir + 'aviationR/data/trajectory.csv', sep=',', skiprows=[0,1,2,3,4,6,7,8,9], index_col=0)
 
     fig, ax = plt.subplots(1, 3,figsize=(12,4))
     x = result['event']
@@ -30,15 +31,15 @@ if result is not None:
     for cap in caps:
         cap.set_markeredgewidth(1)
 
-    tim = np.array(track.index)
+    tim = track.time.values.astype(np.float)
     lat = track['latitude']
     lon = track['longitude']
-    alt = track['altitude_ft']
+    alt = track['altitude']
 
     ax[1].plot(tim, alt)
     for i in result['time']:
-        ax[1].plot(i,track.loc[i,'altitude_ft'], color='red', marker='o')
+        ax[1].plot(tim[i],alt[i], color='red', marker='o')
     ax[2].plot(lon, lat)
     for i in result['time']:
-        ax[2].plot(track.loc[i,'longitude'],track.loc[i,'latitude'], color='red', marker='o')
+        ax[2].plot(lon[i],lat[i], color='red', marker='o')
     plt.show()

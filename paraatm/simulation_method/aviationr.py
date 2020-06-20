@@ -141,7 +141,7 @@ class AviationRisk(NatsSimulationWrapper, object):
             risk_list[i - 1], phase_list[i - 1], occurrence_list[i - 1], subject_list[i - 1] = risk_estimator.risk_estimation(
                 case_code, i, model, hierarchical_softmax, risk_model, datadict, isRNN)
 
-            time_list[i-1] = self.simulationInterface.get_curr_sim_time()
+            time_list[i-1] = int(self.simulationInterface.get_curr_sim_time()/30)
 
             # modify NATS simulation according to NTSB accident
             t = self.accident_simulator(self.aircraftInterface, self.controllerInterface, self.pilotInterface, phase_list[i-1],
@@ -163,7 +163,6 @@ class AviationRisk(NatsSimulationWrapper, object):
         for i in range(len(subject_list)):
             event_list.append(phase_list[i] + '\n' + occurrence_list[i] + '\n' + subject_list[i])
         print('Aviation accident simulation finished!')
-        self.simulationInterface.write_trajectories(self.data + 'trajectory.csv')
 
         return {'risk':risk_list, 'event':event_list, 'time':time_list}
 
