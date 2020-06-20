@@ -14,6 +14,7 @@ The script can also check compliance for each command
 """
 
 import os
+import time
 import pandas as pd
 import numpy as np
 import scipy.stats as sts
@@ -155,6 +156,8 @@ class VCAS(NatsSimulationWrapper, object):
             # print(server_runtime_sim_status)
             if (server_runtime_sim_status == self.NATS_SIMULATION_STATUS_PAUSE):
                 break
+            else:
+                time.sleep(0.1)
 
         curr_t = self.starttime + self.simulationInterface.get_curr_sim_time()
         ac = self.aircraftInterface.select_aircraft(aclist[0])
@@ -182,6 +185,8 @@ class VCAS(NatsSimulationWrapper, object):
                     # print(server_runtime_sim_status)
                     if (server_runtime_sim_status == self.NATS_SIMULATION_STATUS_PAUSE):
                         break
+                    else:
+                        time.sleep(0.1)
 
                 ac = self.aircraftInterface.select_aircraft(aclist[0])
                 h = ac.getAltitude_ft()
@@ -204,6 +209,8 @@ class VCAS(NatsSimulationWrapper, object):
                         # print(server_runtime_sim_status)
                         if (server_runtime_sim_status == self.NATS_SIMULATION_STATUS_PAUSE):
                             break
+                        else:
+                            time.sleep(0.1)
 
                     ac = self.aircraftInterface.select_aircraft(aclist[0])
                     ac.setFlight_phase(stat)
@@ -218,6 +225,8 @@ class VCAS(NatsSimulationWrapper, object):
                     # print(server_runtime_sim_status)
                     if (server_runtime_sim_status == self.NATS_SIMULATION_STATUS_PAUSE):
                         break
+                    else:
+                        time.sleep(0.1)
 
                 ac = self.aircraftInterface.select_aircraft(aclist[0])
                 # curlon = ac.getLongitude_deg()
