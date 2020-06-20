@@ -89,7 +89,7 @@ class TestNatsSimulation(unittest.TestCase):
     
     def test_gate_to_gate(self):
         simulation = nats_gate_to_gate.GateToGate()
-        df = simulation()
+        df = simulation()['trajectory']
 
         # Basic consistency checks:
         self.assertEqual(len(df), 369)
@@ -110,7 +110,7 @@ class TestNatsSimulation(unittest.TestCase):
                'sim_time': 1000}  # total simulation time
 
         sim = VCAS(cfg)
-        track = sim()
+        track = sim()['trajectory']
         self.assertEqual(len(track), 1000)
     def test_aviationr(self):
         cur_dir = os.path.dirname(os.path.abspath(__file__))
@@ -120,11 +120,12 @@ class TestNatsSimulation(unittest.TestCase):
                'mfl_file': data_dir + 'aviationR/data/TRX_DEMO_SFO_PHX_mfl.trx',  # mfl file
                'data_file': data_dir + 'aviationR/data/',
                'model_file': data_dir + 'aviationR/model/',
-               'sim_time': 12000}  # total simulation time
+               'sim_time': 8000}  # total simulation time
 
         # call
         sim = AviationRisk(cfg)
-        _ = sim.simulation()  # call simulation function using NatsSimulationWrapper
+        track = sim()['trajectory']  # call simulation function using NatsSimulationWrapper
+        self.assertEqual(len(track), 8000)
 
 @unittest.skipIf(not USE_GNATS, "use NATS instead of GNATS")
 class TestGnatsSimulation(unittest.TestCase):
@@ -140,7 +141,7 @@ class TestGnatsSimulation(unittest.TestCase):
 
     def test_gate_to_gate(self):
         simulation = gnats_gate_to_gate.GateToGate()
-        df = simulation()
+        df = simulation()['trajectory']
 
         # Basic consistency checks:
         self.assertEqual(len(df), 218)
