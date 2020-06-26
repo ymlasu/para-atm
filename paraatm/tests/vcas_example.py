@@ -1,4 +1,12 @@
-#from vcasmodule import VCAS
+"""
+@organization: Arizona State University
+@author: Yuhao Wang
+@date: 2020-04-19
+@last updated: 2020-06-12
+
+This Python script is a demonstration for calling VCAS module
+"""
+
 import os
 import numpy as np
 from paraatm.plotting import plot_trajectory
@@ -7,7 +15,7 @@ import matplotlib.pyplot as plt
 
 cur_dir = os.path.dirname(os.path.abspath(__file__))
 data_dir = os.path.join(cur_dir, '..', 'sample_data/')
-# user need to set environmental variable NATS_HOME
+# user needs to set environmental variable GNATS_HOME
 # input for VCAS
 cfg = {'fp_file': data_dir + 'vcas/ASU123at6000.trx',  # flight plan file
        'mfl_file': data_dir + 'vcas/ASU123_mfl.trx',  # mfl file

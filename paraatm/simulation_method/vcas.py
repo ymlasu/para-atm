@@ -4,7 +4,7 @@ NASA NextGen NAS ULI Information Fusion
 @organization: Arizona State University
 @author: Yuhao Wang
 @date: 2020-04-19
-@last updated: 2020-05-25
+@last updated: 2020-06-12
 
 This Python script is used for VCAS (Voice Communication-Assisted Simulation)
 Currently monitors altitude related commands during descend only
@@ -13,16 +13,19 @@ Simulation based on NATS beta1.7 standalone version
 The script can also check compliance for each command
 """
 
-import os
 import time
+import os
+import io
+from shutil import copyfile
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
 import scipy.stats as sts
 
-from paraatm.io.nats import NatsSimulationWrapper, NatsEnvironment, read_nats_output_file
+from paraatm.io.gnats import GnatsSimulationWrapper, GnatsEnvironment, read_gnats_output_file
 
 
-class VCAS(NatsSimulationWrapper, object):
+class VCAS(GnatsSimulationWrapper, object):
     """Class method for VCAS simulation and calculation based on input
     """
     def __init__(self, cfg):
@@ -54,25 +57,25 @@ class VCAS(NatsSimulationWrapper, object):
         self.track_file = cfg['data_file']
         self.real = pd.read_csv(cfg['data_file'])
 
-        NatsEnvironment.start_jvm(nats_home=None)
-        self.NATS_SIMULATION_STATUS_PAUSE = NatsEnvironment.get_nats_constant('NATS_SIMULATION_STATUS_PAUSE')
-        self.NATS_SIMULATION_STATUS_ENDED = NatsEnvironment.get_nats_constant('NATS_SIMULATION_STATUS_ENDED')
+        GnatsEnvironment.start_jvm(gnats_home=None)
+        self.NATS_SIMULATION_STATUS_PAUSE = GnatsEnvironment.get_gnats_constant('GNATS_SIMULATION_STATUS_PAUSE')
+        self.NATS_SIMULATION_STATUS_ENDED = GnatsEnvironment.get_gnats_constant('GNATS_SIMULATION_STATUS_ENDED')
 
-        natsStandalone = NatsEnvironment.get_nats_standalone()
+        gnatsStandalone = GnatsEnvironment.get_gnats_standalone()
 
-        self.simulationInterface = natsStandalone.getSimulationInterface()
+        self.simulationInterface = gnatsStandalone.getSimulationInterface()
 
-        self.entityInterface = natsStandalone.getEntityInterface()
+        self.entityInterface = gnatsStandalone.getEntityInterface()
         self.controllerInterface = self.entityInterface.getControllerInterface()
         self.pilotInterface = self.entityInterface.getPilotInterface()
 
-        self.environmentInterface = natsStandalone.getEnvironmentInterface()
+        self.environmentInterface = gnatsStandalone.getEnvironmentInterface()
 
-        self.equipmentInterface = natsStandalone.getEquipmentInterface()
+        self.equipmentInterface = gnatsStandalone.getEquipmentInterface()
         self.aircraftInterface = self.equipmentInterface.getAircraftInterface()
 
         if self.simulationInterface is None:
-            natsStandalone.stop()
+            gnatsStandalone.stop()
             raise RuntimeError("Can't get SimulationInterface")
 
         self.simulationInterface.clear_trajectory()
@@ -145,7 +148,7 @@ class VCAS(NatsSimulationWrapper, object):
             ignore_index=True)  # end cmd
 
         # self.init_NATS()
-        self.environmentInterface.load_rap(os.environ.get('NATS_HOME') + '/' + 'share/tg/rap')  # default wind file
+        self.environmentInterface.load_rap(os.environ.get('GNATS_HOME') + '/' + 'share/tg/rap')  # default wind file
         self.aircraftInterface.load_aircraft(self.fp_file, self.mfl_file)
         aclist = self.aircraftInterface.getAllAircraftId()
         self.simulationInterface.setupSimulation(self.sim_time, 1)
@@ -153,11 +156,11 @@ class VCAS(NatsSimulationWrapper, object):
         # Use a while loop to constantly check server status.
         while True:
             server_runtime_sim_status = self.simulationInterface.get_runtime_sim_status()
-            # print(server_runtime_sim_status)
+            time.sleep(0.1)
             if (server_runtime_sim_status == self.NATS_SIMULATION_STATUS_PAUSE):
                 break
-            else:
-                time.sleep(0.1)
+            elif (server_runtime_sim_status == self.NATS_SIMULATION_STATUS_ENDED):
+                raise Exception('Simulation stopped unexpectedly. Please rerun.')
 
         curr_t = self.starttime + self.simulationInterface.get_curr_sim_time()
         ac = self.aircraftInterface.select_aircraft(aclist[0])
@@ -182,11 +185,11 @@ class VCAS(NatsSimulationWrapper, object):
                 # check pause
                 while True:
                     server_runtime_sim_status = self.simulationInterface.get_runtime_sim_status()
-                    # print(server_runtime_sim_status)
+                    time.sleep(0.1)
                     if (server_runtime_sim_status == self.NATS_SIMULATION_STATUS_PAUSE):
                         break
-                    else:
-                        time.sleep(0.1)
+                    elif (server_runtime_sim_status == self.NATS_SIMULATION_STATUS_ENDED):
+                        raise Exception('Simulation stopped unexpectedly. Please rerun.')
 
                 ac = self.aircraftInterface.select_aircraft(aclist[0])
                 h = ac.getAltitude_ft()
@@ -206,11 +209,11 @@ class VCAS(NatsSimulationWrapper, object):
                     # check pause
                     while True:
                         server_runtime_sim_status = self.simulationInterface.get_runtime_sim_status()
-                        # print(server_runtime_sim_status)
+                        time.sleep(0.1)
                         if (server_runtime_sim_status == self.NATS_SIMULATION_STATUS_PAUSE):
                             break
-                        else:
-                            time.sleep(0.1)
+                        elif (server_runtime_sim_status == self.NATS_SIMULATION_STATUS_ENDED):
+                            raise Exception('Simulation stopped unexpectedly. Please rerun.')
 
                     ac = self.aircraftInterface.select_aircraft(aclist[0])
                     ac.setFlight_phase(stat)
@@ -222,11 +225,12 @@ class VCAS(NatsSimulationWrapper, object):
                 # check pause
                 while True:
                     server_runtime_sim_status = self.simulationInterface.get_runtime_sim_status()
-                    # print(server_runtime_sim_status)
+                    time.sleep(0.1)
                     if (server_runtime_sim_status == self.NATS_SIMULATION_STATUS_PAUSE):
                         break
-                    else:
-                        time.sleep(0.1)
+                    elif (server_runtime_sim_status == self.NATS_SIMULATION_STATUS_ENDED):
+                        raise Exception('Simulation stopped unexpectedly. Please rerun.')
+
 
                 ac = self.aircraftInterface.select_aircraft(aclist[0])
                 # curlon = ac.getLongitude_deg()
@@ -237,13 +241,13 @@ class VCAS(NatsSimulationWrapper, object):
         # check end
         while True:
             server_runtime_sim_status = self.simulationInterface.get_runtime_sim_status()
+            time.sleep(0.1)
             if (server_runtime_sim_status == self.NATS_SIMULATION_STATUS_ENDED):
                 break
 
     def write_output(self, filename):
         """
         write NATS simulation output to specified file
-
         Parameters
         ----------
         filename : str
@@ -271,12 +275,14 @@ class VCAS(NatsSimulationWrapper, object):
             elements in list is an nparray with 2 dimensions recording timestamp, longitude latitude and altitude
         """
         cmd_maintain = self.command_from_file()
+        # track = self.simulation()
         track = self()
         traj = np.asarray([track.time.values.astype(np.float)//1e9, track['latitude'].values,
                            track['longitude'].values, track['altitude'].values])
         models = [traj.T]
         for i in range(len(cmd_maintain)):
             new_cmd = cmd_maintain[0:i]
+            # track = self.simulation(new_cmd)
             track = self(input_cmd=new_cmd)
             traj = np.asarray([track.time.values.astype(np.float) // 1e9, track['latitude'].values,
                                track['longitude'].values, track['altitude'].values])
@@ -295,7 +301,7 @@ class VCAS(NatsSimulationWrapper, object):
             as prior
 
         Returns
-        -------
+        ----------
         nparray
             posterior for obeying each command as time
         """
@@ -310,7 +316,7 @@ class VCAS(NatsSimulationWrapper, object):
         cmd_timeline = np.append(self.command_from_file()['Timestamp'].values, self.starttime + self.sim_time)
         for i in range(len(trajs)-1):
             antimodel = trajs[i+1]
-            obs = self.real[self.real['timestamp'].between(cmd_timeline[i], min((cmd_timeline[i+1]) + 200, cmd_timeline[-1]))]
+            obs = self.real[self.real['timestamp'].between(cmd_timeline[i], min((cmd_timeline[i+1]) + 100, cmd_timeline[-1]))]
             posterior = np.zeros((len(obs) + 1, 3))
             posterior[0, 0] = cmd_timeline[i]
             posterior[0, 1:] = prior[i]
