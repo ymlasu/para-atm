@@ -22,15 +22,18 @@ class SVM_text_class(object):
     """
     SVM_text_class creates SVM classifier and predicts class for the input text data 
     
-    ----------
-    x_train: training input
-    y_train: training target
-
     Methods:
     -------
     _get_SVM_model
-    SVMpred
-    
+    pred
+
+    Parameters
+    ----------
+    x_train : array
+        1D array of training input values
+    y_train : array
+        1D array of training output values
+   
     """
     def __init__(self,x_train,y_train):
         self.x_train = x_train
