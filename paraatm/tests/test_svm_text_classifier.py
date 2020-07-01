@@ -42,6 +42,6 @@ class TestSVM(unittest.TestCase):
         X_test = df3['Synopsis']
         
         smodel = SVM_text_class(X_train,Y_train)
-        Y_test = smodel.get_class(X_test)
+        Y_test = smodel.pred(X_test)
 
         self.assertEqual(Y_test.shape[0],150)
