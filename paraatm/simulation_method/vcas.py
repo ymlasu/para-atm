@@ -271,13 +271,13 @@ class VCAS(NatsSimulationWrapper, object):
             elements in list is an nparray with 2 dimensions recording timestamp, longitude latitude and altitude
         """
         cmd_maintain = self.command_from_file()
-        track = self()
+        track = self()['trajectory']
         traj = np.asarray([track.time.values.astype(np.float)//1e9, track['latitude'].values,
                            track['longitude'].values, track['altitude'].values])
         models = [traj.T]
         for i in range(len(cmd_maintain)):
             new_cmd = cmd_maintain[0:i]
-            track = self(input_cmd=new_cmd)
+            track = self(input_cmd=new_cmd)['trajectory']
             traj = np.asarray([track.time.values.astype(np.float) // 1e9, track['latitude'].values,
                                track['longitude'].values, track['altitude'].values])
             models.append(traj.T)

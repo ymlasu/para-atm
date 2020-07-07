@@ -18,7 +18,7 @@ cfg = {'fp_file': data_dir + 'vcas/ASU123at6000.trx',  # flight plan file
 # call
 sim = VCAS(cfg)
 
-track = sim()  # call simulation function using NatsSimulationWrapper
+track = sim()['trajectory']  # call simulation function using NatsSimulationWrapper
 
 # plot_trajectory(track)  # plot using bokeh method
 
