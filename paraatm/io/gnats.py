@@ -298,7 +298,7 @@ class GnatsSimulationWrapper:
         try:
             self.write_output(self.get_path(output_file))
             if return_df:
-                df = read_gnats_output_file(output_file)
+                df = read_gnats_output_file(self.get_path(output_file))
         finally:
             # This ensures we clean up the temporary directory and
             # file even if an exception occurs above.  If there is an
@@ -325,7 +325,7 @@ class GnatsSimulationWrapper:
         GNATS_HOME to be the working directory).
         """
         if not os.path.isabs(filename):
-            filename = os.path.join(self.cwd, filename)
+            filename = os.path.join(GnatsEnvironment.cwd, filename)
         return filename
 
 
