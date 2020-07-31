@@ -61,6 +61,6 @@ def main():
         class_name, the_class = classes[0] # Use the first available class
         print('Creating simulation from: {}'.format(class_name))
         sim = the_class() # Instatiate class
-        df = sim(output_file=args.output) # Run simulation
+        df = sim(output_file=args.output)['trajectory'] # Run simulation
         if args.plot:
             plot_trajectory(df)
