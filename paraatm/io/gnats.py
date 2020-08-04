@@ -183,19 +183,22 @@ class GnatsEnvironment:
         return cls.gnatsStandalone
 
     @classmethod
-    def get_gnats_constant(cls, name):
+    def get_gnats_constant(cls, name, classname='Constants'):
         """Return the variable that stores the named GNATS constant
 
         Parameters
         ----------
         name : str
             Name of GNATS constant to retrieve
+        classname : str
+            Name of the Java class under which the constant is defined
+            (refer to the GNATS Python header file)
         """
         if not cls.jvm_started:
             raise RuntimeError("JVM not yet started")
         if cls.jvm_stopped:
             raise RuntimeError("JVM already stopped")        
-        return getattr(jpype.JPackage('com').osi.util.Constants, name)
+        return getattr(getattr(jpype.JPackage('com').osi.util, classname), name)
 
     
 
