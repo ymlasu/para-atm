@@ -7,5 +7,6 @@ example of file organization.
 """
 
 from ._misc import (
-    plot_trajectory
+    plot_trajectory,
+    get_tile_providers
 )

@@ -23,5 +23,6 @@ The following is an example trajectory plot of the data in `sample_data/IFF_SFO_
 
    df = read_iff_file('../paraatm/sample_data/IFF_SFO_ASDEX_ABC123.csv')
 
-   plot_trajectory(df)
+   plot_trajectory(df, plot_width=700, plot_height=600)
 
+.. autofunction:: paraatm.plotting.get_tile_providers
