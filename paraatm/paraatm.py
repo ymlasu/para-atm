@@ -24,6 +24,8 @@ def main():
 
     p_plot = subparsers.add_parser('plot', help='plot flight trajectory for a specified data file')
     p_plot.add_argument('file', help='data file to plot (NATS or IFF format)')
+    p_plot.add_argument('--output', help='output file')
+    p_plot.add_argument('--tooltips', action='store_true', help='include tooltip data')
 
     p_nats = subparsers.add_parser('nats', help='run NATS simulation implemented via NatsSimulationWrapper')
     p_nats.add_argument('file', help='python module with a class that derives from NatsSimulationWrapper')
@@ -43,7 +45,7 @@ def main():
     # have different signatures
     if args.command == 'plot':
         df = read_data_file(args.file)
-        plot_trajectory(df)
+        plot_trajectory(df, output_file=args.output, tooltips=args.tooltips)
         
     elif args.command == 'nats' or args.command == 'gnats':
         dirname = os.path.dirname(os.path.abspath(args.file))

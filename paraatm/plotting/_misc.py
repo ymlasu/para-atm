@@ -3,9 +3,10 @@ import math
 
 import bokeh as bk
 import bokeh.plotting as bkplot
+from bokeh.models import HoverTool
 from bokeh.tile_providers import Vendors, get_provider
 
-def plot_trajectory(df, output_file=None, output_notebook=False, plot_width=1600, plot_height=800, tile_provider=Vendors.STAMEN_TERRAIN):
+def plot_trajectory(df, output_file=None, output_notebook=False, plot_width=1600, plot_height=800, tooltips=False, tile_provider=Vendors.STAMEN_TERRAIN):
     """Plot scenario trajectory to static html and open browser
     
     Parameters
@@ -21,6 +22,9 @@ def plot_trajectory(df, output_file=None, output_notebook=False, plot_width=1600
         Plot width in screen units
     plot_height : int
         Plot height in screen units
+    tooltips : bool
+        Whether to include tooltips that display information when
+        hovering over the data points
     tile_providers : str or Vendors enum
         The bokeh "tile provider" used to draw the map background.
         May be either a string or an instance of the
@@ -32,8 +36,16 @@ def plot_trajectory(df, output_file=None, output_notebook=False, plot_width=1600
     elif output_notebook:
         bkplot.output_notebook()
 
+    hover = HoverTool(
+        tooltips = [
+            ('Callsign','@callsign')
+        ]
+    )
+
     p = bkplot.figure(x_axis_type='mercator', y_axis_type='mercator', plot_width=plot_width, plot_height=plot_height)
     p.add_tile(get_provider(tile_provider))
+    if tooltips:
+        p.add_tools(hover)
 
     df_plot = df[['latitude','longitude','heading','callsign']].copy()
     df_plot['longitude'], df_plot['latitude'] = _merc(df_plot['latitude'].values, df_plot['longitude'].values)
