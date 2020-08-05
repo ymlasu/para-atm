@@ -6,7 +6,7 @@ import bokeh.plotting as bkplot
 from bokeh.models import HoverTool
 from bokeh.tile_providers import Vendors, get_provider
 
-def plot_trajectory(df, output_file=None, output_notebook=False, plot_width=1600, plot_height=800, tooltips=False, tile_provider=Vendors.STAMEN_TERRAIN):
+def plot_trajectory(df, output_file=None, output_notebook=False, plot_width=1200, plot_height=600, tooltips=False, tile_provider=Vendors.STAMEN_TERRAIN):
     """Plot scenario trajectory to static html and open browser
     
     Parameters
