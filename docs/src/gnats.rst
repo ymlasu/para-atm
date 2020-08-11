@@ -79,8 +79,8 @@ Additional keyword arguments provided to :py:meth:`~paraatm.io.gnats.GnatsSimula
            # .. Perform simulation using the value of my_parameter
 
    my_sim = MySim()
-   df1 = my_sim(my_parameter=1)
-   df2 = my_sim(my_parameter=2)
+   df1 = my_sim(my_parameter=1)['trajectory']
+   df2 = my_sim(my_parameter=2)['trajectory']
 
 Here, the user-defined :py:meth:`simulation` method on line 2 is defined to accept an argument, :code:`my_parameter`.  Once the simulation class is instantiated, repeated calls can be made using different parameter values, as shown on lines 6 and 7.
 

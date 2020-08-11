@@ -71,5 +71,9 @@ def _merc(lats,lons):
 
 def get_tile_providers():
     """Retrieve list of "tile providers" for use in trajectory plots
+    
+    Returns
+    -------
+    Enumeration
     """
     return Vendors
