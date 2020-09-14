@@ -7,7 +7,6 @@ import os
 import jpype
 import tempfile
 import atexit
-import platform
 import time
 
 
