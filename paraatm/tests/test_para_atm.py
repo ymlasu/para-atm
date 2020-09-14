@@ -4,7 +4,7 @@ import numpy as np
 import os
 
 from paraatm.io.nats import read_nats_output_file, NatsEnvironment
-from paraatm.io.gnats import read_gnats_output_file, GnatsEnvironment
+from paraatm.io.gnats import read_gnats_output_file, GnatsEnvironment, GnatsBasicSimulation
 from paraatm.io.iff import read_iff_file
 from paraatm.io.utils import read_csv_file
 from paraatm.safety.ground_ssd import ground_ssd_safety_analysis
@@ -121,6 +121,19 @@ class TestGnatsSimulation(unittest.TestCase):
 
     def test_gate_to_gate(self):
         simulation = gnats_gate_to_gate.GateToGate()
+        df = simulation()['trajectory']
+
+        # Basic consistency checks:
+        self.assertEqual(len(df), 218)
+
+    def test_basic_simulation(self):
+        # Explicitly start the JVM so that GnatsEnvironment.share_dir is available
+        GnatsEnvironment.start_jvm()
+
+        trx_file = os.path.join(GnatsEnvironment.share_dir, "tg/trx/TRX_DEMO_SFO_PHX_GateToGate_geo.trx")
+        mfl_file = os.path.join(GnatsEnvironment.share_dir, "tg/trx/TRX_DEMO_SFO_PHX_mfl.trx")
+        simulation = GnatsBasicSimulation(trx_file, mfl_file, 22000, 30)
+        
         df = simulation()['trajectory']
 
         # Basic consistency checks:

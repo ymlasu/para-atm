@@ -8,6 +8,7 @@ import jpype
 import tempfile
 import atexit
 import platform
+import time
 
 
 # Note: GnatsEnvironment is implemented as a class wtih static methods.
@@ -332,6 +333,58 @@ class GnatsSimulationWrapper:
         return filename
 
 
+class GnatsBasicSimulation(GnatsSimulationWrapper):
+    """Simple interface for running a GNATS simulation from TRX and MFL files
+
+    If more control is needed, create a subclass of GnatsSimulationWrapper"""
+    def __init__(self, trx_file, mfl_file, propagation_time, time_step):
+        """Define basic simulation
+
+        Parameters
+        ----------
+        trx_file : str
+        mfl_file : str
+        propagation_time : int
+            Total flight propagation time in seconds
+        time_step : int
+            Time step in seconds
+        """
+        
+        self.trx_file = trx_file
+        self.mfl_file = mfl_file
+        self.propagation_time = propagation_time
+        self.time_step = time_step
+
+    def simulation(self):
+        GNATS_SIMULATION_STATUS_ENDED = GnatsEnvironment.get_gnats_constant('GNATS_SIMULATION_STATUS_ENDED')
+
+        simulationInterface = GnatsEnvironment.simulationInterface
+        environmentInterface = GnatsEnvironment.environmentInterface
+        aircraftInterface = GnatsEnvironment.aircraftInterface
+
+        simulationInterface.clear_trajectory()
+
+        environmentInterface.load_rap(GnatsEnvironment.share_dir + "/tg/rap")
+
+        aircraftInterface.load_aircraft(self.trx_file, self.mfl_file)
+
+        simulationInterface.setupSimulation(self.propagation_time, self.time_step)
+
+        simulationInterface.start()
+
+        while True:
+            runtime_sim_status = simulationInterface.get_runtime_sim_status()
+            if (runtime_sim_status == GNATS_SIMULATION_STATUS_ENDED) :
+                break
+            else:
+                time.sleep(1)
+
+    def write_output(self, filename):
+        GnatsEnvironment.simulationInterface.write_trajectories(filename)
+
+    def cleanup(self):
+        GnatsEnvironment.aircraftInterface.release_aircraft()
+        GnatsEnvironment.environmentInterface.release_rap()
 
 def read_gnats_output_file(filename):
     """Read the specified GNATS output file
