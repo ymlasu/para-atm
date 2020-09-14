@@ -336,7 +336,7 @@ class GnatsSimulationWrapper:
 class GnatsBasicSimulation(GnatsSimulationWrapper):
     """Simple interface for running a GNATS simulation from TRX and MFL files
 
-    If more control is needed, create a subclass of GnatsSimulationWrapper"""
+    If more control is needed, create a subclass of :py:class:`GnatsSimulationWrapper`"""
     def __init__(self, trx_file, mfl_file, propagation_time, time_step):
         """Define basic simulation
 

@@ -11,13 +11,52 @@ GNATS simulation
 * Behind-the-scenes path handling, so that the GNATS simulation does not need to be run from within the GNATS installation directory
 * A utility function to retrieve GNATS constants from the Java environment
 * Return trajectory results directly as a pandas DataFrame
+* Both high-level and low-level interfaces for defining simulations
 
 The functions for interfacing with GNATS are subject to change.  Currently, the code has been tested with GNATS beta1.10 on Ubuntu Linux.
 
-Creating a GNATS simulation
----------------------------
+Two mechanisms are provided for interfacing with the GNATS simulation.  The first is :ref:`gnats-basic`, which provides a simple interface for running a simulation from given TRX and MFL files without having to write any of the code to drive the simulation.  The second option is to use :ref:`gnats-wrapper`, which provides more control over the simulation but requires writing more code.
 
-Creation of a GNATS simulation in `para-atm` is done by writing a class that derives from the :py:class:`~paraatm.io.gnats.GnatsSimulationWrapper` class.  This is best understood through an example.  The complete code for the following example is available at `tests/gnats_gate_to_gate.py`, and it is based on `DEMO_Gate_To_Gate_Simulation_SFO_PHX_beta1.9.py` from the GNATS `samples` directory. 
+
+.. _gnats-basic:
+
+GNATS basic interface
+---------------------
+
+The GNATS basic interface makes it possible to run a GNATS simulation without having to write any of the GNATS driver code.  The simulation is specified by providing the TRX and MFL files.  The trajectory results are returned as a simulation output in the form of a :code:`DataFrame`.
+
+The basic interface is implemented through the :py:class:`~paraatm.io.gnats.GnatsBasicSimulation` class.  The following is a complete example, which recreates the `DEMO_Gate_To_Gate_Simulation_SFO_PHX_beta1.9.py` from the GNATS `samples` directory.
+
+.. code-block:: python
+   :linenos:
+      
+    import os
+    from paraatm.io.gnats import GnatsBasicSimulation, GnatsEnvironment
+
+    GnatsEnvironment.start_jvm()
+    trx_file = os.path.join(GnatsEnvironment.share_dir, "tg/trx/TRX_DEMO_SFO_PHX_GateToGate_geo.trx")
+    mfl_file = os.path.join(GnatsEnvironment.share_dir, "tg/trx/TRX_DEMO_SFO_PHX_mfl.trx")
+
+    simulation = GnatsBasicSimulation(trx_file, mfl_file, 22000, 30)
+    df = simulation()['trajectory']
+
+Lines 5 and 6 specify the locations of the TRX and MFL files that will be used.  In this example, these files are referenced within the GNATS installation directory, by accessing the :code:`GnatsEnvironment.share_dir` variable, which stores the location of the ":code:`share`" directory based on :code:`GNATS_HOME`.  Of course, the user is free to specify TRX and MFL files that are not located within the GNATS installation as well.  Note that line 4, which manually starts the JVM, is necessary so that :code:`GnatsEnvironment.share_dir` is available for use on lines 5 and 6.
+
+Line 8 creates an instance of the simulation class by specifying the input files as well as the simulation propagation time and time step.  Line 9 executes the simulation and stores the trajectory results in the variable :code:`df`.  More information about the simulation results is given below in :ref:`gnats-run`.
+
+If more control over the simulation is needed, the user can use the :ref:`gnats-wrapper` (the basic simulation interface itself is implemented in terms of the wrapper interface).
+
+.. _gnats-wrapper:
+
+GNATS wrapper interface
+-----------------------
+
+The GNATS wrapper interface is provided for users that need more control over the simulation (e.g., to customize the simulation inputs or to pause the simulation as it runs).  `para-atm` provides a base class that the user can derive from, which automates some of the steps of interfacing with GNATS.
+
+Creating a GNATS simulation
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The GNATS wrapper interface is used by writing a class that derives from the :py:class:`~paraatm.io.gnats.GnatsSimulationWrapper` class.  This is best understood through an example.  The complete code for the following example is available at `tests/gnats_gate_to_gate.py`, and it is based on `DEMO_Gate_To_Gate_Simulation_SFO_PHX_beta1.9.py` from the GNATS `samples` directory. 
 
 .. code-block:: python
    :linenos:
@@ -47,9 +86,10 @@ As compared to the GNATS sample file, some key differences in this implementatio
 * Cleanup calls for :code:`gnatsStandalone.stop()` and :code:`shutdownJVM()` are not needed, as they are automatically handled
 * GNATS constants are retrieved using the utility function :py:meth:`~paraatm.io.gnats.GnatsEnvironment.get_gnats_constant`, as opposed to importing the constants from `GNATS_Python_Header_standalone.py`, where each constant is manually defined
 
+.. _gnats-run:
 
 Running the GNATS simulation
-----------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Once the user-defined class deriving from :py:class:`~paraatm.io.gnats.GnatsSimulationWrapper` has been created, the simulation is executed by creating an instance of the class and calling its :py:meth:`~paraatm.io.gnats.GnatsSimulationWrapper.__call__` method.  This method will handle various setup behind the scenes, such as starting the JVM, creating the :code:`GNATSStandalone` instance, and preparing the current working directory.  Once the simulation is prepared, the user's :py:meth:`~paraatm.io.gnats.GnatsSimulationWrapper.simulation` method is called automatically.  The output file is automatically created by communicating with the user-defined :py:meth:`~paraatm.io.gnats.GnatsSimulationWrapper.write_output` method, and the trajectory results are stored as a DataFrame in the :code:`'trajectory'` key of the returned dictionary.
 
@@ -102,6 +142,9 @@ In this example, the call to :code:`my_sim()` on line 7 uses the :code:`return_d
 
 The API
 -------
+
+.. autoclass:: paraatm.io.gnats.GnatsBasicSimulation
+    :members: __init__, __call__
 
 .. autoclass:: paraatm.io.gnats.GnatsSimulationWrapper
     :members:
