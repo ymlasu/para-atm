@@ -4,6 +4,8 @@
 
 para-atm is a Python package that provides tools for analysis of the national air transportation system.  The project stems from the Prognostic Analysis and Reliability Assessment Laboratory (PARA) at Arizona State University.
 
+Related work, demonstrations, and examples are also available in the [PARA-ATM Research Collection](https://github.com/ymlasu/para-atm-collection).
+
 ## Installation
 
 In short, the steps are:
