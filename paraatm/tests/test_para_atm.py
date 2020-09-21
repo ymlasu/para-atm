@@ -40,7 +40,7 @@ class TestGNATSFiles(unittest.TestCase):
         df = read_gnats_output_file(sample_gnats_file)
         # Simple check:
         self.assertEqual(len(df), 218)
-        
+
 class TestIFFFiles(unittest.TestCase):
     def test_read_iff(self):
         filename = os.path.join(THIS_DIR, '..', 'sample_data/IFF_SFO_ASDEX_ABC123.csv')
@@ -86,7 +86,7 @@ class TestNatsSimulation(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         NatsEnvironment.stop_jvm()
-    
+
     def test_gate_to_gate(self):
         simulation = nats_gate_to_gate.GateToGate()
         df = simulation()['trajectory']
@@ -168,6 +168,6 @@ class TestSklearnGP(unittest.TestCase):
         self.assertAlmostEqual(Ym[1], 1.435301, 1)
         self.assertAlmostEqual(Ys[0], 0.805718, 1)
         self.assertAlmostEqual(Ys[1], 0.805718, 1)
-        
+
 if __name__ == '__main__':
     unittest.main()
