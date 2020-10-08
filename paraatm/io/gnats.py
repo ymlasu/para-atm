@@ -200,6 +200,17 @@ class GnatsEnvironment:
             raise RuntimeError("JVM already stopped")        
         return getattr(getattr(jpype.JPackage('com').osi.util, classname), name)
 
+    @classmethod
+    def build_path(cls, filename):
+        """Return a path to filename that behaves as if original directory is current working directory
+
+        This will internally convert relative paths to be relative to
+        the original working directory (otherwise, GNATS considers
+        GNATS_HOME to be the working directory).
+        """
+        if not os.path.isabs(filename):
+            filename = os.path.join(cls.cwd, filename)
+        return filename
     
 
 # Register stop_jvm to be called automatically when Python exits.
@@ -217,9 +228,10 @@ class GnatsSimulationWrapper:
     simulation
       This method runs the actual GNATS simulation.  If the simulation
       code needs to access data files relative to the original working
-      directory, use the :py:meth:`get_path` method, which will
-      produce an appropriate path to work around the fact that GNATS
-      simulation occurs in the GNATS_HOME directory.
+      directory, use the :py:meth:`GnatsEnvironment.build_path`
+      method, which will produce an appropriate path to work around
+      the fact that GNATS simulation occurs in the GNATS_HOME
+      directory.
 
     write_output
       This method writes output to the specified filename.
@@ -299,9 +311,9 @@ class GnatsSimulationWrapper:
             tempdir = None
 
         try:
-            self.write_output(self.get_path(output_file))
+            self.write_output(GnatsEnvironment.build_path(output_file))
             if return_df:
-                df = read_gnats_output_file(self.get_path(output_file))
+                df = read_gnats_output_file(GnatsEnvironment.build_path(output_file))
         finally:
             # This ensures we clean up the temporary directory and
             # file even if an exception occurs above.  If there is an
@@ -318,18 +330,6 @@ class GnatsSimulationWrapper:
             results['trajectory'] = df
 
         return results
-
-
-    def get_path(self, filename):
-        """Return a path to filename that behaves as if original directory is current working directory
-
-        This will internally convert relative paths to be relative to
-        the original working directory (otherwise, GNATS considers
-        GNATS_HOME to be the working directory).
-        """
-        if not os.path.isabs(filename):
-            filename = os.path.join(GnatsEnvironment.cwd, filename)
-        return filename
 
 
 class GnatsBasicSimulation(GnatsSimulationWrapper):
