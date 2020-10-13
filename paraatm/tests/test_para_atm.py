@@ -25,7 +25,7 @@ class TestNATSFiles(unittest.TestCase):
     def test_read_nats_output(self):
         df = read_nats_output_file(sample_nats_file)
         # Simple check:
-        self.assertEqual(df.shape, (369, 12))
+        self.assertEqual(df.shape, (369, 15))
 
     def test_read_nats_output_5ac(self):
         filename = os.path.join(THIS_DIR, '..', 'sample_data/NATS_demo_5_aircraft.csv')
