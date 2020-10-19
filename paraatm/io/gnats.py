@@ -423,10 +423,15 @@ def read_gnats_output_file(filename):
         header_row = pd.read_csv(StringIO(lines[header_idx]), header=None, names=header_cols).iloc[0]
         nrows = header_row['number_of_trajectory_rec']
         aircraft_df = pd.read_csv(StringIO('\n'.join(lines[header_idx+1:header_idx+1+nrows])), header=None, names=data_cols)
+
         # Fill in auxiliary data that comes from the header row
         aircraft_df['callsign'] = header_row['callsign']
         aircraft_df['origin'] = header_row['origin_airport']
         aircraft_df['destination'] = header_row['destination_airport']
+        # Adjust for aircraft-specific start time:
+        aircraft_df['timestamp(UTC sec)'] += header_row['start_time']
+
+        # Append this aircraft's data to the output:
         df = df.append(aircraft_df)
 
 
