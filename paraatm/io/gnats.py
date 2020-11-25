@@ -132,11 +132,10 @@ class GnatsEnvironment:
         cls.aircraftInterface = cls.equipmentInterface.getAircraftInterface()
         cls.cnsInterface = cls.equipmentInterface.getCNSInterface()
 
-        cls.safetyMetricsInterface = cls.gnatsStandalone.getSafetyMetricsInterface()
+        cls.riskMeasuresInterface = cls.gnatsStandalone.getRiskMeasuresInterface()
 
         if cls.simulationInterface is None:
             raise RuntimeError("Can't get simulationInterface")
-
     @classmethod
     def stop_jvm(cls):
         """Stop java virtual machine and GNATS server
