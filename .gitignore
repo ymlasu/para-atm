@@ -8,7 +8,7 @@ src/NATS/*.csv
 src/NATS/*.log
 data/Sherlock
 *.egg-info
-
+*.swp
 # Created by setup.py install:
 src/build/
 src/dist/
