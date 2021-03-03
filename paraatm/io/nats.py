@@ -5,6 +5,7 @@ import numpy as np
 from io import StringIO
 import os
 import jpype
+import jpype.imports
 import tempfile
 import atexit
 import platform
@@ -92,15 +93,20 @@ class NatsEnvironment:
         else:
             dist_dir = 'dist'
 
-        classpath = os.path.join(NATS_HOME, os.path.join(dist_dir, "nats-standalone.jar"))
-        classpath = classpath + os.pathsep + os.path.join(NATS_HOME, dist_dir, "nats-client.jar")
-        classpath = classpath + os.pathsep + os.path.join(NATS_HOME, dist_dir, "nats-shared.jar")
-        classpath = classpath + os.pathsep + os.path.join(NATS_HOME, dist_dir, "json.jar")
-        classpath = classpath + os.pathsep + os.path.join(NATS_HOME, dist_dir, "commons-logging-1.2.jar")
+        dist_dir = os.path.join(NATS_HOME, 'dist')
+        client_dist_dir = os.path.join(NATS_HOME,'..','GNATS_Client','dist')
+
+        cls.share_dir = os.path.join(NATS_HOME, '..', 'GNATS_Server', 'share')
+
+        classpath = os.path.join(dist_dir, "gnats-standalone.jar")
+        classpath += os.pathsep + os.path.join(client_dist_dir, "gnats-client.jar")
+        classpath += os.pathsep + os.path.join(client_dist_dir, "gnats-shared.jar")
+        classpath += os.pathsep + os.path.join(client_dist_dir, "json.jar")
+        classpath += os.pathsep + os.path.join(client_dist_dir, "commons-logging-1.2.jar")
 
         jpype.startJVM(jpype.getDefaultJVMPath(), "-ea", "-Djava.class.path=%s" % classpath)
 
-        clsNATSStandalone = jpype.JClass('NATSStandalone')
+        clsNATSStandalone = jpype.JClass('GNATSStandalone')
         # Start NATS Standalone environment
         cls.natsStandalone = clsNATSStandalone.start()
 
@@ -147,7 +153,7 @@ class NatsEnvironment:
 
     @classmethod
     def get_nats_standalone(cls):
-        """Retrieve reference to NATSStandalone class instance"""
+        """Retrieve reference to GNATSStandalone class instance"""
         if not cls.jvm_started:
             raise RuntimeError("JVM not yet started")
         if cls.jvm_stopped:

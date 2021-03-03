@@ -5,9 +5,11 @@ from paraatm.io.nats import NatsSimulationWrapper, NatsEnvironment
 class GateToGate(NatsSimulationWrapper):
     def simulation(self):
 
-        NATS_SIMULATION_STATUS_PAUSE = NatsEnvironment.get_nats_constant('NATS_SIMULATION_STATUS_PAUSE')
-        NATS_SIMULATION_STATUS_ENDED = NatsEnvironment.get_nats_constant('NATS_SIMULATION_STATUS_ENDED')
+        NATS_SIMULATION_STATUS_PAUSE = NatsEnvironment.get_nats_constant('GNATS_SIMULATION_STATUS_PAUSE')
+        NATS_SIMULATION_STATUS_ENDED = NatsEnvironment.get_nats_constant('GNATS_SIMULATION_STATUS_ENDED')
 
+        DIR_share = NatsEnvironment.share_dir
+        
         natsStandalone = NatsEnvironment.get_nats_standalone()
 
         simulationInterface = natsStandalone.getSimulationInterface()
@@ -24,12 +26,12 @@ class GateToGate(NatsSimulationWrapper):
         if simulationInterface is None:
             natsStandalone.stop()
             raise RuntimeError("Can't get SimulationInterface")
-
+        
         simulationInterface.clear_trajectory()
 
-        environmentInterface.load_rap("share/tg/rap")
+        environmentInterface.load_rap(DIR_share + "/tg/rap")
 
-        aircraftInterface.load_aircraft("share/tg/trx/TRX_DEMO_SFO_PHX_GateToGate.trx", "share/tg/trx/TRX_DEMO_SFO_PHX_mfl.trx")
+        aircraftInterface.load_aircraft(DIR_share + "/tg/trx/TRX_DEMO_SFO_PHX_GateToGate.trx", DIR_share + "/tg/trx/TRX_DEMO_SFO_PHX_mfl.trx")
 
     #     # Controller to set human error: delay time
     #     # Users can try the following setting and see the difference in trajectory

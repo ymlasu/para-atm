@@ -15,7 +15,7 @@ from . import nats_gate_to_gate
 from . import gnats_gate_to_gate
 
 # Change this to False to test NATS instead of GNATS
-USE_GNATS = True
+USE_GNATS = False
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 sample_nats_file = os.path.join(THIS_DIR, '..', 'sample_data/NATS_output_SFO_PHX.csv')
@@ -92,7 +92,7 @@ class TestNatsSimulation(unittest.TestCase):
         df = simulation()['trajectory']
 
         # Basic consistency checks:
-        self.assertEqual(len(df), 369)
+        self.assertEqual(len(df), 229)
 
     def test_vcas(self):
         cur_dir = os.path.dirname(os.path.abspath(__file__))

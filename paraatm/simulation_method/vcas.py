@@ -55,8 +55,8 @@ class VCAS(NatsSimulationWrapper, object):
         self.real = pd.read_csv(cfg['data_file'])
 
         NatsEnvironment.start_jvm(nats_home=None)
-        self.NATS_SIMULATION_STATUS_PAUSE = NatsEnvironment.get_nats_constant('NATS_SIMULATION_STATUS_PAUSE')
-        self.NATS_SIMULATION_STATUS_ENDED = NatsEnvironment.get_nats_constant('NATS_SIMULATION_STATUS_ENDED')
+        self.NATS_SIMULATION_STATUS_PAUSE = NatsEnvironment.get_nats_constant('GNATS_SIMULATION_STATUS_PAUSE')
+        self.NATS_SIMULATION_STATUS_ENDED = NatsEnvironment.get_nats_constant('GNATS_SIMULATION_STATUS_ENDED')
 
         natsStandalone = NatsEnvironment.get_nats_standalone()
 
@@ -145,7 +145,7 @@ class VCAS(NatsSimulationWrapper, object):
             ignore_index=True)  # end cmd
 
         # self.init_NATS()
-        self.environmentInterface.load_rap(os.environ.get('NATS_HOME') + '/' + 'share/tg/rap')  # default wind file
+        self.environmentInterface.load_rap(os.environ.get('NATS_HOME') + '/../GNATS_Server/' + 'share/tg/rap')  # default wind file
         self.aircraftInterface.load_aircraft(self.fp_file, self.mfl_file)
         aclist = self.aircraftInterface.getAllAircraftId()
         self.simulationInterface.setupSimulation(self.sim_time, 1)
