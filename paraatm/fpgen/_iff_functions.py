@@ -1,4 +1,4 @@
-from nats_functions import (get_closest_node_at_airport,
+from ._nats_functions import (get_closest_node_at_airport,
                             get_list_of_adjacent_nodes,
                             get_adjacent_node_closer_to_runway,
                             get_closest_airport,
