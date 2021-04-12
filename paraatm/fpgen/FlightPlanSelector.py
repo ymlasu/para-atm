@@ -155,76 +155,80 @@ class FlightPlanSelector:
 			else:
 				destination = "K" + destination
 
-		departureSids = self.natsSim.terminalAreaInterface.getAllSids(origin)
-
 		arrivalStars = self.natsSim.terminalAreaInterface.getAllStars(destination)
 		
 		firstEnroutePoint = ""
-		
 		flightPlanComponents = self.str_readFlightPlan.split(".")[1:]
-		
-		for component in flightPlanComponents:
-			if component.isalpha():
-				firstEnroutePoint = component
-				break
+		alphaComponents = [component for component in flightPlanComponents if component.isalpha()]
+		if alphaComponents: 
+			firstEnroutePoint = alphaComponents[0]
+			enrouteWp = self.natsSim.terminalAreaInterface.getWaypoint_Latitude_Longitude_deg(firstEnroutePoint)
+
 
 		# SID
+		dist=99999999.
 		enrouteWp = self.natsSim.terminalAreaInterface.getWaypoint_Latitude_Longitude_deg(firstEnroutePoint)
-		distanceToEnroute = 9999999
 		optimalSid = ""
-		for sid in departureSids:
-			legs = self.natsSim.terminalAreaInterface.getProcedure_leg_names('SID', sid, origin)
-			for leg in legs:
-				legWps = self.natsSim.terminalAreaInterface.getWaypoints_in_procedure_leg("SID", sid, origin, leg)
+		departureSids = self.natsSim.terminalAreaInterface.getAllSids(origin)
+		legNamesList = [list(self.natsSim.terminalAreaInterface.getProcedure_leg_names('SID', sid, origin)) for sid in departureSids]
+		for sid,legNames in zip(departureSids,legNamesList):
+			for legName in legNames:
+				legWps = self.natsSim.terminalAreaInterface.getWaypoints_in_procedure_leg("SID", sid, origin, legName)
 				if legWps:
-					latLonVal = self.natsSim.terminalAreaInterface.getWaypoint_Latitude_Longitude_deg(list(legWps)[-1])
-					if not (latLonVal is None) :
-						if self.distance(latLonVal, enrouteWp) < distanceToEnroute:
-							optimalSid = sid
+					firstLatLonVal = self.natsSim.terminalAreaInterface.getWaypoint_Latitude_Longitude_deg(list(legWps)[0])
+					if not (firstLatLonVal is None):
+						newDist = self.distance(firstLatLonVal, enrouteWp)
+						if newDist < dist:
+							dist=newDist
+							print('legWps:',legWps,'lastLatLonVal:',firstLatLonVal,'\n')
+							print('New Distance: ',dist)
+							print('OptimalSid: ',sid)
+							optimalSid=sid
 
 		# APPROACH
 		optimalApproach = ""
 		firstApproachWaypoint = ""
 		approachProcedures = self.natsSim.terminalAreaInterface.getAllApproaches(destination)
-		if "I" + arrivalRunway[2:] in approachProcedures:
-			optimalApproach = "I" + arrivalRunway[2:]
-		elif "I" + arrivalRunway[2:-1] in approachProcedures:
-			optimalApproach = "I" + arrivalRunway[2:-1]
-		else:
-			optimalApproach = "I" + arrivalRunway[2:4]
+		optimalApproaches = [approachProc for approachProc in approachProcedures if arrivalRunway[2:5] in approachProc]
+		if optimalApproaches:
+			optimalApproachwI = [oa for oa in optimalApproaches if oa.startswith('I')]
+			if optimalApproachwI:
+				optimalApproach=optimalApproachwI[0]
+			else:
+				optimalApproach = optimalApproaches[0]
 
 		# TAKEOFF
-		optimalTakeoff = ""
-		firstTakeoffWaypoint = ""
-		takeoffProcedures = self.natsSim.terminalAreaInterface.getAllApproaches(origin)
-		if "I" + departureRunway[2:] in takeoffProcedures:
-			optimalTakeoff = "I" + departureRunway[2:]
-		elif "I" + departureRunway[2:-1] in takeoffProcedures:
-			optimalTakeoff = "I" + departureRunway[2:-1]
-		
 		result_Procedure_leg_names = self.natsSim.terminalAreaInterface.getProcedure_leg_names('APPROACH', optimalApproach, destination)
 		if not (result_Procedure_leg_names is None) :
 			approachLeg = result_Procedure_leg_names[0]
 			firstApproachWaypoint = self.natsSim.terminalAreaInterface.getWaypoints_in_procedure_leg("APPROACH", optimalApproach, destination, approachLeg)[0]
 
 		# STAR
-		distanceToApproach = 9999999
-		approachWp = self.natsSim.terminalAreaInterface.getWaypoint_Latitude_Longitude_deg(firstApproachWaypoint)
+		dist= 9999999.
+		arrivalStars = self.natsSim.terminalAreaInterface.getAllStars(destination)
+		approachLatLon = self.natsSim.terminalAreaInterface.getWaypoint_Latitude_Longitude_deg(firstApproachWaypoint)
+		print('First Approach Waypoint:',firstApproachWaypoint,' LatLon:',approachLatLon,'\n')
 		optimalStar = ""
-		for star in arrivalStars:
-			legs = self.natsSim.terminalAreaInterface.getProcedure_leg_names('STAR', star, destination)
-			for leg in legs:
-				legWps = self.natsSim.terminalAreaInterface.getWaypoints_in_procedure_leg("STAR", star, destination, leg)
-				latLonVal = self.natsSim.terminalAreaInterface.getWaypoint_Latitude_Longitude_deg(list(legWps)[-1])
-				if not (latLonVal is None) :
-					if self.distance(latLonVal, approachWp) < distanceToApproach:
-						optimalStar = star
+		legNamesList = [list(self.natsSim.terminalAreaInterface.getProcedure_leg_names('STAR', star,destination)) for star in arrivalStars]
 
-		return (optimalSid, optimalStar, optimalApproach, optimalTakeoff)
+		for star,legNames in zip(arrivalStars,legNamesList):
+			for legName in legNames:
+				legWps = self.natsSim.terminalAreaInterface.getWaypoints_in_procedure_leg("STAR", star, destination, legName)
+				if legWps:
+					lastLatLonVal = self.natsSim.terminalAreaInterface.getWaypoint_Latitude_Longitude_deg(list(legWps)[-1])
+					if not (firstLatLonVal is None):
+						newDist = self.distance(lastLatLonVal, approachLatLon)
+						if newDist < dist:
+							dist=newDist
+							print('legWps:',legWps,'lastLatLonVal:',lastLatLonVal,'\n')
+							print('New Distance: ',dist)
+							print('OptimalStar:',star)
+							optimalStar=star
+
+		return (optimalSid, optimalStar, optimalApproach)
 
 	def generateDepartureTaxiPlan(self, origin_airport, departure_runway, origin_gate) :
 		tmp_surface_plan_string = ""
-		
 		tmp_node_seq = -1 # Reset
 		
 		tmp_array_node_data = self.natsSim.airportInterface.getLayout_node_data(origin_airport)
@@ -309,6 +313,9 @@ class FlightPlanSelector:
 				
 		self.starting_latitude = "" # Reset
 		self.starting_longitude = "" # Reset
+		self.selected_approach = ""
+		self.selected_sid = ""
+		self.selected_star = ""
 		
 		tmp_departing_surface_plan_string = "" # Reset
 		tmp_landing_surface_plan_string = "" # Reset
@@ -361,19 +368,13 @@ class FlightPlanSelector:
 
 		if (-1 < self.str_readFlightPlan.index(".")) and (self.str_readFlightPlan.index(".") < self.str_readFlightPlan.rindex(".")) :
 			self.enroute_fp = self.str_readFlightPlan[self.str_readFlightPlan.index(".")+1 : self.str_readFlightPlan.rindex(".")]
-		self.selected_takeoff=''
-		if flight_plan_type == self.FLIGHT_PLAN_TYPE_GATE_TO_GATE or flight_plan_type == self.FLIGHT_PLAN_TYPE_RUNWAY_TO_RUNWAY :
+
+		if flight_plan_type == self.FLIGHT_PLAN_TYPE_GATE_TO_GATE or flight_plan_type == self.FLIGHT_PLAN_TYPE_RUNWAY_TO_RUNWAY or flight_plan_type==self.FLIGHT_PLAN_TYPE_CRUISE_TO_GATE:
 			self.result_terminalProcedure = self.getTerminalProcedures(origin_airport, destination_airport, departure_runway, arrival_runway)
-			if len(self.result_terminalProcedure) == 4 :
+			if len(self.result_terminalProcedure) == 3:
 				self.selected_sid = self.result_terminalProcedure[0]
 				self.selected_star = self.result_terminalProcedure[1]
 				self.selected_approach = self.result_terminalProcedure[2]
-				self.selected_takeoff = self.result_terminalProcedure[3]
-			else:
-				self.selected_sid = self.result_terminalProcedure[0]
-				self.selected_star = self.result_terminalProcedure[1]
-				self.selected_approach = self.result_terminalProcedure[2]
-				self.selected_takeoff = ''
 			
 		if (self.enroute_fp.find("/.") == 0) :
 			self.enroute_fp = self.enroute_fp[2:]
@@ -390,7 +391,7 @@ class FlightPlanSelector:
 
 		elif flight_plan_type == self.FLIGHT_PLAN_TYPE_RUNWAY_TO_RUNWAY :
 			tmp_array_node_data = self.natsSim.airportInterface.getLayout_node_data(origin_airport)
-			if not(tmp_array_node_data is None) :
+			if not(tmp_array_node_data is None):
 				for i in range(0, len(tmp_array_node_data)) :
 					if (tmp_array_node_data[i][3] == departure_runway) and (tmp_array_node_data[i][4] == "Entry") :
 						self.starting_latitude = str(tmp_array_node_data[i][1])
@@ -406,8 +407,8 @@ class FlightPlanSelector:
 		elif (flight_plan_type == self.FLIGHT_PLAN_TYPE_CRUISE_TO_GATE) :
 			# Obtain landing surface plan -----------------
 			tmp_landing_surface_plan_string = self.generateArrivalTaxiPlan(destination_airport, arrival_runway, destination_gate)
-			
 			tmp_first_waypoint = self.enroute_fp[: self.enroute_fp.find(".")]
+
 			tmp_lat_lon = self.natsSim.terminalAreaInterface.getWaypoint_Latitude_Longitude_deg(tmp_first_waypoint)
 			if not(tmp_lat_lon is None) :
 				self.starting_latitude = str(tmp_lat_lon[0])
@@ -423,10 +424,7 @@ class FlightPlanSelector:
 		fp_generated = fp_generated + ">"
 		
 		if not(departure_runway == "") :
-			fp_generated = fp_generated + "." + departure_runway
-
-		if not(self.selected_takeoff==""):
-			fp_generated = fp_generated + "." + self.selected_takeoff
+			fp_generated = fp_generated + "." + departure_runway	
 
 		if (flight_plan_type == self.FLIGHT_PLAN_TYPE_GATE_TO_GATE) or (flight_plan_type == self.FLIGHT_PLAN_TYPE_RUNWAY_TO_RUNWAY) :
 			if not(self.selected_sid == "") :

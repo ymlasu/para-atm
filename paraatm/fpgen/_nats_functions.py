@@ -41,11 +41,11 @@ def get_usable_apts_and_rwys(natsSim,arrival=True):
             approachProcedures = natsSim.terminalAreaInterface.getAllApproaches(apt)
 
             if arrival:
-                usableAPs = [ap[1:] for ap in approachProcedures]
+                usableAPs = [ap[1:4] for ap in approachProcedures]
                 usableRws = []
                 for rwy_node in rwy_nodes:
                     rwy_entry,rwy_end=get_rwy_entry_and_end_point(rwy_node,apt)
-                    if rwy_entry[2:] in usableAPs:
+                    if rwy_entry[2:5] in usableAPs:
                         usableRws.append(rwy_entry)
                 if usableRws:
                     usable_apts_and_rwys.update({apt : usableRws})

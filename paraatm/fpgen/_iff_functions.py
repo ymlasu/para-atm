@@ -66,14 +66,12 @@ def get_rwy_from_iff(iff_data,callsign,natsSim,airport,minRwySpeed=10.,maxRwySpe
     end=1
     usable_rwy_entries = [list(natsSim.airportInterface.getRunwayEnds(airport,rwy))[entry] for rwy in usable_rwys]
     usable_rwy_ends = [list(natsSim.airportInterface.getRunwayEnds(airport,rwy))[end] for rwy in usable_rwys]
-    print("Usable Runway Entries:",usable_rwy_entries)
 
     rwyNodeList = [node for node in trackData.airportNodes if node.lower().startswith('rwy')]
     rwyNodeOptions,counts = np.unique(rwyNodeList,return_counts=True)
     rwyNodeSorted=np.array(rwyNodeOptions)[np.argsort(counts)[::-1]]
     rwyNodes = [rwy for rwy in rwyNodeSorted if rwy in usable_rwy_entries]
     if rwyNodes:
-        print("Sorted Runway Node Options from IFF:",rwyNodes)
         rwyIdx = usable_rwy_entries.index(rwyNodes[0])
         rwy = usable_rwys[rwyIdx]
         print('Rwy at {} from IFF: {}'.format(airport,rwy))
