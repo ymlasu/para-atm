@@ -34,7 +34,7 @@ def getAlphaCharOnly(entry):
 		   
 
 class FlightPlanSelector:
-	def __init__(self,natsSim,fname = "../../GNATS_Server/share/tg/trx/TRX_DEMO_100rec_beta1.5.trx"):
+	def __init__(self,natsSim,fname = "./TRX_07132005_noduplicates_crypted"):
 		self.fname = fname
 		self.readFile()
 		self.FLIGHT_PLAN_TYPE_GATE_TO_GATE = 1
