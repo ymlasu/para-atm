@@ -176,6 +176,21 @@ class NatsEnvironment:
         return getattr(jpype.JPackage('com').osi.util.Constants, name)
 
     @classmethod
+    def get_nats_clearance(cls, name):
+        """Return the variable that stores the named NATS clearance
+
+        Parameters
+        ----------
+        name : str
+            Name of NATS clearance to retrieve
+        """
+        if not cls.jvm_started:
+            raise RuntimeError("JVM not yet started")
+        if cls.jvm_stopped:
+            raise RuntimeError("JVM already stopped")        
+        return getattr(jpype.JPackage('com').osi.util.AircraftClearance, name)
+
+    @classmethod
     def build_path(cls, filename):
         """Return a path to filename that behaves as if original directory is current working directory
 
