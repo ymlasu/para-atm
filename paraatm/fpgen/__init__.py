@@ -9,7 +9,8 @@ example of file organization.
 from ._nats_functions import (
     get_gate_lat_lon_from_nats,
     get_random_gate,
-    get_random_runway
+    get_random_runway,
+    get_usable_apts_and_rwys
 )
 
 from ._iff_functions import (
