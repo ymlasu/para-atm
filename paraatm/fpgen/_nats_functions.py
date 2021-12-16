@@ -28,36 +28,63 @@ def get_gate_lat_lon_from_nats(natsSim,gate,airport):
     lon = df.loc[df['id']==gate]['lon'].values[0]
     return lat,lon
 
-def get_usable_apts_and_rwys(natsSim,arrival=True):
+def get_usable_apts_and_rwys(natsSim,arrival=True,contiguousUS=True):
     apts=list(natsSim.airportInterface.getAllAirportCodesInGNATS())
     usable_apts_and_rwys = {}
     unusableAirports = ['KMEM','KSNA']
     for apt in apts:
-        if apt[0]=='K' and apt not in unusableAirports:
-            rwys = list(natsSim.airportInterface.getAllRunways(apt))
-            rwys= [list(rwy) for rwy in rwys]
-            rwy_nodes = [rwy[1] for rwy in rwys]
-            rwys = [rwy[0] for rwy in rwys]
-            approachProcedures = natsSim.terminalAreaInterface.getAllApproaches(apt)
+        if contiguousUS:
+            if apt[0]=='K' and apt not in unusableAirports:
+                rwys = list(natsSim.airportInterface.getAllRunways(apt))
+                rwys= [list(rwy) for rwy in rwys]
+                rwy_nodes = [rwy[1] for rwy in rwys]
+                rwys = [rwy[0] for rwy in rwys]
+                approachProcedures = natsSim.terminalAreaInterface.getAllApproaches(apt)
 
-            if arrival:
-                usableAPs = [ap[1:4] for ap in approachProcedures]
-                usableRws = []
-                for rwy_node in rwy_nodes:
-                    rwy_entry,rwy_end=get_rwy_entry_and_end_point(rwy_node,apt)
-                    if rwy_entry[2:5] in usableAPs:
+                if arrival:
+                    usableAPs = [ap[1:4] for ap in approachProcedures]
+                    usableRws = []
+                    for rwy_node in rwy_nodes:
+                        rwy_entry,rwy_end=get_rwy_entry_and_end_point(rwy_node,apt)
+                        if rwy_entry[2:5] in usableAPs:
+                            usableRws.append(rwy_entry)
+                    if usableRws:
+                        usable_apts_and_rwys.update({apt : usableRws})
+
+                if not arrival:
+                    usableRws = []
+                    for rwy_node in rwy_nodes:
+                        rwy_entry,rwy_end=get_rwy_entry_and_end_point(rwy_node,apt)
                         usableRws.append(rwy_entry)
-                if usableRws:
-                    usable_apts_and_rwys.update({apt : usableRws})
+                    if usableRws:
+                        usable_apts_and_rwys.update({apt : usableRws})
 
-            if not arrival:
-                usableRws = []
-                for rwy_node in rwy_nodes:
-                    rwy_entry,rwy_end=get_rwy_entry_and_end_point(rwy_node,apt)
-                    usableRws.append(rwy_entry)
-                if usableRws:
-                    usable_apts_and_rwys.update({apt : usableRws})
-            
+        elif not contiguousUS:
+            if  apt not in unusableAirports:
+                rwys = list(natsSim.airportInterface.getAllRunways(apt))
+                rwys= [list(rwy) for rwy in rwys]
+                rwy_nodes = [rwy[1] for rwy in rwys]
+                rwys = [rwy[0] for rwy in rwys]
+                approachProcedures = natsSim.terminalAreaInterface.getAllApproaches(apt)
+
+                if arrival:
+                    usableAPs = [ap[1:4] for ap in approachProcedures]
+                    usableRws = []
+                    for rwy_node in rwy_nodes:
+                        rwy_entry,rwy_end=get_rwy_entry_and_end_point(rwy_node,apt)
+                        if rwy_entry[2:5] in usableAPs:
+                            usableRws.append(rwy_entry)
+                    if usableRws:
+                        usable_apts_and_rwys.update({apt : usableRws})
+
+                if not arrival:
+                    usableRws = []
+                    for rwy_node in rwy_nodes:
+                        rwy_entry,rwy_end=get_rwy_entry_and_end_point(rwy_node,apt)
+                        usableRws.append(rwy_entry)
+                    if usableRws:
+                        usable_apts_and_rwys.update({apt : usableRws})     
+                                          
     return usable_apts_and_rwys
 
 def get_rwy_entry_and_end_point(rwy_node,airport):

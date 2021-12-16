@@ -41,6 +41,7 @@ class FlightPlanSelector:
 		self.FLIGHT_PLAN_TYPE_RUNWAY_TO_RUNWAY = 2
 		self.FLIGHT_PLAN_TYPE_CRUISE = 3
 		self.FLIGHT_PLAN_TYPE_CRUISE_TO_GATE = 4
+		self.FLIGHT_PLAN_TYPE_GATE_TO_CRUISE = 5
 		self.str_readFlightPlan = ""
 		self.enroute_fp = ""
 		self.selected_sid = ""
@@ -59,6 +60,9 @@ class FlightPlanSelector:
 		fid = open(self.fname,'r')
 		Lines = fid.readlines()
 		self.flmap = {}
+
+		n=0
+		allPlans = []
 		for l in Lines:
 			if 'FP_ROUTE' in l:
 				l = re.sub('<[^>]+>','', l)								
@@ -78,7 +82,10 @@ class FlightPlanSelector:
 				if fplan[-4] == '.':
 					didx = 3				
 				destination = fplan[-didx:]
+				n+=1
+				allPlans.append(fplan)
 				self.flmap[origin+'-'+destination] = fplan
+
 	
 	def readFlightPlan(self, origin, destination):
 		return_string = ""
@@ -143,6 +150,8 @@ class FlightPlanSelector:
 
 
 	def getTerminalProcedures(self, origin, destination, departureRunway, arrivalRunway):
+
+		ifVerbose = False
 		if len(origin) == 3:
 			if origin in ["ANC", "HNL"]:
 				origin = "P" + origin
@@ -164,7 +173,6 @@ class FlightPlanSelector:
 			firstEnroutePoint = alphaComponents[0]
 			enrouteWp = self.natsSim.terminalAreaInterface.getWaypoint_Latitude_Longitude_deg(firstEnroutePoint)
 
-
 		# SID
 		dist=99999999.
 		enrouteWp = self.natsSim.terminalAreaInterface.getWaypoint_Latitude_Longitude_deg(firstEnroutePoint)
@@ -180,10 +188,13 @@ class FlightPlanSelector:
 						newDist = self.distance(firstLatLonVal, enrouteWp)
 						if newDist < dist:
 							dist=newDist
-							print('legWps:',legWps,'lastLatLonVal:',firstLatLonVal,'\n')
-							print('New Distance: ',dist)
-							print('OptimalSid: ',sid)
 							optimalSid=sid
+
+							if ifVerbose:
+								print('legWps:',legWps,'lastLatLonVal:',firstLatLonVal,'\n')
+								print('New Distance: ',dist)
+								print('OptimalSid: ',sid)
+							
 
 		# APPROACH
 		optimalApproach = ""
@@ -196,6 +207,7 @@ class FlightPlanSelector:
 				optimalApproach=optimalApproachwI[0]
 			else:
 				optimalApproach = optimalApproaches[0]
+		if ifVerbose: print('OptimalApproach', optimalApproach)
 
 		# TAKEOFF
 		result_Procedure_leg_names = self.natsSim.terminalAreaInterface.getProcedure_leg_names('APPROACH', optimalApproach, destination)
@@ -207,7 +219,7 @@ class FlightPlanSelector:
 		dist= 9999999.
 		arrivalStars = self.natsSim.terminalAreaInterface.getAllStars(destination)
 		approachLatLon = self.natsSim.terminalAreaInterface.getWaypoint_Latitude_Longitude_deg(firstApproachWaypoint)
-		print('First Approach Waypoint:',firstApproachWaypoint,' LatLon:',approachLatLon,'\n')
+		if ifVerbose: print('First Approach Waypoint:',firstApproachWaypoint,' LatLon:',approachLatLon,'\n')
 		optimalStar = ""
 		legNamesList = [list(self.natsSim.terminalAreaInterface.getProcedure_leg_names('STAR', star,destination)) for star in arrivalStars]
 
@@ -216,14 +228,18 @@ class FlightPlanSelector:
 				legWps = self.natsSim.terminalAreaInterface.getWaypoints_in_procedure_leg("STAR", star, destination, legName)
 				if legWps:
 					lastLatLonVal = self.natsSim.terminalAreaInterface.getWaypoint_Latitude_Longitude_deg(list(legWps)[-1])
-					if not (firstLatLonVal is None):
+#					if not (firstLatLonVal is None):
+					if not (lastLatLonVal is None):
 						newDist = self.distance(lastLatLonVal, approachLatLon)
 						if newDist < dist:
 							dist=newDist
-							print('legWps:',legWps,'lastLatLonVal:',lastLatLonVal,'\n')
-							print('New Distance: ',dist)
-							print('OptimalStar:',star)
 							optimalStar=star
+
+							if ifVerbose:
+								print('legWps:',legWps,'lastLatLonVal:',lastLatLonVal,'\n')
+								print('New Distance: ',dist)
+								print('OptimalStar:',star)
+							
 
 		return (optimalSid, optimalStar, optimalApproach)
 
@@ -335,6 +351,7 @@ class FlightPlanSelector:
 			if origin_gate is None or origin_gate == "" or destination_gate is None or destination_gate == "":
 				print("Please input origin and destination gates")
 				quit()
+		
 		elif flight_plan_type == self.FLIGHT_PLAN_TYPE_RUNWAY_TO_RUNWAY :
 			if origin_airport is None or origin_airport == "" or destination_airport is None or destination_airport == "":
 				print("Please input origin and destination airports")
@@ -343,10 +360,12 @@ class FlightPlanSelector:
 			if departure_runway is None or departure_runway == "" or arrival_runway is None or arrival_runway == "":
 				print("Please input departure and arrival runways")
 				quit()
+		
 		elif flight_plan_type == self.FLIGHT_PLAN_TYPE_CRUISE :
 			if origin_airport is None or origin_airport == "" or destination_airport is None or destination_airport == "":
 				print("Please input origin and destination airports")
 				quit()
+		
 		elif flight_plan_type == self.FLIGHT_PLAN_TYPE_CRUISE_TO_GATE :
 			if origin_airport is None or origin_airport == "" or destination_airport is None or destination_airport == "":
 				print("Please input origin and destination airports")
@@ -358,6 +377,19 @@ class FlightPlanSelector:
 			
 			if destination_gate is None or destination_gate == "":
 				print("Please input destination gate")
+
+		elif flight_plan_type == self.FLIGHT_PLAN_TYPE_GATE_TO_CRUISE :
+			if origin_airport is None or origin_airport == "" or destination_airport is None or destination_airport == "":
+				print("Please input origin and destination airports")
+				quit()
+			
+			if departure_runway is None or departure_runway == "":
+				print("Please input arrival runway")
+				quit()
+			
+			if origin_gate is None or origin_gate == "":
+				print("Please input destination gate")
+
 		else :
 			print("Please input valid flight plan type")
 			quit()
@@ -404,6 +436,7 @@ class FlightPlanSelector:
 			if not(tmp_lat_lon is None) :
 				self.starting_latitude = str(tmp_lat_lon[0])
 				self.starting_longitude = str(tmp_lat_lon[1])
+
 		elif (flight_plan_type == self.FLIGHT_PLAN_TYPE_CRUISE_TO_GATE) :
 			# Obtain landing surface plan -----------------
 			tmp_landing_surface_plan_string = self.generateArrivalTaxiPlan(destination_airport, arrival_runway, destination_gate)
@@ -413,7 +446,14 @@ class FlightPlanSelector:
 			if not(tmp_lat_lon is None) :
 				self.starting_latitude = str(tmp_lat_lon[0])
 				self.starting_longitude = str(tmp_lat_lon[1])
-		
+
+		elif flight_plan_type == self.FLIGHT_PLAN_TYPE_GATE_TO_CRUISE :
+			tmp_node_seq = -1 # Reset
+			tmp_node_seq_first_point = -1 # Reset
+			
+			# Obtain departing surface plan ---------------
+			tmp_departing_surface_plan_string = self.generateDepartureTaxiPlan(origin_airport, departure_runway, origin_gate)	
+
 		# =================================================
 		# Combine the final returning value
 		fp_generated = origin_airport
@@ -426,7 +466,7 @@ class FlightPlanSelector:
 		if not(departure_runway == "") :
 			fp_generated = fp_generated + "." + departure_runway	
 
-		if (flight_plan_type == self.FLIGHT_PLAN_TYPE_GATE_TO_GATE) or (flight_plan_type == self.FLIGHT_PLAN_TYPE_RUNWAY_TO_RUNWAY) :
+		if (flight_plan_type == self.FLIGHT_PLAN_TYPE_GATE_TO_GATE) or (flight_plan_type == self.FLIGHT_PLAN_TYPE_RUNWAY_TO_RUNWAY) or (flight_plan_type == self.FLIGHT_PLAN_TYPE_GATE_TO_CRUISE) :
 			if not(self.selected_sid == "") :
 				fp_generated = fp_generated + "." + self.selected_sid
 		

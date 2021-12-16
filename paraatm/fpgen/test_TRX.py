@@ -38,7 +38,8 @@ cleanStr = ""
 
 TRACK_TIME = time.time()
 
-for no, key in enumerate(f.flmap.keys()):
+strNo = 15
+for no, key in enumerate(f.flmap.keys(),0):
 
     departureAirport = key.split('-')[0]
     arrivalAirport = key.split('-')[1]
@@ -59,7 +60,7 @@ for no, key in enumerate(f.flmap.keys()):
     cleanStr += (line1 + line2 + '\n')
     f.flmap[key] = line2[9:]
 
-
+    print(line1.split(' '))
     print(flightID)
     departureGate = get_random_gate(natsSim,departureAirport)
     departureRwy = get_random_runway(natsSim,departureAirport,arrival=False)
@@ -78,10 +79,11 @@ for no, key in enumerate(f.flmap.keys()):
     airportInstance = natsSim.airportInterface.select_airport(departureAirport)
     elevstr = '%.2f' % (airportInstance.getElevation()/100.0)  
 
-    line1 = line1.replace(fplatstr, latstr)
-    line1 = line1.replace(fplonstr, lonstr)
-    line1 = line1.replace(fpelevstr, elevstr)
-
+    line1 = line1.replace(" " + fplatstr + " ", " " + latstr + " ")
+    line1 = line1.replace(" " + fplonstr + " ", " " + lonstr + " ")
+    print(line1)
+    line1 = line1.replace(" " + fpelevstr + " ", " " + elevstr + " ")
+    print(line1)
     TRACK_TIME += 10
     with open(trxFilename,'a+') as trxFile:
         trxFile.write('%s %d' % ('TRACKTIME', TRACK_TIME) + '\n')
@@ -91,7 +93,9 @@ for no, key in enumerate(f.flmap.keys()):
     with open(mflFilename,'a+') as mflFile:
         mflFile.write(flightID + ' ' + '330' + '\n')
     
-    1/0
+    if no - strNo >15: 1/0
+    
+
 
 
 
