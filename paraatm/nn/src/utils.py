@@ -15,42 +15,12 @@ DATASET_NAME_TO_NUM = {
     'atl0807': 6,
 }
 
-
 class Trajectory_Dataloader():
     def __init__(self, args):
 
         self.args = args
-        if self.args.dataset == 'eth5':
 
-            self.data_dirs = ['./data/eth/univ', './data/eth/hotel',
-                              './data/ucy/zara/zara01', './data/ucy/zara/zara02',
-                              './data/ucy/univ/students001', './data/ucy/univ/students003',
-                              './data/ucy/univ/uni_examples', './data/ucy/zara/zara03']
-
-            # Data directory where the pre-processed pickle file resides
-            self.data_dir = './data'
-            skip = [6, 10, 10, 10, 10, 10, 10, 10]
-
-            train_set = [i for i in range(len(self.data_dirs))]
-
-            assert args.test_set in DATASET_NAME_TO_NUM.keys(), 'Unsupported dataset {}'.format(args.test_set)
-
-            args.test_set = DATASET_NAME_TO_NUM[args.test_set]
-
-            if args.test_set == 4 or args.test_set == 5:
-                self.test_set = [4, 5]
-            else:
-                self.test_set = [self.args.test_set]
-
-            for x in self.test_set:
-                train_set.remove(x)
-
-            self.train_dir = [self.data_dirs[x] for x in train_set]
-            self.test_dir = [self.data_dirs[x] for x in self.test_set]
-            self.trainskip = [skip[x] for x in train_set]
-            self.testskip = [skip[x] for x in self.test_set]
-
-        elif self.args.dataset == 'iffatl':
+        if self.args.dataset == 'iffatl':
 
             self.data_dirs = ['./data/iff/atl/20190801', './data/iff/atl/20190802',
                               './data/iff/atl/20190803', './data/iff/atl/20190804',
