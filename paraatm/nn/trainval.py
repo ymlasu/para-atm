@@ -1,6 +1,7 @@
+import os
 import argparse
 import ast
-import os
+
 import torch
 import yaml
 
@@ -18,7 +19,7 @@ def get_parser():
     parser.add_argument('--save_dir')
     parser.add_argument('--model_dir')
     parser.add_argument('--config')
-    parser.add_argument('--using_cuda', default=True, type=ast.literal_eval)
+    parser.add_argument('--using_cuda', default=False, type=ast.literal_eval)
     parser.add_argument('--test_set', default='atl0807', type=str,
                         help='Set this value to [atl0801, atl0802, atl0803, atl0804, atl0805, atl0806, atl0807] foe different test set')
     parser.add_argument('--base_dir', default='.', help='Base directory including these scripts.')
@@ -28,13 +29,13 @@ def get_parser():
     parser.add_argument('--load_model', default=None, type=str, help="load pretrained model for test or training")
     parser.add_argument('--model', default='bstar.BSTAR')
     parser.add_argument('--seq_length', default=20, type=int)
-    parser.add_argument('--obs_length', default=8, type=int)
-    parser.add_argument('--pred_length', default=12, type=int)
+    parser.add_argument('--obs_length', default=12, type=int)
+    parser.add_argument('--pred_length', default=8, type=int)
     parser.add_argument('--batch_around_ped', default=256, type=int)
     parser.add_argument('--batch_size', default=7, type=int)
     parser.add_argument('--test_batch_size', default=4, type=int)
     parser.add_argument('--show_step', default=100, type=int)
-    parser.add_argument('--start_test', default=100, type=int)
+    parser.add_argument('--start_test', default=250, type=int)
     parser.add_argument('--sample_num', default=20, type=int)
     parser.add_argument('--num_epochs', default=300, type=int)
     parser.add_argument('--ifshow_detail', default=True, type=ast.literal_eval)
@@ -44,7 +45,7 @@ def get_parser():
     parser.add_argument('--neighbor_thred', default=10, type=int)
     parser.add_argument('--learning_rate', default=0.0015, type=float)
     parser.add_argument('--clip', default=1, type=int)
-    parser.add_argument('--skip', default=10, type=int)
+    parser.add_argument('--skip', default=5, type=int)
 
     return parser
 
@@ -53,7 +54,7 @@ def load_arg(p):
     # save arg
     if os.path.exists(p.config):
         with open(p.config, 'r') as f:
-            default_arg = yaml.load(f)
+            default_arg = yaml.safe_load(f)
         key = vars(p).keys()
         for k in default_arg.keys():
             if k not in key:
@@ -90,7 +91,8 @@ if __name__ == '__main__':
 
     args = load_arg(p)
 
-    torch.cuda.set_device(0)
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    #torch.cuda.set_device(device)
 
     trainer = processor(args)
 

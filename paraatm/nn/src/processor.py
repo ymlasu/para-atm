@@ -1,10 +1,14 @@
+import os
 import torch
-import torch.nn as nn
-from .bstar import STAR
-from .utils import *
-
+import time
 from tqdm import tqdm
 import pickle
+
+import torch.nn as nn
+
+from . import bstar
+from . import utils
+
 
 
 class processor(object):
@@ -12,8 +16,8 @@ class processor(object):
 
         self.args = args
 
-        self.dataloader = Trajectory_Dataloader(args)
-        self.net = STAR(args)
+        self.dataloader = utils.TrajectoryDataloader(args)
+        self.net = bstar.STAR(args)
 
         self.set_optimizer()
 
@@ -75,6 +79,7 @@ class processor(object):
 
         print('Training begin')
         test_error, test_final_error = 0, 0
+
         for epoch in range(self.args.num_epochs):
 
             self.net.train()
@@ -116,15 +121,15 @@ class processor(object):
 
         self.dataloader.reset_batch_pointer(set='train', valid=False)
         loss_epoch = 0
-
+        print('Number of trainbatchnums:', self.dataloader.trainbatchnums)
         for batch in range(self.dataloader.trainbatchnums):
 
             start = time.time()
             inputs, batch_id = self.dataloader.get_train_batch(batch)
             inputs = tuple([torch.Tensor(i) for i in inputs])
-            inputs = tuple([i.cuda() for i in inputs])
+            #inputs = tuple([i.cuda() for i in inputs])
 
-            loss = torch.zeros(1).cuda()
+            loss = torch.zeros(1)#.cuda()
             batch_abs, batch_norm, shift_value, seq_list, nei_list, nei_num, batch_pednum = inputs
             inputs_forward = batch_abs[:-1], batch_norm[:-1], shift_value[:-1], seq_list[:-1], nei_list[:-1], nei_num[:-1], batch_pednum
 
@@ -132,7 +137,7 @@ class processor(object):
 
             outputs = self.net.forward(inputs_forward, iftest=False)
 
-            lossmask, num = getLossMask(outputs, seq_list[0], seq_list[1:], using_cuda=self.args.using_cuda)
+            lossmask, num = utils.getLossMask(outputs, seq_list[0], seq_list[1:], using_cuda=self.args.using_cuda)
             loss_o = torch.sum(self.criterion(outputs, batch_norm[1:, :, :2]), dim=2)
 
             loss += (torch.sum(loss_o * lossmask / num))
@@ -184,9 +189,9 @@ class processor(object):
 
             all_output = torch.stack(all_output)  # output
 
-            lossmask, num = getLossMask(all_output, seq_list[0], seq_list[1:], using_cuda=self.args.using_cuda)
+            lossmask, num = utils.getLossMask(all_output, seq_list[0], seq_list[1:], using_cuda=self.args.using_cuda)
 
-            error, error_cnt, final_error, final_error_cnt = L2forTestS(all_output, batch_norm[1:, :, :2],
+            error, error_cnt, final_error, final_error_cnt = utils.L2forTestS(all_output, batch_norm[1:, :, :2],
                                                                         self.args.obs_length, lossmask)
 
             all_output_mean.append(torch.mean(all_output, 0))

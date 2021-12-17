@@ -9,9 +9,9 @@ from .lrt_linear import BBBLinear
 
 def get_noise(shape, noise_type):
     if noise_type == "gaussian":
-        return torch.randn(shape).cuda()
+        return torch.randn(shape)#.cuda()
     elif noise_type == "uniform":
-        return torch.rand(*shape).sub_(0.5).mul_(2.0).cuda()
+        return torch.rand(*shape).sub_(0.5).mul_(2.0)#.cuda()
     raise ValueError('Unrecognized noise type "%s"' % noise_type)
 
 
@@ -276,7 +276,7 @@ class TransformerModel(nn.Module):
         self.ninp = ninp
 
     def forward(self, src, mask):
-        n_mask = mask + torch.eye(mask.shape[0], mask.shape[0]).cuda()
+        n_mask = mask + torch.eye(mask.shape[0], mask.shape[0])#.cuda()
         n_mask = n_mask.float().masked_fill(n_mask == 0., float(-1e20)).masked_fill(n_mask == 1., float(0.0))  # mask 0 to 1e-20, mask 1 to 0.0
         output = self.transformer_encoder(src, mask=n_mask)
 
@@ -413,8 +413,8 @@ class STAR(torch.nn.Module):
         nodes_abs, nodes_norm, shift_value, seq_list, nei_lists, nei_num, batch_pednum = inputs
         num_Ped = nodes_norm.shape[1]
 
-        outputs = torch.zeros(nodes_norm.shape[0], num_Ped, 2).cuda()
-        GM = torch.zeros(nodes_norm.shape[0], num_Ped, 32).cuda()
+        outputs = torch.zeros(nodes_norm.shape[0], num_Ped, 2)#.cuda()
+        GM = torch.zeros(nodes_norm.shape[0], num_Ped, 32)#.cuda()
 
         noise = get_noise((1, 16), 'gaussian')
 

@@ -15,18 +15,16 @@ DATASET_NAME_TO_NUM = {
     'atl0807': 6,
 }
 
-class Trajectory_Dataloader():
+class TrajectoryDataloader():
     def __init__(self, args):
 
-        self.args = args
+        self.args = args #arg.dataset=iffatl
 
         if self.args.dataset == 'iffatl':
 
-            self.data_dirs = ['./data/iff/atl/20190801', './data/iff/atl/20190802',
-                              './data/iff/atl/20190803', './data/iff/atl/20190804',
-                              './data/iff/atl/20190805', './data/iff/atl/20190806',
-                              './data/iff/atl/20190807'
-                              ]
+            data_dir = '../../../para-atm-collection/air-traffic-prediction/MultiAircraftTP/BSTAR-Part2-ModelTrainingCode/data/iff/atl/'
+            dates = ['20190801','20190802','20190803','20190804','20190805','20190806','20190807']
+            self.data_dirs = [data_dir+s for s in dates]
 
             # Data directory where the pre-processed pickle file resides
             self.data_dir = './data'
@@ -59,17 +57,19 @@ class Trajectory_Dataloader():
         print("Done.")
 
         # Load the processed data from the pickle file
-        print("Preparing data batches.")
         if not (os.path.exists(self.train_batch_cache)):
+            print("Preparing train data batches.")
             self.frameped_dict, self.pedtraject_dict = self.load_dict(self.train_data_file)
             self.dataPreprocess('train')
+            print("Done.")
         if not (os.path.exists(self.test_batch_cache)):
+            print("Preparing test data batches.")
             self.test_frameped_dict, self.test_pedtraject_dict = self.load_dict(self.test_data_file)
             self.dataPreprocess('test')
+            print("Done.")
 
         self.trainbatch, self.trainbatchnums, _, _ = self.load_cache(self.train_batch_cache)
         self.testbatch, self.testbatchnums, _, _ = self.load_cache(self.test_batch_cache)
-        print("Done.")
 
         print('Total number of training batches:', self.trainbatchnums)
         print('Total number of test batches:', self.testbatchnums)
@@ -99,7 +99,6 @@ class Trajectory_Dataloader():
 
         # For each dataset
         for seti, directory in enumerate(data_dirs):
-
             file_path = os.path.join(directory, 'true_pos_.csv')
             # Load the data from the csv file
             data = np.genfromtxt(file_path, delimiter=',')
@@ -107,10 +106,8 @@ class Trajectory_Dataloader():
 
             Pedlist = np.unique(data[1, :]).tolist()
             numPeds = len(Pedlist)
-
             # Add the list of frameIDs to the frameList_data
             Pedlist_data.append(Pedlist)
-
             # Initialize the list of numpy arrays for the current dataset
             all_frame_data.append([])
             valid_frame_data.append([])
@@ -129,7 +126,6 @@ class Trajectory_Dataloader():
                 FrameList = FrameContainPed[0, :].tolist()
                 if len(FrameList) < 2:
                     continue
-
                 # Add number of frames of this trajectory
                 numFrame_data[seti].append(len(FrameList))
 
@@ -148,7 +144,6 @@ class Trajectory_Dataloader():
                         frameped_dict[seti][int(frame)] = []
                     frameped_dict[seti][int(frame)].append(pedi)
                 pedtrajec_dict[seti][pedi] = np.array(Trajectories)
-
         f = open(data_file, "wb")
         pickle.dump((frameped_dict, pedtrajec_dict), f, protocol=2)
         f.close()
@@ -186,7 +181,6 @@ class Trajectory_Dataloader():
         f = open(data_file, 'rb')
         raw_data = pickle.load(f)
         f.close()
-
         frameped_dict = raw_data[0]
         pedtraject_dict = raw_data[1]
 
@@ -195,6 +189,7 @@ class Trajectory_Dataloader():
     def load_cache(self, data_file):
         f = open(data_file, 'rb')
         raw_data = pickle.load(f)
+        print('raw_data:',raw_data)
         f.close()
         return raw_data
 
@@ -581,26 +576,6 @@ def L2forTestS(outputs, targets, obs_length, lossMask, num_samples=20):
     final_error_cnt = error_full.shape[-1]
 
     return error.item(), error_cnt, final_error.item(), final_error_cnt
-
-
-def timeit(method):
-    def timed(*args, **kw):
-        ts = time.time()
-        result = method(*args, **kw)
-        te = time.time()
-        print('Function', method.__name__, 'time:', round((te - ts) * 1000, 1), 'ms')
-        print()
-        return result
-
-    return timed
-
-
-def import_class(name):
-    components = name.split('.')
-    mod = __import__(components[0])
-    for comp in components[1:]:
-        mod = getattr(mod, comp)
-    return mod
 
 
 def vectorized_haversine_dist(s_lat, s_lng, e_lat, e_lng):
