@@ -10,7 +10,6 @@ from . import bstar
 from . import utils
 
 
-
 class processor(object):
     def __init__(self, args):
 
@@ -121,7 +120,6 @@ class processor(object):
 
         self.dataloader.reset_batch_pointer(set='train', valid=False)
         loss_epoch = 0
-        print('Number of trainbatchnums:', self.dataloader.trainbatchnums)
         for batch in range(self.dataloader.trainbatchnums):
 
             start = time.time()
