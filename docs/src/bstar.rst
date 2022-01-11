@@ -10,14 +10,11 @@ A detailed demonstration of B-STAR can be found `here <https://github.com/ymlasu
 
 
 .. py:module:: paraatm.bstar
-
 para-atm B-STAR module
 ------------
 B-STAR is a separate packed module in para-atm. :py:func:`~paraatm.bstar.trainval` is the interface function for user to perform desired tasks such as training a model with desired parameters, and testing with a pre-trained model.
 
 .. autofunction:: paraatm.bstar.trainval
-
-
 To Train a Model 
 ------------
 The training of a B-STAR model can be accessed by calling :py:func:`~paraatm.bstar.trainval` in the terminal, with the parameters defined above. Here is an example,
