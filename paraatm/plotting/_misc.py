@@ -11,9 +11,10 @@ def plot_trajectory(df, output_file=None, output_notebook=False, plot_width=1200
     
     Parameters
     ----------
-    df : DataFrame
+    df : DataFrame or GeoDataFrame
         DataFrame containing a scenario with 'latitude', 'longitude',
-        'heading', and 'callsign' columns
+        'heading', and 'callsign' columns (DataFrame) or a defined geometry, 
+        'heading', and 'callsign' (GeoDataFrame)
     output_file : str
         Output file for html (if None, use bokeh default)
     output_notebook : bool
@@ -47,8 +48,13 @@ def plot_trajectory(df, output_file=None, output_notebook=False, plot_width=1200
     if tooltips:
         p.add_tools(hover)
 
-    df_plot = df[['latitude','longitude','heading','callsign']].copy()
-    df_plot['longitude'], df_plot['latitude'] = _merc(df_plot['latitude'].values, df_plot['longitude'].values)
+    if 'geometry' not in df.columns:
+        df_plot = df[['latitude','longitude','heading','callsign']].copy()
+        df_plot['longitude'], df_plot['latitude'] = _merc(df_plot['latitude'].values, df_plot['longitude'].values)
+    elif 'geometry' in df.columns:
+        df_plot = df['heading','callsign'].copy()
+        df_plot['longitude'] = df.geometry.x
+        df_plot['latitude'] = df.geometry.y
 
     points = p.triangle(x='longitude', y='latitude', angle='heading', angle_units='deg', source=df_plot) 
 

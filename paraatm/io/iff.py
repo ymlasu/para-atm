@@ -3,6 +3,8 @@
 import pandas as pd
 import numpy as np
 from pkg_resources import parse_version
+import geopandas as gpd
+from shapely.geometry import Point
 
 def read_iff_file(filename, record_types=3, callsigns=None, chunksize=50000, encoding='latin-1'):
     """
@@ -144,3 +146,76 @@ def read_iff_file(filename, record_types=3, callsigns=None, chunksize=50000, enc
         result = data_frames
 
     return result
+
+def read_iff_file_as_gpd(filename, record_types=3, callsigns=None, chunksize=50000, encoding='latin-1'):
+    """
+    Read IFF file and return data frames for requested record types
+    
+    From IFF 2.15 specification, record types include:
+
+    2. header
+    3. track point
+    4. flight plan
+    5. data source program
+    6. sectorization
+    7. minimum safe altitude
+    8. flight progress
+    9. aircraft state
+
+    Parameters
+    ----------
+    filename : str
+        File to read
+    record_types : int, sequence of ints, or 'all'
+        Record types to return
+    callsigns : None, string, or list of strings
+        If None, return records for all aircraft callsigns.
+        Otherwise, only return records that match the given callsign
+        (in the case of a single string) or match one of the specified
+        callsigns (in the case of a list of strings).
+    chunksize: int
+        Number of rows that are read at a time by pd.read_csv.  This
+        limits memory usage when working with large files, as we can
+        extract out the desired rows from each chunk, isntead of
+        reading everything into one large DataFrame and then taking a
+        subset.
+    encoding: str
+        Encoding argument passed on to open and pd.read_csv.  Using
+        'latin-1' instead of the default will suppress errors that
+        might otherwise occur with minor data corruption.  See
+        http://python-notes.curiousefficiency.org/en/latest/python3/text_file_processing.html
+    
+    Returns
+    -------
+    GeoDataFrame or dict or a mix of GeoDataFrames and DataFrames
+       If record_types is a scalar and either 3,7 or 9, return a GeoDataFrame
+       containing the data for that record type only.  Otherwise, return a dictionary
+       mapping each requested record type to a corresponding DataFrame or GeoDataFrame.
+    """
+
+    #Run read_iff_file to convert to pandas DataFrame
+    result = read_iff_file(filename,record_types=record_types,callsigns=callsigns,chunksize=chunksize,encoding=encoding)
+
+    rec_types_to_convert = [3,7,9]
+    
+    if not hasattr(record_types, '__getitem__'):
+        if record_types in rec_types_to_convert:
+            geom = [Point(x,y,z) for x,y,z in zip(result.longitude.values,result.latitude.values,result.altitude.values)]
+            result.drop(['latitude','longitude','altitude'], axis=1,inplace=True)
+            gdf = gpd.GeoDataFrame(result, geometry=geom)
+            gdf.set_crs(epsg=4326,inplace=True)
+            result = gdf
+    
+    if hasattr(record_types, '__getitem__'):
+        for key in result.keys():
+            if key in rec_types_to_convert:
+                df = result[key]
+                geom = [Point(x,y,z) for x,y,z in zip(df.longitude.values,df.latitude.values,df.altitude.values)]
+                df.drop(['latitude','longitude','altitude'], axis=1,inplace=True)
+                gdf = gpd.GeoDataFrame(df, geometry=geom)
+                gdf.set_crs(epsg=4326,inplace=True)
+                result[key] = gdf
+
+    return result
+
+    
