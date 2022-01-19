@@ -1,7 +1,7 @@
 import os
 import argparse
 import ast
-os.environ["CUDA_VISIBLE_DEVICES"] = ""
+#os.environ["CUDA_VISIBLE_DEVICES"] = ""
 
 import torch
 import yaml
