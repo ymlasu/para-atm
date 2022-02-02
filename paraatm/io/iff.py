@@ -218,4 +218,129 @@ def read_iff_file_as_gpd(filename, record_types=3, callsigns=None, chunksize=500
 
     return result
 
-    
+class IFFSpark:
+    def __init__(self):
+        from pyspark.sql import SparkSession
+        from sedona.register import SedonaRegistrator
+        from sedona.utils import SedonaKryoRegistrator, KryoSerializer
+
+        sparkSession = SparkSession.\
+            builder.\
+            master("local[*]").\
+            appName("Sector_IFF_Parser").\
+            config("spark.serializer", KryoSerializer.getName).\
+            config("spark.kryo.registrator", SedonaKryoRegistrator.getName) .\
+            config('spark.jars.packages',
+            'org.apache.sedona:sedona-python-adapter-3.0_2.12:1.1.1-incubating,'
+            'org.datasyslab:geotools-wrapper:1.1.0-25.2'). \
+            getOrCreate()
+
+        SedonaRegistrator.registerAll(sparkSession)
+        self.sparkSession = sparkSession
+
+    def register_iff_file_as_sql_table(self,filename, record_types=3, callsigns=None, chunksize=50000, encoding='latin-1',query_name=None):
+        from sedona.register import SedonaRegistrator
+        from pyspark.sql.types import IntegerType
+
+        SedonaRegistrator.registerAll(self.sparkSession)
+
+        iff_schema = self.iff_schema()
+        df = self.sparkSession.read.csv(filename, header=False, sep=",", schema=iff_schema)    
+        
+        cols = ['recType', 'recTime', 'acId', 'lat', 'lon', 'alt']
+        df = df.select(*cols).filter(df['recType']==3).withColumn("recTime", df['recTime'].cast(IntegerType()))
+        
+        if query_name is not None:
+            df.registerTempTable(query_name)
+        
+        return df.toPandas()
+
+    def convert_position_to_geometry(self,tablename,register_name=None):
+        df=self.sparkSession.sql(
+            """
+            SELECT *,
+            ST_Point(CAST(lat AS Decimal(24, 20)), CAST(lon AS Decimal(24, 20))) AS geom
+            FROM {}
+            """.format(tablename))
+
+        if register_name is not None:
+            df.createOrReplaceTempView(register_name)
+        
+        return gpd.GeoDataFrame(df.toPandas(),geometry='geom',crs='EPSG:4326')
+
+
+    def query_time(self, tablename,t_start,t_end,register_name=None):
+        df = self.sparkSession.sql(
+            """
+            SELECT *
+            FROM {}
+            WHERE recTime>={} AND recTime<={}
+            """.format(tablename,t_start, t_end))
+
+
+        if register_name is not None:
+            df.createOrReplaceTempView(register_name)
+        
+        return gpd.GeoDataFrame(df.toPandas(),geometry='geom',crs='EPSG:4326')
+
+    def query_fix_and_radius(self, tablename,fix_x_y_z,radius,vertical_thresh,register_name=None):
+        df = self.sparkSession.sql(
+            """
+                SELECT *
+                FROM {}
+                WHERE ST_Contains(ST_PolygonFromEnvelope({}, {}, {}, {}), geom) AND alt>{}
+            """.format(tablename,fix_x_y_z[0]-radius, fix_x_y_z[1]-radius, fix_x_y_z[0]+radius,fix_x_y_z[1]+radius,fix_x_y_z[2]+vertical_thresh))
+        
+        if register_name is not None:
+            df.createOrReplaceTempView(register_name)
+
+        return gpd.GeoDataFrame(df.toPandas(),geometry='geom',crs='EPSG:4326')
+            
+
+    #Create load_schema function that returns variable 'myschema' specifically for IFF recType=3.
+    def iff_schema(self):
+        from pyspark.sql.types import (ShortType, StringType, StructType,StructField,LongType, IntegerType, DoubleType)
+        myschema = StructType([
+            StructField("recType", ShortType(), True),  # 1  //track point record type number
+            StructField("recTime", StringType(), True),  # 2  //seconds since midnigght 1/1/70 UTC
+            StructField("fltKey", LongType(), True),  # 3  //flight key
+            StructField("bcnCode", IntegerType(), True),  # 4  //digit range from 0 to 7
+            StructField("cid", IntegerType(), True),  # 5  //computer flight id
+            StructField("Source", StringType(), True),  # 6  //source of the record
+            StructField("msgType", StringType(), True),  # 7
+            StructField("acId", StringType(), True),  # 8  //call sign
+            StructField("recTypeCat", IntegerType(), True),  # 9
+            StructField("lat", DoubleType(), True),  # 10
+            StructField("lon", DoubleType(), True),  # 11
+            StructField("alt", DoubleType(), True),  # 12  //in 100s of feet
+            StructField("significance", ShortType(), True),  # 13 //digit range from 1 to 10
+            StructField("latAcc", DoubleType(), True),  # 14
+            StructField("lonAcc", DoubleType(), True),  # 15
+            StructField("altAcc", DoubleType(), True),  # 16
+            StructField("groundSpeed", IntegerType(), True),  # 17 //in knots
+            StructField("course", DoubleType(), True),  # 18  //in degrees from true north
+            StructField("rateOfClimb", DoubleType(), True),  # 19  //in feet per minute
+            StructField("altQualifier", StringType(), True),  # 20  //Altitude qualifier (the “B4 character”)
+            StructField("altIndicator", StringType(), True),  # 21  //Altitude indicator (the “C4 character”)
+            StructField("trackPtStatus", StringType(), True),  # 22  //Track point status (e.g., ‘C’ for coast)
+            StructField("leaderDir", IntegerType(), True),  # 23  //int 0-8 representing the direction of the leader line
+            StructField("scratchPad", StringType(), True),  # 24
+            StructField("msawInhibitInd", ShortType(), True),  # 25 // MSAW Inhibit Indicator (0=not inhibited, 1=inhibited)
+            StructField("assignedAltString", StringType(), True),  # 26
+            StructField("controllingFac", StringType(), True),  # 27
+            StructField("controllingSec", StringType(), True),  # 28
+            StructField("receivingFac", StringType(), True),  # 29
+            StructField("receivingSec", StringType(), True),  # 30
+            StructField("activeContr", IntegerType(), True),  # 31  // the active control number
+            StructField("primaryContr", IntegerType(), True),
+            # 32  //The primary(previous, controlling, or possible next)controller number
+            StructField("kybrdSubset", StringType(), True),  # 33  //identifies a subset of controller keyboards
+            StructField("kybrdSymbol", StringType(), True),  # 34  //identifies a keyboard within the keyboard subsets
+            StructField("adsCode", IntegerType(), True),  # 35  //arrival departure status code
+            StructField("opsType", StringType(), True),  # 36  //Operations type (O/E/A/D/I/U)from ARTS and ARTS 3A data
+            StructField("airportCode", StringType(), True),  # 37
+            StructField("trackNumber", IntegerType(), True),  # 38
+            StructField("tptReturnType", StringType(), True),  # 39
+            StructField("modeSCode", StringType(), True)  # 40
+        ])
+        return myschema
