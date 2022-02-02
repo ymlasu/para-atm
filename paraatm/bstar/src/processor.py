@@ -20,10 +20,12 @@ class processor(object):
 
         self.set_optimizer()
 
-        if self.args.using_cuda:
-            self.net = self.net.cuda()
-        else:
-            self.net = self.net.cpu()
+        # if self.args.using_cuda:
+        #     self.net = self.net.cuda()
+        # else:
+        #     self.net = self.net.cpu()
+        self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        self.net = self.net.to(self.device)
 
         if not os.path.isdir(self.args.model_dir):
             os.mkdir(self.args.model_dir)
@@ -125,9 +127,9 @@ class processor(object):
             start = time.time()
             inputs, batch_id = self.dataloader.get_train_batch(batch)
             inputs = tuple([torch.Tensor(i) for i in inputs])
-            #inputs = tuple([i.cuda() for i in inputs])
+            inputs = tuple([i.to(self.device) for i in inputs])
 
-            loss = torch.zeros(1)#.cuda()
+            loss = torch.zeros(1).to(self.device)
             batch_abs, batch_norm, shift_value, seq_list, nei_list, nei_num, batch_pednum = inputs
             inputs_forward = batch_abs[:-1], batch_norm[:-1], shift_value[:-1], seq_list[:-1], nei_list[:-1], nei_num[:-1], batch_pednum
 

@@ -1,6 +1,7 @@
 import os
 import argparse
 import ast
+#os.environ["CUDA_VISIBLE_DEVICES"] = ""
 
 import torch
 import yaml
@@ -90,9 +91,6 @@ if __name__ == '__main__':
         save_arg(p)
 
     args = load_arg(p)
-
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    #torch.cuda.set_device(device)
 
     trainer = processor(args)
 
