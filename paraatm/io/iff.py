@@ -247,7 +247,7 @@ class IFFSpark:
         iff_schema = self.iff_schema()
         df = self.sparkSession.read.csv(filename, header=False, sep=",", schema=iff_schema)    
         
-        cols = ['recType', 'recTime', 'acId', 'lat', 'lon', 'alt']
+        cols = ['recType', 'recTime', 'callsign', 'latitude', 'longitude', 'altitude','heading']
         df = df.select(*cols).filter(df['recType']==3).withColumn("recTime", df['recTime'].cast(IntegerType()))
         
         if query_name is not None:
@@ -259,7 +259,7 @@ class IFFSpark:
         df=self.sparkSession.sql(
             """
             SELECT *,
-            ST_Point(CAST(lat AS Decimal(24, 20)), CAST(lon AS Decimal(24, 20))) AS geom
+            ST_Point(CAST(latitude AS Decimal(24, 20)), CAST(longitude AS Decimal(24, 20))) AS geom
             FROM {}
             """.format(tablename))
 
@@ -288,7 +288,7 @@ class IFFSpark:
             """
                 SELECT *
                 FROM {}
-                WHERE ST_Contains(ST_PolygonFromEnvelope({}, {}, {}, {}), geom) AND alt>{}
+                WHERE ST_Contains(ST_PolygonFromEnvelope({}, {}, {}, {}), geom) AND altitude>{}
             """.format(tablename,fix_x_y_z[0]-radius, fix_x_y_z[1]-radius, fix_x_y_z[0]+radius,fix_x_y_z[1]+radius,fix_x_y_z[2]+vertical_thresh))
         
         if register_name is not None:
@@ -308,17 +308,17 @@ class IFFSpark:
             StructField("cid", IntegerType(), True),  # 5  //computer flight id
             StructField("Source", StringType(), True),  # 6  //source of the record
             StructField("msgType", StringType(), True),  # 7
-            StructField("acId", StringType(), True),  # 8  //call sign
+            StructField("callsign", StringType(), True),  # 8  //call sign
             StructField("recTypeCat", IntegerType(), True),  # 9
-            StructField("lat", DoubleType(), True),  # 10
-            StructField("lon", DoubleType(), True),  # 11
-            StructField("alt", DoubleType(), True),  # 12  //in 100s of feet
+            StructField("latitude", DoubleType(), True),  # 10
+            StructField("longitude", DoubleType(), True),  # 11
+            StructField("altitude", DoubleType(), True),  # 12  //in 100s of feet
             StructField("significance", ShortType(), True),  # 13 //digit range from 1 to 10
             StructField("latAcc", DoubleType(), True),  # 14
             StructField("lonAcc", DoubleType(), True),  # 15
             StructField("altAcc", DoubleType(), True),  # 16
-            StructField("groundSpeed", IntegerType(), True),  # 17 //in knots
-            StructField("course", DoubleType(), True),  # 18  //in degrees from true north
+            StructField("tas", IntegerType(), True),  # 17 //in knots
+            StructField("heading", DoubleType(), True),  # 18  //in degrees from true north
             StructField("rateOfClimb", DoubleType(), True),  # 19  //in feet per minute
             StructField("altQualifier", StringType(), True),  # 20  //Altitude qualifier (the “B4 character”)
             StructField("altIndicator", StringType(), True),  # 21  //Altitude indicator (the “C4 character”)
