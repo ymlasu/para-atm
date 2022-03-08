@@ -42,7 +42,7 @@ def extract_flightaware_data(FA_URL):
     traj_mat['Rate'] = traj_mat['Rate'].fillna(0)
 
     # Rename columns
-    traj_mat.rename(columns={traj_mat.columns[0]: "Time_s", "LatitudeLat": "Latitude", "LongitudeLon": "Longitude", "CourseDir": "Course_deg", "kts": "TAS_kts", "mph": "TAS_mph", "feet": "Altitude_ft", "Rate": "ROCD"}, inplace = True)
+    traj_mat.rename(columns={traj_mat.columns[0]: "time", "LatitudeLat": "latitude", "LongitudeLon": "longitude", "CourseDir": "heading", "kts": "tas", "mph": "tas_mph", "feet": "altitude", "Rate": "rocd"}, inplace = True)
 
     # Remove NaN entries
     is_NaN = traj_mat.isnull()
