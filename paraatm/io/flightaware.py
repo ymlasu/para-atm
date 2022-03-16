@@ -12,13 +12,38 @@ def extract_flightaware_data(FA_URL):
     traj_mat = dfs[0]
     traj_mat.drop(labels=0,axis=0,inplace=True)
 
+
     # format strings
     time_format = '%a %I:%M:%S %p'
     LatLon_format = "^(\\-?\d+\.\d{4}?)" # regex extracts the following: from start opf string (^) with possible -ve (\\-?) unlimited digits in series (\d+) a decimal point (\.) four digits \d{4} 
     Course_TAS_format = "(\\-?\d+)"
 
+    start = 'flight/'
+    end = '/history'
+    callsign = FA_URL[FA_URL.find(start)+len(start):FA_URL.find(end)]
+
+    start = '/history/'
+    end = '/'
+    split_str = FA_URL.split(start)
+    date = FA_URL[len(split_str[0])+len(start):(len(split_str[0])+len(start)+split_str[1].find(end))]
+
+    start = date+'/'
+    end = '/'
+    split_str = FA_URL.split(start)
+    start_time = FA_URL[len(split_str[0])+len(start):(len(split_str[0])+len(start)+split_str[1].find(end))]
+
+    start = start_time+'/'
+    end = '/'
+    split_str = FA_URL.split(start)
+    origin = FA_URL[len(split_str[0])+len(start):(len(split_str[0])+len(start)+split_str[1].find(end))]
+
+    start = origin +'/'
+    end = '/'
+    split_str = FA_URL.split(start)
+    dest = FA_URL[len(split_str[0])+len(start):(len(split_str[0])+len(start)+split_str[1].find(end))]
+
     # Time Stamps
-    format_time_col(traj_mat, time_format)
+    format_time_col(traj_mat,date, start_time,time_format)
 
     # Latitude
     format_col(traj_mat,'LatitudeLat',LatLon_format)
@@ -40,6 +65,9 @@ def extract_flightaware_data(FA_URL):
         
     # ROCD
     traj_mat['Rate'] = traj_mat['Rate'].fillna(0)
+    traj_mat['callsign'] = callsign
+    traj_mat['orig'] = origin
+    traj_mat['dest'] = dest
 
     # Rename columns
     traj_mat.rename(columns={traj_mat.columns[0]: "time", "LatitudeLat": "latitude", "LongitudeLon": "longitude", "CourseDir": "heading", "kts": "tas", "mph": "tas_mph", "feet": "altitude", "Rate": "rocd"}, inplace = True)
@@ -52,7 +80,7 @@ def extract_flightaware_data(FA_URL):
     return traj_mat
 
 
-def format_time_col(database, format_string): 
+def format_time_col(database,date, start_time,format_string): 
 
     col_head = database.columns[0] # assumes time is the first entry
     temp_col = database[col_head].str.slice(0,15)   
@@ -64,7 +92,7 @@ def format_time_col(database, format_string):
     seconds_offset = seconds_offset.replace(di)*24*60*60
     
     database[col_head] = temp_col.dt.total_seconds() + seconds_offset - seconds_offset[1]
-
+    database[col_head] = pd.to_datetime(date+' '+start_time)+pd.to_timedelta(database[col_head],unit='s')
     return 
 
 
