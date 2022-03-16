@@ -105,7 +105,7 @@ def format_alt_col(database, col_head):
     temp_len = temp_col.astype(str)
     temp_len = temp_len.str.len()
 
-    database[col_head] = np.floor(temp_col/pow(10,temp_len//2)) 
+    database[col_head] = np.floor(temp_col/pow(10,temp_len//2))*10 
 
     return 
 
