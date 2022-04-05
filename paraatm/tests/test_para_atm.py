@@ -2,7 +2,6 @@ import unittest
 import pandas as pd
 import numpy as np
 import os
-
 from paraatm.io.nats import read_nats_output_file, NatsEnvironment
 from paraatm.io.gnats import read_gnats_output_file, GnatsEnvironment, GnatsBasicSimulation
 from paraatm.io.iff import read_iff_file
@@ -10,6 +9,7 @@ from paraatm.io.utils import read_csv_file
 from paraatm.safety.ground_ssd import ground_ssd_safety_analysis
 from paraatm.rsm.gp import SklearnGPRegressor
 from paraatm.simulation_method.vcas import VCAS
+from paraatm.simulation_method.aviationr import AviationRisk
 
 from . import nats_gate_to_gate
 from . import gnats_gate_to_gate
@@ -94,6 +94,12 @@ class TestNatsSimulation(unittest.TestCase):
         # Basic consistency checks:
         self.assertEqual(len(df), 229)
 
+    # Note from McFarland: testing on Ubuntu using NATS 1.8, this test
+    # often hangs after the message "Flight propagation completed",
+    # with CPU still being utilized but no further progress.  The hang
+    # occurs sometimes but other times the test completes.  This
+    # should be investigated further.  Perhaps it will be resolved by
+    # moving to GNATS.
     def test_vcas(self):
         cur_dir = os.path.dirname(os.path.abspath(__file__))
         data_dir = os.path.join(cur_dir, '..', 'sample_data/')
@@ -106,6 +112,20 @@ class TestNatsSimulation(unittest.TestCase):
         sim = VCAS(cfg)
         track = sim()['trajectory']
         self.assertEqual(len(track), 1000)
+    def test_aviationr(self):
+        cur_dir = os.path.dirname(os.path.abspath(__file__))
+        data_dir = os.path.join(cur_dir, '..', 'sample_data/')
+
+        cfg = {'fp_file': data_dir + 'aviationR/data/TRX_DEMO_SFO_PHX_GateToGate.trx',  # flight plan file
+               'mfl_file': data_dir + 'aviationR/data/TRX_DEMO_SFO_PHX_mfl.trx',  # mfl file
+               'data_file': data_dir + 'aviationR/data/',
+               'model_file': data_dir + 'aviationR/model/',
+               'sim_time': 8000}  # total simulation time
+
+        # call
+        sim = AviationRisk(cfg)
+        track = sim()['trajectory']  # call simulation function using NatsSimulationWrapper
+        self.assertEqual(len(track), 8000)
 
 @unittest.skipIf(not USE_GNATS, "use NATS instead of GNATS")
 class TestGnatsSimulation(unittest.TestCase):
