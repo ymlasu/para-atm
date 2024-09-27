@@ -1,0 +1,1 @@
+from ._svm_text_classifier import SVM_text_class
